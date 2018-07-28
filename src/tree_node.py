@@ -2,6 +2,9 @@
 Module for working with a phylogenetic tree.
 """
 
+from collections import deque
+import re
+
 class TreeNode(object):
     """
     Represents a node in a phylogenetic tree. Nodes may have one parent and one
@@ -105,21 +108,61 @@ class TreeNode(object):
         """Returns True if this node has no children."""
         return len(self.children) is 0
 
-    def traverse(self):
+    def traverse_preorder(self):
         """
-        Returns an iterator object that includes all nodes related to this one.
+        Traverse the tree, from the root to the leaves.
         """
-        nodes = self.children
-        while nodes:
-            node = nodes.pop()
+        structure = deque()
+        structure.append(self)
+        while structure:
+            node = structure.pop()
             yield node
-            for child in node.children:
-                nodes.append(child)
+            structure.extend(node.children)
+
+    def traverse_inorder(self):
+        pass
+
+    def traverse_postorder(self):
+        """
+        Traverse the tree, starting from the leaves and working inward to the
+        root.
+        """
+        structure_1, structure_2 = deque()
+        structure_1.append(self)
+        while structure_1:
+            node = structure_1.pop()
+            structure_2.append(node)
+            structure_1.extend(node.children)
+        while structure_2:
+            yield structure_2.pop()
 
     def iter_leaves(self):
         """
         Returns an iterator object that includes all leaves within this node.
         """
-        for node in self.traverse():
+        for node in self.traverse_preorder():
             if node.is_leaf():
                 yield node
+
+    def leaves(self):
+        """
+        Returns a list containing all leaves within this node.
+        """
+        return list(self.iter_leaves())
+
+    def iter_otus(self):
+        """
+        Returns an iterator object that includes all OTUs within this node.
+        OTUs are separated from a unique sequence identifier by a delimiter
+        (either '@' or '|').
+        """
+        for leaf in self.iter_leaves():
+            otu = re.split(r"\||@", leaf.name)[0]
+            yield otu
+
+    def otus(self):
+        """
+        Returns a list containing all OTUs within this node. OTUs are separated
+        from a unique sequence identifier by a delimiter (either '@' or '|').
+        """
+        return list(self.iter_otus())

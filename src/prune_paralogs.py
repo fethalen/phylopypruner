@@ -1,35 +1,33 @@
 #!/usr/bin/env python
 
-# Author: Felix Thalen
-# Date: July 18, 2018
-
 """
-  Parse the Newick tree in <path>.
+Implements various paralog pruning algorithms, used for finding orthologs in a
+gene tree.
 """
 
-import argparse
-import newick
-
-def parse_args():
-    """ Parse the arguments provided by the user.
+def maximum_inclusion(tree, min_taxa):
     """
-    parser = argparse.ArgumentParser(usage=__doc__)
-    parser.add_argument('path', type=str, \
-            help='The file containing the tree in Newick format')
-    return parser.parse_args()
-
-def main():
-    """ Parse and store a Newick file, iterate over its tips and store its name
-    and branch length to a dictionary. Use that dictionary to identify branches
-    that deviate more than 'factor' standard deviations from the median branch
-    length and output their name and distance, separated by tab.
+    Takes a Newick homolog tree and a minimum number of taxa treshold as an
+    input. Find for the maximum inclusive subtree, cut it off and return its
+    root as a putative ortholog.
     """
-    args = parse_args()
+    for node in tree.traverse_preorder():
+        if not _repetetive_otus(node):
+            leaf_count = sum(1 for _ in node.iter_leaves())
+            if leaf_count >= min_taxa:
+                yield node
 
-    tree = newick.read(args.path)
+def one_to_one_orthologs(tree):
+    """
+    Takes a Newick tree as an input and returns an unmodified tree if and only
+    if the OTUs are non-repetetive.
+    """
+    if not _repetetive_otus(tree):
+        return tree
 
-    for leaf in tree.iter_leaves():
-        print("{}\t{}".format(leaf.name, leaf.dist))
-
-if __name__ == '__main__':
-    main()
+def _repetetive_otus(tree):
+    """
+    Takes a tree node as an input, returns true if one or more OTUs are
+    present in the tree more than once.
+    """
+    return len(tree.otus) > len(set(tree.otus))
