@@ -17,6 +17,12 @@ class Sequence(object):
         self._description = str(description)
         self._sequence_data = str(sequence_data)
         self._is_alignment = True if self.is_alignment else False
+        if description:
+            self._otu = re.split(r"\||@", description)[0]
+            self._identifier = re.split(r"\||@", description)[1]
+        else:
+            self._otu = ""
+            self._identifier = ""
 
     def __str__(self):
         return self.description
@@ -49,6 +55,28 @@ class Sequence(object):
         self._sequence_data = value
 
     @property
+    def otu(self):
+        """
+        The operational taxonomical unit (OTU) to which this sequence belongs to.
+        """
+        return self._otu
+
+    @otu.setter
+    def otu(self, value):
+        self._otu = value
+
+    @property
+    def identifier(self):
+        """
+        A unique identifier for this sequence.
+        """
+        return self._identifier
+
+    @identifier.setter
+    def identifier(self, value):
+        self._identifier = value
+
+    @property
     def is_alignment(self):
         """
         Returns True if the sequence contain at least one gap character. Only
@@ -60,16 +88,17 @@ class Sequence(object):
     def is_alignment(self, value):
         self._is_alignment = value
 
-    def count(self, letter):
-        """Returns the frequency of the provided letter in this sequence."""
-        return self._sequence_data.count(letter)
-
     def _validate_sequence(self):
         if not self.sequence_data:
             return
         for letter in self.sequence_data:
             if letter not in IUPAC_CODES:
-                raise AssertionError('Non-IUPAC codes found in sequence.')
+                raise AssertionError('Non-IUPAC codes found in sequence \
+                        {}.'.format(self.description))
+
+    def count(self, letter):
+        """Returns the frequency of the provided letter in this sequence."""
+        return self._sequence_data.count(letter)
 
     def gc_content(self):
         """
@@ -80,20 +109,13 @@ class Sequence(object):
         nucleotides = 'acgt'
         for base in seq_lower:
             if not base in nucleotides:
-                print('Expected a nucleotide base (a, c, g, t), but found {}: \
-                        '.format(base))
+                print('Expected a nucleotide base (a, c, g, t), but found {} \
+                        in sequence {}.'.format(base, self.description))
         gc_count = seq_lower.count('g') + seq_lower.count('c')
         return round(float(gc_count) / len(sequence), 2)
 
-    def otu(self):
+    def ungapped(self):
         """
-        Returns this sequence's OTU. The OTU is the first part of a description
-        header, separated by a delimiter ('|' or '@').
+        Return this sequence without any gap character ('-').
         """
-        return re.split(r"\||@", self.description)[0]
-
-    def identifier(self):
-        """
-        Return a unique sequence identifier.
-        """
-        return re.split(r"\||@", self.description)[1]
+        return self.sequence_data.replace("-", "")
