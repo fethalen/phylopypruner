@@ -69,11 +69,10 @@ class MultipleSequenceAlignment(object):
             sequence.sequence_data = sequence_data
             sequence.otu = re.split(r"\||@", sequence.description)[0]
             sequence.identifier = re.split(r"\||@", sequence.description)[1]
-        elif description or sequence_data:
-            if description:
-                sequence.otu = re.split(r"\||@", sequence.description)[0]
-            if sequence_data:
-                sequence.identifier = re.split(r"\||@", sequence.description)[1]
+        elif description:
+            sequence.otu = re.split(r"\||@", sequence.description)[0]
+        elif sequence_data:
+            sequence.identifier = re.split(r"\||@", sequence.description)[1]
 
         self.sequences.append(sequence)
         return sequence
