@@ -36,7 +36,6 @@ def trim_short_seqs(msa, tree, treshold):
                 remove_node(leaf)
                 trimmed_seqs.append(leaf)
 
-    # TODO: nothing is appended!
     return trimmed_seqs
 
 def _mean(data):
@@ -51,11 +50,20 @@ def _sdm(data):
     return sum((x - _mean(data))**2 for x in data)
 
 def _std(data):
-    """ Return the population standard deviation of data.
-    """
+    "Return the population standard deviation of data."
     if len(data) < 2:
         raise ValueError('variance requires at least two data points')
     return (_sdm(data) / len(data)) ** 0.5
+
+def _long_branches(node, treshold):
+    """
+    Takes a TreeNode object and a treshold as an input. Returns true if any
+    leaf within the node has a distance that is larger than the treshold.
+    """
+    for leaf in node.iter_leaves():
+        if leaf.dist > treshold:
+            return True
+    return False
 
 def prune_long_branches(node, factor):
     """
@@ -71,6 +79,9 @@ def prune_long_branches(node, factor):
 
     for leaf in node.iter_leaves():
         if leaf.dist > treshold:
+            if leaf.name == leaf.parent.name:
+                leaf.parent.view()
+                continue
             remove_node(leaf)
             yield leaf
 

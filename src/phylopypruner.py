@@ -23,6 +23,7 @@ import fasta
 import newick
 import filtering
 import mask_monophylies
+import root
 from prune_paralogs import prune_paralogs
 from msa import MultipleSequenceAlignment
 from log import Log
@@ -37,6 +38,11 @@ def _validate_input(msa, tree, tree_path):
     if set(descriptions).intersection(names) < set(descriptions):
         raise AssertionError("MSA {} does not match tree \
                 {}".format(msa.filename, tree_path))
+
+def _validate_arguments(args):
+    if not args.outgroup and args.prune == "MO" or args.prune == "RT":
+        print("No outgroup has been specified")
+        exit()
 
 def _get_sequences(msa, tree):
     """
@@ -150,6 +156,8 @@ def main():
     "Parse arguments, run filter and infer orthologs."
     args = parse_args()
 
+    _validate_arguments(args)
+
     # parse the MSA and tree and create a log to keep track of operations
     nw_file = args.tree
     msa_file = args.msa
@@ -165,11 +173,9 @@ def main():
         log.trimmed_seqs = filtering.trim_short_seqs(msa, tree, args.min_seq)
 
     # prune long branches
-    if args.min_support:
+    if args.trim_lb:
         log.lbs_removed = list(filtering.prune_long_branches(tree,
-                                                             args.min_support))
-
-    tree.view()
+                                                             args.trim_lb))
 
     # mask monophylies
     if args.mask:
@@ -179,16 +185,29 @@ def main():
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         log.monophylies_masked = masked_seqs
 
+    # collapse weakly supported nodes into polytomies
+    if args.min_support:
+        log.pruned_sequences = filtering.collapse_nodes(tree, args.min_support)
+
+    # We run masked monophylies again, since some sequences might be missed
+    # otherwise. Only running masked monophylies here doesn't solve the
+    # problem.
+    if args.mask:
+        if args.mask == "pdist":
+            tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
+        elif args.mask == "longest":
+            tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
+        log.monophylies_masked = masked_seqs
+
+
     # exit if number of OTUs < treshold
     if filtering.too_few_otus(tree, args.min_taxa):
         print("too few OTUs in tree {}, exiting".format(nw_file))
         exit()
 
-    # collapse weakly supported nodes into polytomies
-    if args.min_support:
-        log.pruned_sequences = filtering.collapse_nodes(tree, args.min_support)
-
-    tree.view()
+    if args.outgroup:
+        if not args.prune == "RT" and not args.prune == "MO":
+            tree = root.outgroup(tree, args.outgroup)
 
     # prune paralogs
     log.pruned_sequences = prune_paralogs(

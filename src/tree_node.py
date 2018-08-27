@@ -164,50 +164,91 @@ class TreeNode(object):
             raise AssertionError("{} is not present within tree \
                     {}".format(node, self))
 
-        root = None
         parent = node.parent
+        seen = set()
+        root = TreeNode()
+        working_node = root
+        last = root.add_child(node)
 
-        index = 0
         while parent:
-            index += 1
-
-            if not root:
-                root = TreeNode()
-                working_node = root
-                last = root.add_child(node)
-
-            if not parent.is_root():
+            if not parent.is_root() and len(working_node) > 0:
                 working_node = working_node.add_child(child=None,
                                                       name=parent.name,
                                                       dist=parent.dist,
                                                       support=parent.support)
+            elif len(parent) < 1:
+                # case where the parent node contains a polytomy
+                working_node = working_node.add_child()
 
             for child in parent.children:
-                if not child is last:
+                if not child in seen and not child is last:
                     working_node.children.append(child)
+
+            for node in parent.traverse_preorder():
+                seen.add(node)
 
             last = parent
             parent = parent.parent
-            if parent:
-                parent.remove_child(last)
 
+            if parent:
+                if last in parent.children:
+                    parent.remove_child(last)
+
+        # get rid of empty leaves that may occur
+        while _empty_leaves(root):
+            for leaf in root.iter_leaves():
+                if not leaf.name:
+                    remove_node(leaf)
         return root
 
-    def outgroups_only(self, outgroups):
+    def outgroups_present(self, outgroups):
+        """
+        Takes a list of OTUs as an input. Returns true if all OTUs within
+        outgroups are present within this TreeNode object.
+        """
+        for outgroup_otu in outgroups:
+            found = False
+
+            for otu in self.iter_otus():
+                if otu == outgroup_otu:
+                    found = True
+
+            if not found:
+                return False
+
+        return True
+
+    def repetetive_outgroups(self, outgroups):
+        """
+        Takes a list of OTUs as an input. Returns true if this TreeNode object
+        contains multiple instances of the same OTU.
+        """
+        seen = set()
+
+        for outgroup in self.iter_otus():
+            if outgroup in seen:
+                return True
+            if outgroup in outgroups:
+                seen.add(outgroup)
+
+        return False
+
+    def is_monophyletic_outgroup(self, outgroups):
         """
         Takes a list of OTUs as an input. Returns true if this node only
-        contains OTUs from the provided list.
+        contains non-repetetive OTUs from the provided list.
         """
         if not isinstance(outgroups, list):
             raise TypeError("{} is not a list".format(outgroups))
 
-        statement = True
+        seen = set()
 
         for outgroup in self.iter_otus():
-            if not outgroup in outgroups:
-                statement = False
+            if not outgroup in outgroups or outgroup in seen:
+                return False
+            seen.add(outgroup)
 
-        return statement
+        return True
 
     def traverse_preorder(self):
         """
@@ -405,3 +446,13 @@ def remove_node(node):
         parent.dist = parent.dist + child.dist
         parent.support = child.support
         parent.children = child.children
+
+def _empty_leaves(node):
+    """
+    Return True if and only if there are leaves without any name within the
+    provided TreeNode object.
+    """
+    for leaf in node.iter_leaves():
+        if not leaf.name:
+            return True
+    return False
