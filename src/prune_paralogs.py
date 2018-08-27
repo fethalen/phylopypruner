@@ -46,6 +46,9 @@ def maximum_inclusion(tree, min_taxa):
     """
     max_subtree = largest_subtree(tree, min_taxa)
 
+    if not max_subtree:
+        return
+
     if max_subtree.is_root():
         # the entire tree consists of non-repetetive taxa only
         yield max_subtree
@@ -63,10 +66,26 @@ def rooted_tree(tree, min_taxa, outgroup):
         if node.outgroups_only:
             pass
 
-def monophyletic_outgroups(tree, min_taxa, outgroup):
+def monophyletic_outgroups(tree, min_taxa, outgroups):
     """
+    Takes a TreeNode object, the minimum number of taxa allowed and a list of
+    outgroups as an input. Looks for subtrees where all outgroup OTUs are
+    present and forms a monophyletic group, cuts the tree off, roots it and
+    returns the largest subtree with non-repetetive taxa within that tree. An
+    iterator object is returned, where each object is the most inclusive
+    subtree found within each monophyletic group.
     """
-    pass
+    if not tree.outgroups_present(outgroups):
+        pass
+
+    if tree.repetetive_outgroups(outgroups):
+        pass
+
+    for node in tree.traverse_preorder():
+        if node.is_monophyletic_outgroup(outgroups):
+            pass
+
+    yield tree
 
 def one_to_one_orthologs(tree):
     """

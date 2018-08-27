@@ -215,6 +215,7 @@ class Log(object):
                 leaf_count = len(list(subtree.iter_leaves()))
                 print("\northolog # {}:\t\t\t\t".format(index + 1))
                 print("  # of sequences in ortholog: \t\t{}".format(leaf_count))
+                subtree.view()
 
     def to_txt(self, filename):
         """
