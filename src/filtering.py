@@ -2,8 +2,6 @@
 Tools for filtering tree nodes and sequences.
 """
 
-from tree_node import remove_node
-
 def _is_short_sequence(sequence, treshold):
     """
     Return true if the provided sequence is shorter than the provided treshold.
@@ -24,7 +22,7 @@ def trim_short_seqs(msa, tree, treshold):
     sequences that are shorter than the provided treshold from both the MSA and
     the tree.
     """
-    trimmed_seqs = []
+    nodes_to_remove = set()
 
     for leaf in tree.iter_leaves():
         match = msa.get_sequence(leaf.name)
@@ -33,10 +31,9 @@ def trim_short_seqs(msa, tree, treshold):
             sequence = match
 
             if _is_short_sequence(sequence, treshold):
-                remove_node(leaf)
-                trimmed_seqs.append(leaf)
+                nodes_to_remove.add(leaf)
 
-    return trimmed_seqs
+    return list(tree.remove_nodes(nodes_to_remove))
 
 def _mean(data):
     """ Return the sample arithmetic mean of data, a sequence of real-valued
@@ -55,16 +52,6 @@ def _std(data):
         raise ValueError('variance requires at least two data points')
     return (_sdm(data) / len(data)) ** 0.5
 
-def _long_branches(node, treshold):
-    """
-    Takes a TreeNode object and a treshold as an input. Returns true if any
-    leaf within the node has a distance that is larger than the treshold.
-    """
-    for leaf in node.iter_leaves():
-        if leaf.dist > treshold:
-            return True
-    return False
-
 def prune_long_branches(node, factor):
     """
     Takes a TreeNode object and a integer as an input. Remove leaves that has a
@@ -73,17 +60,17 @@ def prune_long_branches(node, factor):
     leaves as an iterator object.
     """
     dists = []
+    leaves_to_remove = set()
+
     for leaf in node.iter_leaves():
         dists.append(leaf.dist)
     treshold = _std(dists) * factor
 
     for leaf in node.iter_leaves():
         if leaf.dist > treshold:
-            if leaf.name == leaf.parent.name:
-                leaf.parent.view()
-                continue
-            remove_node(leaf)
-            yield leaf
+            leaves_to_remove.add(leaf)
+
+    return node.remove_nodes(leaves_to_remove)
 
 def collapse_nodes(node, treshold):
     """

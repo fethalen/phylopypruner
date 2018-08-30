@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+#pylint: disable=too-many-branches
 
 # Author: Felix Thalen
 # Date: July 24, 2018
@@ -40,7 +41,8 @@ def _validate_input(msa, tree, tree_path):
                 {}".format(msa.filename, tree_path))
 
 def _validate_arguments(args):
-    if not args.outgroup and args.prune == "MO" or args.prune == "RT":
+    if not args.outgroup and args.prune == "MO" or \
+        not args.outgroup and args.prune == "RT":
         print("No outgroup has been specified")
         exit()
 
@@ -150,6 +152,14 @@ def parse_args():
                         type=str,
                         choices=["LS", "MI", "MO", "RT", "1to1"],
                         help="prune paralogs using this method")
+    parser.add_argument("--verbose",
+                        default=False,
+                        action="store_true",
+                        help="show a more detailed report")
+    parser.add_argument("--quiet",
+                        default=False,
+                        action="store_true",
+                        help="don't output a report")
     return parser.parse_args()
 
 def main():
@@ -197,8 +207,7 @@ def main():
             tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
         elif args.mask == "longest":
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
-        log.monophylies_masked = masked_seqs
-
+        log.monophylies_masked.append(masked_seqs)
 
     # exit if number of OTUs < treshold
     if filtering.too_few_otus(tree, args.min_taxa):
@@ -206,14 +215,19 @@ def main():
         exit()
 
     if args.outgroup:
-        if not args.prune == "RT" and not args.prune == "MO":
-            tree = root.outgroup(tree, args.outgroup)
+        if not args.prune == "MO":
+            rerooted_tree = root.outgroup(tree, args.outgroup)
+            if rerooted_tree:
+                tree = rerooted_tree
+
+    # get a list of paralogs
+    log.paralogs = tree.paralogs()
 
     # prune paralogs
-    log.pruned_sequences = prune_paralogs(
+    log.orthologs = prune_paralogs(
         args.prune, tree, args.min_taxa, args.outgroup)
 
-    log.report()
+    log.report(args.verbose)
     print("\n" + _file_out(msa_file))
 
 if __name__ == "__main__":

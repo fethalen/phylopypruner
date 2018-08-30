@@ -1,5 +1,6 @@
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=too-many-public-methods
+# pylint: disable=too-many-branches
 
 """
 Module for working with a phylogenetic tree.
@@ -13,7 +14,6 @@ class TreeNode(object):
     Represents a node in a phylogenetic tree. Nodes may have one parent and one
     or more children.
     """
-
     def __init__(self, name='', dist=0.0, support=1.0):
         self._name = name
         self._children = []
@@ -25,19 +25,19 @@ class TreeNode(object):
         return self.name
 
     def __len__(self):
-        """Length of node is its number of children."""
+        "Length of node is its number of children."
         return len(self.children)
 
     def __nonzero__(self):
         return True
 
     def __bool__(self):
-        """Python3 __nonzero__ equivalent."""
+        "Python3 __nonzero__ equivalent."
         return True
 
     @property
     def name(self):
-        """Return the name of this node."""
+        "Return the name of this node."
         return self._name
 
     @name.setter
@@ -46,7 +46,7 @@ class TreeNode(object):
 
     @property
     def children(self):
-        """Return a list of the node's children."""
+        "Return a list of the node's children."
         return self._children
 
     @children.setter
@@ -56,7 +56,7 @@ class TreeNode(object):
 
     @property
     def parent(self):
-        """Return the node's parent, if any, or return None."""
+        "Return the node's parent, if any, or return None."
         return self._parent
 
     @parent.setter
@@ -65,7 +65,7 @@ class TreeNode(object):
 
     @property
     def dist(self):
-        """This node's distance (that is, it's branch length)."""
+        "This node's distance."
         return self._dist
 
     @dist.setter
@@ -74,7 +74,7 @@ class TreeNode(object):
 
     @property
     def support(self):
-        """The support value for this node. Default is 1.0."""
+        "The support value for this node. Default is 1.0."
         return self._support
 
     @support.setter
@@ -82,7 +82,7 @@ class TreeNode(object):
         self._support = float(value)
 
     def add_child(self, child=None, name='', dist=0.0, support=1.0):
-        """Adds a new child to this node."""
+        "Adds a new child to this node."
         if not child:
             child = self.__class__()
             child.name = name
@@ -94,57 +94,37 @@ class TreeNode(object):
         return child
 
     def remove_child(self, child):
-        """Remove the provided child, if it exists."""
+        "Remove the provided child, if it exists."
         try:
             self._children.remove(child)
         except ValueError:
             print('child {} not found in node {}'.format(child, self))
 
-    def remove_node(self, node):
-        """
-        Remove the provided TreeNode object from this node, if it exists. No
-        operation is performed if this is the root node.
-        """
-        if not isinstance(node, TreeNode):
-            raise TypeError("{} must be a TreeNode object".format(node))
-
-        if node.is_root():
-            raise AssertionError("{} can't be a root node".format(node))
-
-        for node_item in self.traverse_preorder():
-            if node_item is node:
-                parent = node.parent
-
-                if parent:
-                    parent.remove_child(node)
-
-                    if len(parent) is 0 and not parent.is_root():
-                        remove_node(parent)
-        return node
-
     def iter_sisters(self):
-        """
-        Return an iterator object that contains this node's sister nodes.
-        """
+        "Return an iterator object that contains this node's sister nodes."
         if self.parent:
             for child in self.parent.children:
                 if child is not self:
                     yield child
 
+    def otu(self):
+        "Returns the OTU to which this node belongs."
+        return re.split(r"\||@", self.name)[0]
+
     def is_root(self):
-        """Returns True if this node lacks a parent."""
+        "Returns True if this node lacks a parent."
         return not self.parent
 
     def is_leaf(self):
-        """Returns True if this node has no children."""
+        "Returns True if this node has no children."
         return len(self.children) is 0
 
     def is_monophyletic(self):
-        """Returns True if all leaves in this node belong to a single OTU."""
+        "Returns True if all leaves in this node belong to a single OTU."
         return len(set(list(self.iter_otus()))) is 1
 
     def is_polytomy(self):
-        """Returns True if this node has two or more children."""
+        "Returns True if this node has two or more children."
         return len(self.children) > 2
 
     def is_bifurcating(self):
@@ -195,11 +175,55 @@ class TreeNode(object):
                     parent.remove_child(last)
 
         # get rid of empty leaves that may occur
-        while _empty_leaves(root):
+        while root.empty_leaves():
             for leaf in root.iter_leaves():
                 if not leaf.name:
-                    remove_node(leaf)
+                    leaf.delete()
         return root
+
+    def remove_nodes(self, nodes_to_remove):
+        """
+        Takes a set of strings, where each string is the name of a node to
+        remove, as an input. Iterate over the nodes within this TreeNode object
+        and remove a node if it matches a node within the set of nodes.
+        """
+        while nodes_to_remove:
+            match = False
+
+            for node in self.traverse_preorder():
+                if node in nodes_to_remove:
+                    nodes_to_remove.remove(node)
+                    yield node
+                    match = True
+                    # remove_node(node)
+                    node.delete()
+                    break
+
+            if not match:
+                # no node to remove could be found
+                return
+
+    def delete(self):
+        """
+        Remove this node from its parent, if it exists. If the parent is a
+        bifurcating node and is left with a single child upon removal, then
+        replace the node with its child.
+        """
+        if self.is_root():
+            raise AssertionError("can't remove a root node")
+
+        parent = self.parent
+        parent.remove_child(self)
+
+        if len(parent) is 1 and not parent.is_root():
+            # Case where a child was removed from a bifurcating node; replace
+            # the node with the child.
+            child = parent.children[0]
+            parent.remove_child(child)
+            parent.name = child.name
+            parent.dist = parent.dist + child.dist
+            parent.support = child.support
+            parent.children = child.children
 
     def outgroups_present(self, outgroups):
         """
@@ -251,9 +275,7 @@ class TreeNode(object):
         return True
 
     def traverse_preorder(self):
-        """
-        Traverse the tree, from the root to the leaves.
-        """
+        "Traverse the tree, from the root to the leaves."
         structure = deque()
         structure.append(self)
         while structure:
@@ -288,7 +310,7 @@ class TreeNode(object):
             parent.add_child(child)
 
         self.children = []
-        remove_node(self)
+        self.delete()
 
     def distance_to(self, node):
         "Returns the distance between this node and another node."
@@ -326,9 +348,7 @@ class TreeNode(object):
             parent = parent.parent
 
     def iter_leaves(self):
-        """
-        Returns an iterator object that includes all leaves within this node.
-        """
+        "Returns an iterator object that includes all leaves within this node."
         for node in self.traverse_preorder():
             if node.is_leaf():
                 yield node
@@ -342,16 +362,12 @@ class TreeNode(object):
                 yield node
 
     def iter_names(self):
-        """
-        Returns an iterator object that includes all names within this node.
-        """
+        "Returns an iterator object that includes all names within this node."
         for leaf in self.iter_leaves():
             yield leaf.name
 
     def iter_otus(self):
-        """
-        Returns an iterator object that includes all OTUs within this node.
-        """
+        "Returns an iterator object that includes all OTUs within this node."
         for name in self.iter_names():
             otu = re.split(r"\||@", name)[0]
             yield otu
@@ -423,36 +439,31 @@ class TreeNode(object):
                                       compact=compact, attributes=attributes)
         return '\n'+'\n'.join(lines)
 
-def remove_node(node):
-    """
-    Remove the provided node from its node, if it exists. If a node's
-    parent node has no children after removal, then remove the parent node
-    too. If the parent node is the root node, don't remove it regardless.
-    """
-    if not isinstance(node, TreeNode):
-        raise TypeError("{} must be a TreeNode object".format(node))
+    def empty_leaves(self):
+        "Returns True if there are leaves without a name within this node."
+        for leaf in self.iter_leaves():
+            if not leaf.name:
+                return True
+        return False
 
-    if node.is_root():
-        raise AssertionError("can't remove a root node")
+    def paralogs(self):
+        """
+        Returns the list of TreeNode objects within this node with an OTU that
+        is present more than once within this node.
+        """
+        seen = set()
+        flag = set()
+        paralogs = list()
 
-    parent = node.parent
-    parent.remove_child(node)
+        for leaf in self.iter_leaves():
+            otu = leaf.otu()
+            if otu in seen:
+                flag.add(otu)
+            seen.add(otu)
 
-    # In case one node is removed from a bifurcating node, that node is no
-    # longer needed.
-    if len(parent) is 1 and not parent.is_root():
-        child = parent.children[0]
-        parent.name = child.name
-        parent.dist = parent.dist + child.dist
-        parent.support = child.support
-        parent.children = child.children
+        for leaf in self.iter_leaves():
+            otu = leaf.otu()
+            if otu in flag:
+                paralogs.append(leaf)
 
-def _empty_leaves(node):
-    """
-    Return True if and only if there are leaves without any name within the
-    provided TreeNode object.
-    """
-    for leaf in node.iter_leaves():
-        if not leaf.name:
-            return True
-    return False
+        return paralogs

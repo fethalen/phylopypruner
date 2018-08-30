@@ -5,6 +5,16 @@ Implements various paralog pruning algorithms, used for finding orthologs in a
 gene tree.
 """
 
+import root
+
+def _has_enough_taxa(node, min_taxa):
+    """
+    Takes a TreeNode object and a treshold as an input. Returns False if there
+    are fewer than [min_taxa] OTUs within the node, else True.
+    """
+    otus = set([_ for _ in node.iter_otus()])
+    return len(otus) >= min_taxa
+
 def _repetetive_otus(node):
     """
     Takes a TreeNode object as an input, returns true if one or more OTUs are
@@ -56,15 +66,39 @@ def maximum_inclusion(tree, min_taxa):
 
     while max_subtree:
         yield max_subtree
-        tree.remove_node(max_subtree)
+        max_subtree.delete()
         max_subtree = largest_subtree(tree, min_taxa)
 
-def rooted_tree(tree, min_taxa, outgroup):
+def rooted_tree(tree, min_taxa, outgroups):
     """
+    Takes a TreeNode object, the minimum number of OTUs allowed in the output
+    and a list of outgroup(s) as an input. Finds the largest subtree with the
+    highest number of ingroup taxa and returns the largest subtree with
+    non-repetitive OTUs.
     """
-    for node in tree.traverse_preorder():
-        if node.outgroups_only:
-            pass
+    if not tree.outgroups_present(outgroups):
+        # outgroups absent
+        return
+
+    keep = None
+
+    # find the branch with the highest number of ingroups
+    for subtree in tree.iter_branches():
+        if not _has_enough_taxa(subtree, min_taxa):
+            continue
+
+        if subtree.outgroups_present(outgroups):
+            continue
+
+        size = len([_ for _ in subtree.iter_leaves()])
+
+        if not keep:
+            keep = subtree
+        elif size > len([_ for _ in keep.iter_leaves()]):
+            keep = subtree
+
+    max_subtree = largest_subtree(keep, min_taxa)
+    return max_subtree
 
 def monophyletic_outgroups(tree, min_taxa, outgroups):
     """
@@ -76,16 +110,29 @@ def monophyletic_outgroups(tree, min_taxa, outgroups):
     subtree found within each monophyletic group.
     """
     if not tree.outgroups_present(outgroups):
-        pass
-
-    if tree.repetetive_outgroups(outgroups):
-        pass
+        return
 
     for node in tree.traverse_preorder():
-        if node.is_monophyletic_outgroup(outgroups):
-            pass
+        # find branches where all outgroups are represented and non-repetetive
+        if not node.outgroups_present(outgroups):
+            continue
 
-    yield tree
+        if node.repetetive_outgroups(outgroups):
+            continue
+
+        if not _has_enough_taxa(node, min_taxa):
+            continue
+
+        # find the branch where all outgroups are present
+        for branch in node.iter_branches():
+            if not branch.outgroups_present(outgroups):
+                continue
+
+            if branch.is_monophyletic_outgroup(outgroups):
+                monophyletic_outgroup = root.outgroup(branch, outgroups)
+                max_subtree = largest_subtree(monophyletic_outgroup, min_taxa)
+                if max_subtree:
+                    yield max_subtree
 
 def one_to_one_orthologs(tree):
     """
@@ -94,21 +141,6 @@ def one_to_one_orthologs(tree):
     """
     if not _repetetive_otus(tree):
         return tree
-
-def get_paralogs(tree):
-    "Return a list of paralogs present in the provided TreeNode object."
-    if not _repetetive_otus(tree):
-        return
-
-    seen = set()
-    paralogs = set()
-
-    for otu in tree.iter_otus():
-        if otu in seen:
-            paralogs.add(otu)
-        else:
-            seen.add(otu)
-    return paralogs
 
 def prune_paralogs(method, tree, min_taxa, outgroup):
     """
@@ -129,7 +161,7 @@ def prune_paralogs(method, tree, min_taxa, outgroup):
     elif method == "MO":
         subtrees = list(monophyletic_outgroups(tree, min_taxa, outgroup))
     elif method == "RT":
-        subtrees = list(rooted_tree(tree, min_taxa, outgroup))
+        subtrees.append(rooted_tree(tree, min_taxa, outgroup))
     elif method == "1to1":
         if one_to_one_orthologs(tree):
             subtrees.append(tree)

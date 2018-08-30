@@ -5,6 +5,7 @@
 Store information about performed operations.
 """
 
+from __future__ import print_function
 import datetime
 
 class Log(object):
@@ -25,7 +26,8 @@ class Log(object):
         self._trimmed_seqs = []
         self._lbs_removed = []
         self._monophylies_masked = []
-        self._pruned_sequences = []
+        self._orthologs = []
+        self._paralogs = []
 
     @property
     def version(self):
@@ -161,17 +163,24 @@ class Log(object):
         self._lbs_removed = value
 
     @property
-    def pruned_sequences(self):
-        """
-        A list of sequences that were removed during the paralog-pruning stage.
-        """
-        return self._pruned_sequences
+    def orthologs(self):
+        "A list of TreeNode objects recovered as orthologs."
+        return self._orthologs
 
-    @pruned_sequences.setter
-    def pruned_sequences(self, value):
-        self._pruned_sequences = value
+    @orthologs.setter
+    def orthologs(self, value):
+        self._orthologs = value
 
-    def report(self):
+    @property
+    def paralogs(self):
+        "A list of TreeNode objects recovered as paralogs."
+        return self._paralogs
+
+    @paralogs.setter
+    def paralogs(self, value):
+        self._paralogs = value
+
+    def report(self, verbose):
         """
         Print a report of the records in this log.
         """
@@ -184,9 +193,12 @@ class Log(object):
             if len(self.outgroup) == 1:
                 print("outgroup:\t\t\t\t{}".format(self.outgroup[0]))
             else:
-                print("outgroups: ")
-                for otu in self.outgroup:
-                    print("  {}".format(otu))
+                print("outgroups:\t\t\t\t", end="")
+                for index, otu in enumerate(self.outgroup):
+                    if index == len(self.outgroup) - 1:
+                        print("{}".format(otu))
+                    else:
+                        print("{}, ".format(otu), end="")
 
         print("# of sequences:\t\t\t\t{}".format(self.sequences))
         print("# of OTUs:\t\t\t\t{}".format(self.taxa))
@@ -200,22 +212,30 @@ class Log(object):
             print("# of nodes collapsed into polytomies:\t{}".format(
                 self.collapsed_nodes))
 
-        if self.trimmed_seqs:
-            print("\nshort sequences removed:")
-            for trimmed_seq in self.trimmed_seqs:
-                print("  {}".format(trimmed_seq))
+        if verbose:
+            if self.trimmed_seqs:
+                print("\nshort sequences removed:")
+                for trimmed_seq in self.trimmed_seqs:
+                    print("  {}".format(trimmed_seq))
 
-        if self.lbs_removed:
-            print("\nlong branched sequences removed:")
-            for long_branch in self.lbs_removed:
-                print("  {}".format(long_branch))
+            if self.lbs_removed:
+                print("\nlong branched sequences removed:")
+                for long_branch in self.lbs_removed:
+                    print("  {}".format(long_branch))
 
-        if self.pruned_sequences:
-            for index, subtree in enumerate(self.pruned_sequences):
+        if self.paralogs:
+            print("\nparalogs:")
+            for paralog in self.paralogs:
+                print("  {}".format(paralog.otu()))
+
+        if self.orthologs:
+            for index, subtree in enumerate(self.orthologs):
                 leaf_count = len(list(subtree.iter_leaves()))
-                print("\northolog # {}:\t\t\t\t".format(index + 1))
-                print("  # of sequences in ortholog: \t\t{}".format(leaf_count))
+                print("\northolog #{}:\t\t\t\t".format(index + 1))
+                print("  # of OTUs: \t\t\t\t{}".format(leaf_count))
                 subtree.view()
+        else:
+            print("no orthologs were recovered")
 
     def to_txt(self, filename):
         """
