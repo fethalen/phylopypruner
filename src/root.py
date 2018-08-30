@@ -2,8 +2,6 @@
 Methods for rooting a phylogenetic tree.
 """
 
-import re
-
 def outgroup(tree, outgroups):
     """
     Takes a TreeNode object and a list of outgroups as an input. If all
@@ -20,16 +18,13 @@ def outgroup(tree, outgroups):
     if len(outgroups) == 1:
         outgroup_otu = outgroups[0]
         for leaf in tree.iter_leaves():
-            otu = re.split(r"\||@", leaf.name)[0]
+            otu = leaf.otu()
             if otu == outgroup_otu:
-                rerooted_tree = tree.reroot(leaf)
+                return tree.reroot(leaf)
 
     for branch in tree.iter_branches():
         if branch.is_monophyletic_outgroup(outgroups):
-            for leaf in branch.iter_leaves():
-                print(leaf.name)
-
-    return rerooted_tree
+            return tree.reroot(branch)
 
 def _longest_tip_to_tip_dist(node):
     """
