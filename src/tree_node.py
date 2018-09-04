@@ -2,9 +2,7 @@
 # pylint: disable=too-many-public-methods
 # pylint: disable=too-many-branches
 
-"""
-Module for working with a phylogenetic tree.
-"""
+"Module for working with a phylogenetic tree."
 
 import re
 from collections import deque
@@ -179,6 +177,7 @@ class TreeNode(object):
             for leaf in root.iter_leaves():
                 if not leaf.name:
                     leaf.delete()
+
         return root
 
     def remove_nodes(self, nodes_to_remove):

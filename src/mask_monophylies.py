@@ -148,6 +148,7 @@ def longest_isoform(msa, node):
 
                 for leaf in multiples[otu]:
                     if leaf.name is not keep:
+                        removed.append(leaf)
                         leaf.delete()
 
         else:
@@ -195,6 +196,7 @@ def pairwise_distance(node):
 
                 for leaf in multiples[otu]:
                     if leaf.name is not keep:
+                        removed.append(leaf)
                         leaf.delete()
         else:
             # find the leaf with the shortest distance to the current branch

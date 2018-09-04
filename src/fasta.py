@@ -28,12 +28,12 @@ def read(filename):
                 sequence_data += line
     return msa
 
-def write(msa, filename):
+def write(msa):
     """
     Takes a multiple sequence alignment object and a path as an input. Writes
     all sequences within that alignment to the provided filename.
     """
-    with open(filename, "w") as fasta_file:
+    with open(msa.filename, "w") as fasta_file:
         for sequence in msa.sequences:
-            fasta_file.write(sequence.description)
-            fasta_file.write(sequence.sequence_data)
+            fasta_file.write(">{}\n".format(sequence.description))
+            fasta_file.write("{}\n".format(sequence.sequence_data))
