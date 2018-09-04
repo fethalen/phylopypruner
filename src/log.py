@@ -13,13 +13,14 @@ class Log(object):
     A record of a single run.
     """
 
-    def __init__(self, version, msa, tree, arguments):
+    def __init__(self, version, msa, tree, settings):
         self._version = version
         self._msa = msa
         self._tree = tree
         self._msa_file = msa.filename
-        self._tree_file = arguments.tree
-        self._outgroup = arguments.outgroup
+        self._tree_file = settings.nw_file
+        self._outgroup = settings.outgroup
+        self._prune_paralogs = bool(settings.prune)
         self._sequences = len(list(self._tree.iter_leaves()))
         self._taxa = len(set(list(self._tree.iter_otus())))
         self._collapsed_nodes = 0
@@ -112,6 +113,17 @@ class Log(object):
         A list of sequences that were deleted due to being to short.
         """
         return self._trimmed_seqs
+
+    @property
+    def prune_paralogs(self):
+        """
+        True if a prune paralog method was specified for this run.
+        """
+        return self._prune_paralogs
+
+    @prune_paralogs.setter
+    def prune_paralogs(self, value):
+        self._prune_paralogs = value
 
     @trimmed_seqs.setter
     def trimmed_seqs(self, value):
@@ -223,18 +235,21 @@ class Log(object):
                 for long_branch in self.lbs_removed:
                     print("  {}".format(long_branch))
 
+        seen = set()
         if self.paralogs:
-            print("\nparalogs:")
+            print("\nOTUs with paralogs:")
             for paralog in self.paralogs:
-                print("  {}".format(paralog.otu()))
+                if not paralog.otu() in seen:
+                    print("  {}".format(paralog.otu()))
+                    seen.add(paralog.otu())
 
         if self.orthologs:
             for index, subtree in enumerate(self.orthologs):
                 leaf_count = len(list(subtree.iter_leaves()))
-                print("\northolog #{}:\t\t\t\t".format(index + 1))
+                print("\northologous group #{}:\t\t\t\t".format(index + 1))
                 print("  # of OTUs: \t\t\t\t{}".format(leaf_count))
                 subtree.view()
-        else:
+        elif self.prune_paralogs:
             print("no orthologs were recovered")
 
     def to_txt(self, filename):
