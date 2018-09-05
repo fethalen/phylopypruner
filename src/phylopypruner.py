@@ -12,8 +12,9 @@ r"""
   tutorial and explanations of the implemented algorithms.
 
 example:
-  ./phylopypruner.py 16s.fa 16s.tre --min-taxa 4 --min-seq 200 --support 0.7
-  --trim-lb 5 --outgroup Drosophila --root midpoint --mask pdist --prune MI
+  ./phylopypruner.py --msa 16s.fa --tree 16s.tre --min-taxa 4 --min-seq 200
+    --min-support 0.7 --trim-lb 5 --outgroup Drosophila --root midpoint
+    --mask pdist --prune MI
 
 """
 

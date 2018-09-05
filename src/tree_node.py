@@ -249,6 +249,7 @@ class TreeNode(object):
         seen = set()
 
         for outgroup in self.iter_otus():
+            print(outgroup)
             if outgroup in seen:
                 return True
             if outgroup in outgroups:
