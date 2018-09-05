@@ -122,10 +122,6 @@ def _mask(node, keep):
                 leaves_to_remove -= 1
                 break
 
-    for leaf in node.iter_leaves():
-        if not leaf.name:
-            leaf.delete()
-
     return removed
 
 def _sequence_len(msa, description):
