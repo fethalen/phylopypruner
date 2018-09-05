@@ -15,14 +15,6 @@ def _has_enough_taxa(node, min_taxa):
     otus = set([_ for _ in node.iter_otus()])
     return len(otus) >= min_taxa
 
-def _repetetive_otus(node):
-    """
-    Takes a TreeNode object as an input, returns true if one or more OTUs are
-    present in the tree more than once.
-    """
-    otus = list(node.iter_otus())
-    return len(otus) > len(set(otus))
-
 def largest_subtree(node, min_taxa, included=None):
     """
     Takes a TreeNode object and a minimum number of taxa as an input. Find and
@@ -32,7 +24,7 @@ def largest_subtree(node, min_taxa, included=None):
     largest = 0
 
     for branch in node.iter_branches():
-        if _repetetive_otus(branch):
+        if bool(branch.paralogs()):
             continue
 
         # used by maximum inclusion to see if branch has already been included
@@ -54,7 +46,7 @@ def largest_subtree(node, min_taxa, included=None):
             max_subtree = branch
             largest = size
         elif size > largest:
-            max_subtree = node
+            max_subtree = branch
             largest = size
 
     return max_subtree
@@ -150,7 +142,7 @@ def one_to_one_orthologs(tree):
     Takes a Newick tree as an input and returns an unmodified tree if and only
     if the OTUs are non-repetetive.
     """
-    if not _repetetive_otus(tree):
+    if not bool(tree.paralogs()):
         return tree
 
 def prune_paralogs(method, tree, min_taxa, outgroup):

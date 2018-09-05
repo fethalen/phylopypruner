@@ -24,6 +24,7 @@ def read(filename):
                 if sequence_data:
                     msa.add_sequence(None, description, sequence_data)
                 description = line[1:]
+                sequence_data = ""
             else:
                 sequence_data += line
     return msa

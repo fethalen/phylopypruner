@@ -20,6 +20,10 @@ def _get_new_root(node):
                 new_root.children = branch.children
                 break
 
+    for leaf in new_root.iter_leaves():
+        if not leaf.name:
+            leaf.delete()
+
     return new_root
 
 def _monophyletic_outgroup(node):
@@ -57,7 +61,8 @@ def _monophyletic_outgroup(node):
             if outgroup_otu == ingroup_otu:
                 removed = child
                 # using child.delete() may end up removing the entire tree
-                child.parent.remove_child(child)
+                child.delete()
+                # child.parent.remove_child(child)
 
     return removed
 
