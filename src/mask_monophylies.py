@@ -20,9 +20,18 @@ def _get_new_root(node):
                 new_root.children = branch.children
                 break
 
+    # get rid of empty leaves throughout the new root
+    leaves_to_remove = 0
     for leaf in new_root.iter_leaves():
         if not leaf.name:
-            leaf.delete()
+            leaves_to_remove += 1
+
+    while leaves_to_remove:
+        for leaf in new_root.iter_leaves():
+            if not leaf.name:
+                leaf.delete()
+                leaves_to_remove -= 1
+                break
 
     return new_root
 
