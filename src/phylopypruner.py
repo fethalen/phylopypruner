@@ -167,8 +167,6 @@ def _run(settings, msa, tree):
             print("too few OTUs in tree {}, exiting".format(settings.nw_file))
             return log
 
-    tree.view()
-
     # get a list of paralogs
     log.paralogs = tree.paralogs()
 
