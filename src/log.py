@@ -78,7 +78,7 @@ class Log(object):
         """
         The name of the Newick file used in this run.
         """
-        return self._msa_file
+        return self._tree_file
 
     @tree_file.setter
     def tree_file(self, value):
