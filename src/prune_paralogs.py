@@ -15,7 +15,7 @@ def _has_enough_taxa(node, min_taxa):
     otus = set([_ for _ in node.iter_otus()])
     return len(otus) >= min_taxa
 
-def largest_subtree(node, min_taxa, included=None):
+def largest_subtree(node, min_taxa):
     """
     Takes a TreeNode object and a minimum number of taxa as an input. Find and
     return the TreeNode object of the largest subtree with non-repeating OTUs.
@@ -25,17 +25,6 @@ def largest_subtree(node, min_taxa, included=None):
 
     for branch in node.iter_branches():
         if bool(branch.paralogs()):
-            continue
-
-        # used by maximum inclusion to see if branch has already been included
-        already_included = False
-        if included:
-            leaves = [leaf for leaf in branch.iter_leaves()]
-            for leaf in leaves:
-                if leaf in included:
-                    already_included = True
-
-        if already_included:
             continue
 
         size = sum(1 for _ in branch.iter_leaves())
@@ -58,7 +47,6 @@ def maximum_inclusion(tree, min_taxa):
     over the remaining tree.
     """
     max_subtree = largest_subtree(tree, min_taxa)
-    included = set()
 
     while max_subtree:
         yield max_subtree
@@ -66,11 +54,16 @@ def maximum_inclusion(tree, min_taxa):
         if max_subtree.is_root():
             break
 
-        leaves = [leaf for leaf in max_subtree.iter_leaves()]
-        for leaf in leaves:
-            included.add(leaf)
+        max_subtree.delete()
 
-        max_subtree = largest_subtree(tree, min_taxa, included)
+        # get rid of empty leaves that may occur after pruning
+        while tree.empty_leaves():
+            for leaf in tree.iter_leaves():
+                if not leaf.name:
+                    leaf.delete()
+                    break
+
+        max_subtree = largest_subtree(tree, min_taxa)
 
 def rooted_tree(tree, min_taxa, outgroups):
     """

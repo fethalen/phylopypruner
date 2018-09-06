@@ -33,7 +33,9 @@ def trim_short_seqs(msa, tree, treshold):
             if _is_short_sequence(sequence, treshold):
                 nodes_to_remove.add(leaf)
 
-    return list(tree.remove_nodes(nodes_to_remove))
+    tree = tree.remove_nodes(nodes_to_remove)
+
+    return nodes_to_remove
 
 def _mean(data):
     """ Return the sample arithmetic mean of data, a sequence of real-valued
@@ -70,7 +72,8 @@ def prune_long_branches(node, factor):
         if leaf.dist > treshold:
             leaves_to_remove.add(leaf)
 
-    return node.remove_nodes(leaves_to_remove)
+    node = node.remove_nodes(leaves_to_remove)
+    return leaves_to_remove
 
 def collapse_nodes(node, treshold):
     """

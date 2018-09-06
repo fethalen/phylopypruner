@@ -177,6 +177,7 @@ class TreeNode(object):
             for leaf in root.iter_leaves():
                 if not leaf.name:
                     leaf.delete()
+                    break
 
         return root
 
@@ -192,15 +193,14 @@ class TreeNode(object):
             for node in self.traverse_preorder():
                 if node in nodes_to_remove:
                     nodes_to_remove.remove(node)
-                    yield node
                     match = True
-                    # remove_node(node)
                     node.delete()
                     break
 
             if not match:
                 # no node to remove could be found
-                return
+                return self
+        return self
 
     def delete(self):
         """
@@ -223,6 +223,8 @@ class TreeNode(object):
             parent.dist = parent.dist + child.dist
             parent.support = child.support
             parent.children = child.children
+
+        return self
 
     def outgroups_present(self, outgroups):
         """
