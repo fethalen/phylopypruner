@@ -444,6 +444,8 @@ class TreeNode(object):
     def empty_leaves(self):
         "Returns True if there are leaves without a name within this node."
         for leaf in self.iter_leaves():
+            if leaf.is_root():
+                return False
             if not leaf.name:
                 return True
         return False
