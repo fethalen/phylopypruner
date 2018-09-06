@@ -21,6 +21,7 @@ example:
 import argparse
 import os
 import sys
+import datetime
 # import itertools
 import fasta
 import newick
@@ -142,25 +143,17 @@ def _run(settings, msa, tree):
     if trim_lb:
         log.lbs_removed = list(filtering.prune_long_branches(tree, trim_lb))
 
-    # mask monophylies
-    if masking_method:
-        if masking_method == "pdist":
-            tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
-        elif masking_method == "longest":
-            tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
-        log.monophylies_masked = masked_seqs
-
-    # get rid of empty leaves that may occur in trim long branches
-    for leaf in tree.iter_leaves():
-        if not leaf.name:
-            leaf.delete()
-
     # collapse weakly supported nodes into polytomies
     if min_support:
         log.pruned_sequences = filtering.collapse_nodes(tree, min_support)
 
-    # run mask monophylies again, running it twice gets rid of some cases that
-    # would get through otherwise
+    if outgroup:
+        if not pruning_method == "MO":
+            rerooted_tree = root.outgroup(tree, outgroup)
+            if rerooted_tree:
+                tree = rerooted_tree
+
+    # mask monophyletic groups
     if masking_method:
         if masking_method == "pdist":
             tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
@@ -168,17 +161,13 @@ def _run(settings, msa, tree):
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         log.monophylies_masked.append(masked_seqs)
 
-   # exit if number of OTUs < threshold
+    # exit if number of OTUs < threshold
     if min_taxa:
         if filtering.too_few_otus(tree, min_taxa):
             print("too few OTUs in tree {}, exiting".format(settings.nw_file))
-            exit()
+            return log
 
-    if outgroup:
-        if not pruning_method == "MO":
-            rerooted_tree = root.outgroup(tree, outgroup)
-            if rerooted_tree:
-                tree = rerooted_tree
+    tree.view()
 
     # get a list of paralogs
     log.paralogs = tree.paralogs()
@@ -188,7 +177,8 @@ def _run(settings, msa, tree):
 
     return log
 
-def _get_orthologs(settings, directory="", dir_out=None, verbose=False):
+def _get_orthologs(settings, directory="", dir_out=None, wrap=None,
+                   verbose=False):
     extension_out = os.path.splitext(settings.fasta_file)[1]
     fasta_path = "{}{}".format(directory, settings.fasta_file)
     nw_path = "{}{}".format(directory, settings.nw_file)
@@ -197,6 +187,7 @@ def _get_orthologs(settings, directory="", dir_out=None, verbose=False):
     log = _run(settings, msa, nw_file)
     log.report(verbose)
 
+    print("")
     for index, ortholog in enumerate(log.orthologs):
         if len(log.orthologs) is 1:
             file_out = _file_out(fasta_path, dir_out)
@@ -204,13 +195,12 @@ def _get_orthologs(settings, directory="", dir_out=None, verbose=False):
             file_out = _file_out(fasta_path, dir_out, index + 1)
         msa_out = MultipleSequenceAlignment(file_out, extension_out)
         for leaf in ortholog.iter_leaves():
-            match = msa.get_sequence(leaf.name)
-            if match:
-                seq = match
+            seq = msa.get_sequence(leaf.name)
+            if seq:
                 msa_out.add_sequence(seq)
 
-        fasta.write(msa_out)
-        print("\nwrote: {}".format(msa_out))
+        fasta.write(msa_out, wrap)
+        print("wrote: {}".format(msa_out))
 
 def _auto():
     # configurations = itertools.product()
@@ -293,14 +283,15 @@ def parse_args():
                         type=str,
                         choices=["LS", "MI", "MO", "RT", "1to1"],
                         help="prune paralogs using this method")
+    parser.add_argument("--wrap",
+                        metavar="<max column>",
+                        default=None,
+                        type=int,
+                        help="wrap output sequences at column <max column>")
     parser.add_argument("--verbose",
                         default=False,
                         action="store_true",
                         help="show a more detailed report")
-    parser.add_argument("--quiet",
-                        default=False,
-                        action="store_true",
-                        help="don't output a report")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
 def main():
@@ -318,7 +309,9 @@ def main():
 
     if args.msa and args.tree:
         # run for a single pair of files
-        _get_orthologs(settings, directory="", dir_out=dir_out, verbose=args.verbose)
+        print("PhyloPyPruner version {}".format(VERSION))
+        print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p") + "\n")
+        _get_orthologs(settings, "", dir_out, args.wrap, args.verbose)
     elif args.dir:
         # run for multiple files in directory
         if not args.dir[-1] == "/":
@@ -343,9 +336,12 @@ def main():
                 else:
                     corr_files[filename] = (file,)
 
+        print("PhyloPyPruner version {}".format(VERSION))
+        print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p") + "\n")
         for pair in corr_files:
             settings.fasta_file, settings.nw_file = corr_files[pair]
-            _get_orthologs(settings, dir_in, dir_out, args.verbose)
+            _get_orthologs(settings, dir_in, dir_out, args.wrap, args.verbose)
+            print("")
 
 if __name__ == "__main__":
     main()

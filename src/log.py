@@ -6,7 +6,6 @@ Store information about performed operations.
 """
 
 from __future__ import print_function
-import datetime
 
 class Log(object):
     """
@@ -17,7 +16,7 @@ class Log(object):
         self._version = version
         self._msa = msa
         self._tree = tree
-        self._msa_file = msa.filename
+        self._msa_file = settings.fasta_file
         self._tree_file = settings.nw_file
         self._outgroup = settings.outgroup
         self._prune_paralogs = bool(settings.prune)
@@ -196,8 +195,6 @@ class Log(object):
         """
         Print a report of the records in this log.
         """
-        print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-        print("version number:\t\t\t\t{}".format(self.version))
         print("MSA:\t\t\t\t\t{}".format(self.msa_file))
         print("tree:\t\t\t\t\t{}".format(self.tree_file))
 
@@ -221,6 +218,8 @@ class Log(object):
         if self.monophylies_masked:
             print("# of monophylies masked:\t\t{}".format(
                 len(self.monophylies_masked)))
+
+        if self.collapsed_nodes:
             print("# of nodes collapsed into polytomies:\t{}".format(
                 self.collapsed_nodes))
 

@@ -20,22 +20,21 @@ def _get_new_root(node):
                 new_root.children = branch.children
                 break
 
-    # get rid of empty leaves throughout the new root
-    leaves_to_remove = 0
+    leaves_to_remove = set()
     for leaf in new_root.iter_leaves():
         if not leaf.name:
-            leaves_to_remove += 1
+            leaves_to_remove.add(leaf)
+    new_root = new_root.remove_nodes(leaves_to_remove)
 
-    while leaves_to_remove:
+    while new_root.empty_leaves():
         for leaf in new_root.iter_leaves():
             if not leaf.name:
                 leaf.delete()
-                leaves_to_remove -= 1
                 break
 
     return new_root
 
-def _monophyletic_outgroup(node):
+def _monophyletic_sister(node):
     """
     Takes a TreeNode object as an input. If both this node and the sister group
     to this node contains a non-repetetive OTU, then replace the sister group
@@ -69,13 +68,11 @@ def _monophyletic_outgroup(node):
             outgroup_otu = child.otu()
             if outgroup_otu == ingroup_otu:
                 removed = child
-                # using child.delete() may end up removing the entire tree
                 child.delete()
-                # child.parent.remove_child(child)
 
     return removed
 
-def _monophylies_in_polytomy(node):
+def _monophyletic_polytomy(node):
     """
     Takes a TreeNode object and a string as an input. Returns tips in that node
     that contain repetetive OTUs as a dictionary, where the key is the OTU and
@@ -109,20 +106,13 @@ def _mask(node, keep):
     within the branch does not match the string, then delete that leaf. Returns
     a list of removed nodes.
     """
-    removed = []
-    leaves_to_remove = len(list(node.iter_leaves())) - 1
+    leaves_to_remove = set()
 
-    # Since leaves are modified at the removal of a node, we need to stop and
-    # iterate over the leaves again after each removal.
-    while leaves_to_remove:
-        for leaf in node.iter_leaves():
-            if leaf.name is not keep:
-                leaf.delete()
-                removed.append(leaf)
-                leaves_to_remove -= 1
-                break
-
-    return removed
+    for leaf in node.iter_leaves():
+        if leaf.name is not keep:
+            leaves_to_remove.add(leaf)
+    node = node.remove_nodes(leaves_to_remove)
+    return leaves_to_remove
 
 def _sequence_len(msa, description):
     """
@@ -148,7 +138,7 @@ def longest_isoform(msa, node):
 
         if not branch.is_monophyletic():
             # branch is polyphyletic, look for polytomies with repetetive OTUs
-            multiples = _monophylies_in_polytomy(branch)
+            multiples = _monophyletic_polytomy(branch)
             for otu in multiples:
                 for leaf in multiples[otu]:
                     seq_len = _sequence_len(msa, leaf.name)
@@ -156,10 +146,13 @@ def longest_isoform(msa, node):
                         longest_seq = seq_len
                         keep = leaf.name
 
+                leaves_to_remove = set()
                 for leaf in multiples[otu]:
                     if leaf.name is not keep:
-                        removed.append(leaf)
-                        leaf.delete()
+                        leaves_to_remove.add(leaf)
+
+                node = node.remove_nodes(leaves_to_remove)
+                removed = removed + list(leaves_to_remove)
 
         else:
             # branch is monophyletic, find the longest sequence
@@ -176,11 +169,12 @@ def longest_isoform(msa, node):
 
     for branch in node.iter_branches():
         if branch.parent:
-            monophyletic_outgroup = _monophyletic_outgroup(branch)
-            if monophyletic_outgroup:
-                removed.append(monophyletic_outgroup)
+            monophyletic_sister = _monophyletic_sister(branch)
+            if monophyletic_sister:
+                removed.append(monophyletic_sister)
 
     new_root = _get_new_root(node)
+
     return new_root, removed
 
 def pairwise_distance(node):
@@ -195,8 +189,7 @@ def pairwise_distance(node):
 
     for branch in node.iter_branches():
         if not branch.is_monophyletic():
-
-            multiples = _monophylies_in_polytomy(branch)
+            multiples = _monophyletic_polytomy(branch)
             for otu in multiples:
                 for leaf in multiples[otu]:
                     distance = leaf.distance_to(branch)
@@ -204,10 +197,13 @@ def pairwise_distance(node):
                         keep = leaf.name
                         shortest = distance
 
+                leaves_to_remove = set()
                 for leaf in multiples[otu]:
                     if leaf.name is not keep:
-                        removed.append(leaf)
-                        leaf.delete()
+                        leaves_to_remove.add(leaf)
+
+                node = node.remove_nodes(leaves_to_remove)
+                removed = removed + list(leaves_to_remove)
         else:
             # find the leaf with the shortest distance to the current branch
             for leaf in branch.iter_leaves():
@@ -222,9 +218,9 @@ def pairwise_distance(node):
 
     for branch in node.iter_branches():
         if branch.parent:
-            monophyletic_outgroup = _monophyletic_outgroup(branch)
-            if monophyletic_outgroup:
-                removed.append(monophyletic_outgroup)
+            monophyletic_sister = _monophyletic_sister(branch)
+            if monophyletic_sister:
+                removed.append(monophyletic_sister)
 
     new_root = _get_new_root(node)
 

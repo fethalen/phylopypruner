@@ -3,6 +3,7 @@ Module for working with the FASTA file format.
 """
 
 from os import path
+from textwrap import wrap
 from multiple_sequence_alignment import MultipleSequenceAlignment
 
 def read(filename):
@@ -29,12 +30,16 @@ def read(filename):
                 sequence_data += line
     return msa
 
-def write(msa):
+def write(msa, max_column):
     """
     Takes a multiple sequence alignment object and a path as an input. Writes
     all sequences within that alignment to the provided filename.
     """
     with open(msa.filename, "w") as fasta_file:
         for sequence in msa.sequences:
+            if max_column:
+                seq_data = "\n".join(wrap(sequence.sequence_data, max_column))
+            else:
+                seq_data = sequence.sequence_data
             fasta_file.write(">{}\n".format(sequence.description))
-            fasta_file.write("{}\n".format(sequence.sequence_data))
+            fasta_file.write("{}\n".format(seq_data))
