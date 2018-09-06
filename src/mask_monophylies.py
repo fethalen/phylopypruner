@@ -24,6 +24,7 @@ def _get_new_root(node):
     for leaf in new_root.iter_leaves():
         if not leaf.name:
             leaves_to_remove.add(leaf)
+
     new_root = new_root.remove_nodes(leaves_to_remove)
 
     while new_root.empty_leaves():

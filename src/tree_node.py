@@ -192,9 +192,10 @@ class TreeNode(object):
 
             for node in self.traverse_preorder():
                 if node in nodes_to_remove:
-                    nodes_to_remove.remove(node)
-                    match = True
-                    node.delete()
+                    if not node.is_root():
+                        match = True
+                        nodes_to_remove.remove(node)
+                        node.delete()
                     break
 
             if not match:
