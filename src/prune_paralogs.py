@@ -54,6 +54,9 @@ def maximum_inclusion(tree, min_taxa):
         if max_subtree.is_root():
             break
 
+        tree.view()
+        max_subtree.parent.view()
+        max_subtree.view()
         max_subtree.delete()
 
         # get rid of empty leaves that may occur after pruning
