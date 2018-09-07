@@ -170,14 +170,7 @@ class TreeNode(object):
 
             if parent:
                 if last in parent.children:
-                    parent.remove_child(last)
-
-        # get rid of empty leaves that may occur
-        while root.empty_leaves():
-            for leaf in root.iter_leaves():
-                if not leaf.name:
-                    leaf.delete()
-                    break
+                    last.delete()
 
         return root
 
@@ -252,7 +245,6 @@ class TreeNode(object):
         seen = set()
 
         for outgroup in self.iter_otus():
-            print(outgroup)
             if outgroup in seen:
                 return True
             if outgroup in outgroups:
@@ -312,8 +304,9 @@ class TreeNode(object):
         for child in self.children:
             parent.add_child(child)
 
-        self.children = []
         self.delete()
+
+        return self
 
     def distance_to(self, node):
         "Returns the distance between this node and another node."

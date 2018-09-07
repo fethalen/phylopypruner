@@ -147,12 +147,6 @@ def _run(settings, msa, tree):
     if min_support:
         log.pruned_sequences = filtering.collapse_nodes(tree, min_support)
 
-    if outgroup:
-        if not pruning_method == "MO":
-            rerooted_tree = root.outgroup(tree, outgroup)
-            if rerooted_tree:
-                tree = rerooted_tree
-
     # mask monophyletic groups
     if masking_method:
         if masking_method == "pdist":
@@ -160,6 +154,12 @@ def _run(settings, msa, tree):
         elif masking_method == "longest":
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         log.monophylies_masked.append(masked_seqs)
+
+    if outgroup:
+        if not pruning_method == "MO":
+            rerooted_tree = root.outgroup(tree, outgroup)
+            if rerooted_tree:
+                tree = rerooted_tree
 
     # exit if number of OTUs < threshold
     if min_taxa:
