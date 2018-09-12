@@ -143,36 +143,25 @@ class TreeNode(object):
                     {}".format(node, self))
 
         parent = node.parent
-        seen = set()
-        root = TreeNode()
-        working_node = root
-        last = root.add_child(node)
+        ancestors = list()
 
         while parent:
-            if not parent.is_root() and len(working_node) > 0:
-                working_node = working_node.add_child(child=None,
-                                                      name=parent.name,
-                                                      dist=parent.dist,
-                                                      support=parent.support)
-            elif len(parent) < 1:
-                # case where the parent node contains a polytomy
-                working_node = working_node.add_child()
-
-            for child in parent.children:
-                if not child in seen and not child is last:
-                    working_node.children.append(child)
-
-            for node in parent.traverse_preorder():
-                seen.add(node)
-
-            last = parent
+            ancestors.append(parent)
             parent = parent.parent
 
-            if parent:
-                if last in parent.children:
-                    last.delete()
+        for index in range(len(ancestors) - 1):
+            child = ancestors[index]
+            parent = ancestors[index + 1]
+            if child in parent.children:
+                parent.remove_child(child)
+                child.add_child(parent)
 
-        return root
+        sister = node.parent
+        node.delete()
+        root = TreeNode()
+        root.children = [node, sister]
+        self = root
+        return self
 
     def remove_nodes(self, nodes_to_remove):
         """
@@ -187,26 +176,34 @@ class TreeNode(object):
                 if node in nodes_to_remove:
                     if not node.is_root():
                         match = True
-                        nodes_to_remove.remove(node)
                         node.delete()
+                        nodes_to_remove.remove(node)
                     break
 
             if not match:
                 # no node to remove could be found
-                return self
+                break
+
+        for leaf in self.iter_leaves():
+            if not leaf.name:
+                leaf.parent.remove_child(leaf)
+                leaf.parent = None
+
         return self
 
     def delete(self):
         """
         Remove this node from its parent, if it exists. If the parent is a
-        bifurcating node and is left with a single child upon removal, then
-        replace the node with its child.
+        bifurcating node that is left with a single child upon removal (i.e.,
+        the parent is unifurcating upon removal), then replace the node with
+        its child.
         """
         if self.is_root():
             raise AssertionError("can't remove a root node")
 
         parent = self.parent
         parent.remove_child(self)
+        # self.parent = None
 
         if len(parent) is 1 and not parent.is_root():
             # Case where a child was removed from a bifurcating node; replace
@@ -443,6 +440,17 @@ class TreeNode(object):
             if not leaf.name:
                 return True
         return False
+
+    def leaves_except(self, node):
+        """
+        Takes a TreeNode object as an input. Returns a set of leaves within
+        this node that do not match the provided node.
+        """
+        leaves = set()
+        for leaf in self.iter_leaves():
+            if leaf is not node:
+                leaves.add(leaf)
+        return leaves
 
     def paralogs(self):
         """

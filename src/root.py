@@ -10,10 +10,10 @@ def outgroup(tree, outgroups):
     includes all the outgroups.
     """
     if not tree.outgroups_present(outgroups):
-        return
+        return tree
 
     if tree.repetetive_outgroups(outgroups):
-        return
+        return tree
 
     if len(outgroups) == 1:
         outgroup_otu = outgroups[0]
@@ -25,6 +25,7 @@ def outgroup(tree, outgroups):
     for branch in tree.iter_branches():
         if branch.is_monophyletic_outgroup(outgroups):
             return tree.reroot(branch)
+    return tree
 
 def _longest_tip_to_tip_dist(node):
     """
