@@ -163,6 +163,8 @@ def _run(settings, msa, tree):
             print("too few OTUs in tree {}".format(settings.nw_file))
             return log
 
+    tree.view()
+
     # get a list of paralogs
     log.paralogs = tree.paralogs()
 
@@ -187,14 +189,15 @@ def _get_orthologs(settings, directory="", dir_out=None, wrap=None,
             file_out = _file_out(fasta_path, dir_out)
         else:
             file_out = _file_out(fasta_path, dir_out, index + 1)
-        msa_out = MultipleSequenceAlignment(file_out, extension_out)
-        for leaf in ortholog.iter_leaves():
-            seq = msa.get_sequence(leaf.name)
-            if seq:
-                msa_out.add_sequence(seq)
-
-        fasta.write(msa_out, wrap)
-        print("wrote: {}".format(msa_out))
+        if ortholog:
+            msa_out = MultipleSequenceAlignment(file_out, extension_out)
+            for leaf in ortholog.iter_leaves():
+                seq = msa.get_sequence(leaf.name)
+                if seq:
+                    msa_out.add_sequence(seq)
+            if len(msa_out) > 0:
+                fasta.write(msa_out, wrap)
+                print("wrote: {}".format(msa_out))
 
 def _auto():
     # configurations = itertools.product()

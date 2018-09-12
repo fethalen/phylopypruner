@@ -76,57 +76,6 @@ def _sequence_len(msa, description):
     if sequence:
         return len(sequence.ungapped())
 
-def longest_isoform(msa, node):
-    """
-    Takes a TreeNode object as an input. For each node that comprise a
-    monophyletic group of sequences from a single OTU: compare the length of
-    each sequence and remove all but the longest sequence form the tree.
-    """
-    removed = []
-    longest_seq = 0
-    keep = None
-
-    for branch in node.iter_branches():
-        if branch.is_monophyletic():
-            # branch is monophyletic, find the longest sequence
-            for leaf in branch.iter_leaves():
-                seq_len = _sequence_len(msa, leaf.name)
-
-                if seq_len > longest_seq:
-                    longest_seq = seq_len
-                    keep = leaf.name
-
-            removed += _mask(branch, keep)
-        else:
-            # branch is polyphyletic, look for polytomies with repetetive OTUs
-            multiples = _monophyletic_polytomy(branch)
-            for otu in multiples:
-                for leaf in multiples[otu]:
-                    seq_len = _sequence_len(msa, leaf.name)
-                    if seq_len > longest_seq:
-                        longest_seq = seq_len
-                        keep = leaf.name
-
-                leaves_to_remove = set()
-                for leaf in multiples[otu]:
-                    if leaf.name is not keep:
-                        leaves_to_remove.add(leaf)
-
-                node = node.remove_nodes(leaves_to_remove)
-                removed = removed + list(leaves_to_remove)
-
-        longest_seq = 0
-        keep = None
-
-    for branch in node.iter_branches():
-        if branch.parent:
-            monophyletic_sister = _monophyletic_sister(branch)
-            if monophyletic_sister:
-                removed.append(monophyletic_sister)
-
-    new_root = _get_new_root(node)
-    return new_root, removed
-
 def _smallest_distance(node):
     """
     Takes a TreeNode object as an input and returns the leaf with with the
@@ -186,49 +135,87 @@ def _monophyletic_polytomy(node):
                 leaves_to_remove.add(leaf)
     return leaves_to_remove
 
-def pairwise_distance(node):
-    leaves_to_remove = set()
-    masked = set()
-    monophylies = False
+def longest_isoform(msa, node):
+    """
+    Takes a TreeNode object as an input. For each node that comprise a
+    monophyletic group of sequences from a single OTU: compare the length of
+    each sequence and remove all but the longest sequence form the tree.
+    """
+    removed = []
+    longest_seq = 0
+    keep = None
 
     for branch in node.iter_branches():
-        monophyletic_sister = _monophyletic_sister(branch)
-        if monophyletic_sister:
-            leaves_to_remove.add(monophyletic_sister)
-        elif branch.is_monophyletic():
-            leaves_to_remove.update(_monophyletic_branch(branch))
+        if branch.is_monophyletic():
+            # branch is monophyletic, find the longest sequence
+            for leaf in branch.iter_leaves():
+                seq_len = _sequence_len(msa, leaf.name)
+
+                if seq_len > longest_seq:
+                    longest_seq = seq_len
+                    keep = leaf.name
+
+            removed += _mask(branch, keep)
         else:
-            # one or more repetetive OTUs within the polytomy
-            leaves_to_remove.update(_monophyletic_polytomy(branch))
-    monophylies = bool(leaves_to_remove)
+            # branch is polyphyletic, look for polytomies with repetetive OTUs
+            multiples = _monophyletic_polytomy(branch)
+            for otu in multiples:
+                for leaf in multiples[otu]:
+                    seq_len = _sequence_len(msa, leaf.name)
+                    if seq_len > longest_seq:
+                        longest_seq = seq_len
+                        keep = leaf.name
 
-    # new monophylies may arise when we get rid of others
-    while monophylies:
-        masked.update(leaves_to_remove)
-        node.remove_nodes(leaves_to_remove)
-        leaves_to_remove = set()
+                leaves_to_remove = set()
+                for leaf in multiples[otu]:
+                    if leaf.name is not keep:
+                        leaves_to_remove.add(leaf)
 
-        for branch in node.iter_branches():
+                node = node.remove_nodes(leaves_to_remove)
+                removed = removed + list(leaves_to_remove)
+
+        longest_seq = 0
+        keep = None
+
+    for branch in node.iter_branches():
+        if branch.parent:
             monophyletic_sister = _monophyletic_sister(branch)
             if monophyletic_sister:
-                leaves_to_remove.add(monophyletic_sister)
-            elif branch.is_monophyletic():
-                leaves_to_remove.update(_monophyletic_branch(branch))
-            else:
-                # one or more repetetive OTUs within the polytomy
-                leaves_to_remove.update(_monophyletic_polytomy(branch))
-        monophylies = bool(leaves_to_remove)
+                removed.append(monophyletic_sister)
 
-    return node, masked
+    new_root = _get_new_root(node)
+    return new_root, removed
 
 def pairwise_distance(node):
-    print("before monophyly masking: {}".format(len(set(node.iter_leaves()))))
     masked = set()
     leaves_to_remove = set()
     for branch in node.iter_branches():
-        if branch.is_monophyletic() and len(set(branch.iter_leaves())) is 2:
-            leaves_to_remove = _monophyletic_branch(branch)
+        child = _monophyletic_sister(branch)
+        if child:
+            child.delete()
+            masked.add(child)
+
+        no_of_leaves = len(set(branch.iter_leaves()))
+
+        if branch.is_monophyletic():
+            if no_of_leaves is 2:
+                # repetetive OTUs within a bifurcating node with two leaves
+                leaves_to_remove = _monophyletic_branch(branch)
+            elif no_of_leaves > 2:
+                leaves_only = True
+                for child in branch.children:
+                    if not child.is_leaf():
+                        leaves_only = False
+                if leaves_only:
+                    # branch is a polytomy, where each child is a leaf and
+                    # belongs to the same OTU
+                    leaves_to_remove = _monophyletic_branch(branch)
+        else:
+            # look for one or more repetetive OTUs within the polytomy
+            leaves_to_remove.update(_monophyletic_polytomy(branch))
+        if leaves_to_remove:
             break
+
     monophylies = bool(leaves_to_remove)
 
     while monophylies:
@@ -238,6 +225,11 @@ def pairwise_distance(node):
         # node.remove_nodes(leaves_to_remove)
         leaves_to_remove = set()
         for branch in node.iter_branches():
+            child = _monophyletic_sister(branch)
+            if child:
+                child.delete()
+                masked.add(child)
+
             no_of_leaves = len(set(branch.iter_leaves()))
 
             if branch.is_monophyletic():
@@ -260,13 +252,5 @@ def pairwise_distance(node):
                 break
         monophylies = bool(leaves_to_remove)
 
-    print("sequences masked: {}".format(len(masked)))
-    print("after monophyly masking: {}".format(len(set(node.iter_leaves()))))
-
-    # for branch in node.iter_branches():
-    #     child = _monophyletic_sister(branch)
-    #     if child:
-    #         child.parent.remove_child(child)
-    #         masked.add(child)
     node = _get_new_root(node)
     return node, masked
