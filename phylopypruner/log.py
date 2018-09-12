@@ -244,10 +244,11 @@ class Log(object):
 
         if self.orthologs:
             for index, subtree in enumerate(self.orthologs):
-                leaf_count = len(list(subtree.iter_leaves()))
-                print("\northologous group #{}:\t\t\t\t".format(index + 1))
-                print("  # of OTUs: \t\t\t\t{}".format(leaf_count))
-                subtree.view()
+                if subtree:
+                    leaf_count = len(list(subtree.iter_leaves()))
+                    print("\northologous group #{}:\t\t\t\t".format(index + 1))
+                    print("  # of OTUs: \t\t\t\t{}".format(leaf_count))
+                    subtree.view()
         elif self.prune_paralogs:
             print("no orthologs were recovered")
 
