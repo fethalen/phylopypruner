@@ -22,7 +22,6 @@ import argparse
 import os
 import sys
 import datetime
-# import itertools
 import fasta
 import newick
 import filtering
@@ -132,7 +131,6 @@ def _run(settings, msa, tree):
     trim_lb = settings.trim_lb
     outgroup = settings.outgroup
     # rooting_method = settings.root
-    masking_method = settings.mask
     pruning_method = settings.prune
 
     # remove short sequences
@@ -148,23 +146,21 @@ def _run(settings, msa, tree):
         log.pruned_sequences = filtering.collapse_nodes(tree, min_support)
 
     # mask monophyletic groups
-    if masking_method:
-        if masking_method == "pdist":
+    if settings.mask:
+        if settings.mask == "pdist":
             tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
-        elif masking_method == "longest":
+        elif settings.mask == "longest":
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
-        log.monophylies_masked.append(masked_seqs)
+        log.monophylies_masked = masked_seqs
 
     if outgroup:
         if not pruning_method == "MO":
-            rerooted_tree = root.outgroup(tree, outgroup)
-            if rerooted_tree:
-                tree = rerooted_tree
+            tree = root.outgroup(tree, outgroup)
 
     # exit if number of OTUs < threshold
     if min_taxa:
         if filtering.too_few_otus(tree, min_taxa):
-            print("too few OTUs in tree {}, exiting".format(settings.nw_file))
+            print("too few OTUs in tree {}".format(settings.nw_file))
             return log
 
     # get a list of paralogs
