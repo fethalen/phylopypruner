@@ -39,16 +39,13 @@ def _monophyletic_sister(node):
     if not parent:
         return
 
-    ingroup_otu = ""
+    ingroup_otus = set()
 
     for child in node.children:
-        if child.is_leaf() and ingroup_otu:
-            # non-unique OTUs found in node
-            return
-        elif child.is_leaf():
-            ingroup_otu = child.otu()
+        if child.is_leaf():
+            ingroup_otus.add(child.otu())
 
-    if not ingroup_otu:
+    if not ingroup_otus:
         # no leaf within the node's children
         return
 
@@ -61,7 +58,7 @@ def _monophyletic_sister(node):
             return
         elif child.is_leaf():
             outgroup_otu = child.otu()
-            if outgroup_otu == ingroup_otu:
+            if outgroup_otu in ingroup_otus:
                 removed = child
 
     return removed
@@ -192,8 +189,7 @@ def pairwise_distance(node):
     for branch in node.iter_branches():
         child = _monophyletic_sister(branch)
         if child:
-            child.delete()
-            masked.add(child)
+            leaves_to_remove.add(child)
 
         no_of_leaves = len(set(branch.iter_leaves()))
 
@@ -227,8 +223,7 @@ def pairwise_distance(node):
         for branch in node.iter_branches():
             child = _monophyletic_sister(branch)
             if child:
-                child.delete()
-                masked.add(child)
+                leaves_to_remove.add(child)
 
             no_of_leaves = len(set(branch.iter_leaves()))
 

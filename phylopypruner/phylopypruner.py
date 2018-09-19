@@ -22,24 +22,53 @@ import argparse
 import os
 import sys
 import datetime
+import shutil
 import fasta
 import newick
 import filtering
 import mask_monophylies
 import root
 from prune_paralogs import prune_paralogs
+from summary import Summary
 from msa import MultipleSequenceAlignment
 from log import Log
 from settings import Settings
 
 VERSION = 0.1
-NO_FILES = """Please provide either a multiple sequence alignment (MSA) and a \
-Newick tree,\nor a path to a directory containing multiple MSAs and Newick \
-trees. Run\nPhyloPyPruner using the '-h' or '--help' flag for additional \
-instructions."""
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
                     ".frn"}
 NW_EXTENSIONS = {".newick", ".nw", ".tre"}
+HEADER = "id;sequences;avg_seq_len;pct_missing_data;alignment_len\n"
+
+def _warning(message):
+    """
+    Returns the provided message with the text 'warning: ' in bold red
+    prepended.
+    """
+    return "{}warning: {}{}".format("\033[91m\033[1m", "\033[0m", message)
+
+NO_FILES = _warning("""Please provide either a multiple sequence alignment \
+(MSA) and a Newick tree,\nor a path to a directory containing multiple MSAs \
+and Newick trees. Run\nPhyloPyPruner using the '-h' or '--help' flag for \
+additional instructions.""")
+
+def _yes_or_no(question):
+    """
+    Takes a question as an input and prompts the user for a yes or no. Returns
+    True if the answer is yes and False if the answer is no.
+    """
+    # make input work the same way in both Python 2 and 3
+    try:
+        input = raw_input
+    except NameError:
+        pass
+    answer = input(question + " (y/n): ".lower().rstrip())
+    while not (answer == "y" or answer == "n"):
+        print("type 'y' for yes and 'n' for no")
+    if answer[0] == "y":
+        return True
+    elif answer[0] == "n":
+        return False
 
 def _validate_input(msa, tree, tree_path):
     "Test to see if MSA and tree entries matches."
@@ -66,7 +95,8 @@ def _validate_arguments(args):
         exit()
     if not args.outgroup and args.prune == "MO" or \
         not args.outgroup and args.prune == "RT":
-        print("No outgroup has been specified")
+        print(_warning("trying to run {}, but no outgroup has been\
+ specified".format(args.prune)))
         exit()
 
 def _get_sequences(msa, tree):
@@ -133,6 +163,8 @@ def _run(settings, msa, tree):
     # rooting_method = settings.root
     pruning_method = settings.prune
 
+    log.homology_tree = tree.view()
+
     # remove short sequences
     if min_seq:
         log.trimmed_seqs = filtering.trim_short_seqs(msa, tree, min_seq)
@@ -153,17 +185,26 @@ def _run(settings, msa, tree):
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         log.monophylies_masked = masked_seqs
 
+    # root by outgroup
     if outgroup:
         if not pruning_method == "MO":
             tree = root.outgroup(tree, outgroup)
+
+    # mask monophyletic groups
+    if settings.mask:
+        if settings.mask == "pdist":
+            tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
+        elif settings.mask == "longest":
+            tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
+        log.monophylies_masked.update(masked_seqs)
+
+    log.masked_tree = tree.view()
 
     # exit if number of OTUs < threshold
     if min_taxa:
         if filtering.too_few_otus(tree, min_taxa):
             print("too few OTUs in tree {}".format(settings.nw_file))
             return log
-
-    tree.view()
 
     # get a list of paralogs
     log.paralogs = tree.paralogs()
@@ -181,9 +222,7 @@ def _get_orthologs(settings, directory="", dir_out=None, wrap=None,
     msa = fasta.read(fasta_path)
     nw_file = newick.read(nw_path)
     log = _run(settings, msa, nw_file)
-    log.report(verbose)
 
-    print("")
     for index, ortholog in enumerate(log.orthologs):
         if len(log.orthologs) is 1:
             file_out = _file_out(fasta_path, dir_out)
@@ -196,8 +235,11 @@ def _get_orthologs(settings, directory="", dir_out=None, wrap=None,
                 if seq:
                     msa_out.add_sequence(seq)
             if len(msa_out) > 0:
+                log.msas_out.append(msa_out)
                 fasta.write(msa_out, wrap)
-                print("wrote: {}".format(msa_out))
+
+    log.report(verbose, dir_out)
+    return log
 
 def _auto():
     # configurations = itertools.product()
@@ -296,19 +338,49 @@ def main():
     args = parse_args()
     _validate_arguments(args)
     settings = Settings(args)
+    summary = Summary()
 
     dir_out = None
     if args.output:
         # create output directory if it does not currently exist
         dir_out = args.output.rstrip("/") # get rid of trailing slash in path
-        if not os.path.isdir(dir_out):
-            os.makedirs(dir_out)
+    elif args.dir:
+        dir_out = str(args.dir).rstrip("/")
+    else:
+        dir_out = os.path.dirname(str(args.msa).rstrip("/"))
+    if not os.path.isdir(dir_out):
+        os.makedirs(dir_out)
+
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
+    ortho_stats = "{}/{}_phylopypruner_orthologs.csv".format(dir_out,
+                                                             timestamp)
+
+    if os.path.isfile(ortho_stats):
+        question = _warning("files from a previous run exists in the output \
+directory, overwrite?")
+        if not _yes_or_no(question):
+            exit()
+    ortho_stats = "{}/{}_phylopypruner_orthologs.csv".format(dir_out,
+                                                             timestamp)
+    if os.path.isfile(ortho_stats):
+        os.remove(ortho_stats)
+    with open(ortho_stats, "w") as stats_file:
+        stats_file.write(HEADER)
+
+    log_out = "{}/{}_phylopypruner_run.log".format(dir_out, timestamp)
+    if os.path.isfile(log_out):
+        os.remove(log_out)
+
+    orthologs_out = dir_out + "/orthologs"
+    if os.path.isdir(orthologs_out):
+        shutil.rmtree(orthologs_out)
 
     if args.msa and args.tree:
         # run for a single pair of files
         print("PhyloPyPruner version {}".format(VERSION))
-        print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p") + "\n")
-        _get_orthologs(settings, "", dir_out, args.wrap, args.verbose)
+        print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
+        summary.logs.append(_get_orthologs(settings, "", dir_out, args.wrap,
+                                           args.verbose))
     elif args.dir:
         # run for multiple files in directory
         if not args.dir[-1] == "/":
@@ -316,7 +388,7 @@ def main():
         else:
             dir_in = args.dir
         if not os.path.isdir(dir_in):
-            print("input directory {} does not exist".format(dir_in))
+            print(_warning("input directory {} does not exist".format(dir_in)))
             exit()
         # corresponding files; filename is key, values are tuple pairs where
         # MSA comes first and tree second
@@ -334,11 +406,14 @@ def main():
                     corr_files[filename] = (file,)
 
         print("PhyloPyPruner version {}".format(VERSION))
-        print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p") + "\n")
+        print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
         for pair in corr_files:
             settings.fasta_file, settings.nw_file = corr_files[pair]
-            _get_orthologs(settings, dir_in, dir_out, args.wrap, args.verbose)
-            print("")
+            summary.logs.append(_get_orthologs(settings, dir_in, dir_out,
+                                               args.wrap, args.verbose))
+
+        summary.report()
+        summary.paralogy_frequency(dir_out)
 
 if __name__ == "__main__":
     main()

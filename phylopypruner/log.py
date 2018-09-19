@@ -6,6 +6,8 @@ Store information about performed operations.
 """
 
 from __future__ import print_function
+from datetime import datetime
+import os.path
 
 class Log(object):
     """
@@ -28,6 +30,9 @@ class Log(object):
         self._monophylies_masked = []
         self._orthologs = []
         self._paralogs = []
+        self._msas_out = []
+        self._homology_tree = None
+        self._masked_tree = None
 
     @property
     def version(self):
@@ -115,14 +120,24 @@ class Log(object):
 
     @property
     def prune_paralogs(self):
-        """
-        True if a prune paralog method was specified for this run.
-        """
+        "True if a prune paralog method was specified for this run."
         return self._prune_paralogs
 
     @prune_paralogs.setter
     def prune_paralogs(self, value):
         self._prune_paralogs = value
+
+    @property
+    def msas_out(self):
+        """
+        A list of multiple sequence alignments (MSAs) that were added to the
+        output.
+        """
+        return self._msas_out
+
+    @msas_out.setter
+    def msas_out(self, value):
+        self._msas_out = value
 
     @trimmed_seqs.setter
     def trimmed_seqs(self, value):
@@ -191,84 +206,188 @@ class Log(object):
     def paralogs(self, value):
         self._paralogs = value
 
-    def report(self, verbose):
-        """
-        Print a report of the records in this log.
-        """
-        print("MSA:\t\t\t\t\t{}".format(self.msa_file))
-        print("tree:\t\t\t\t\t{}".format(self.tree_file))
+    @property
+    def homology_tree(self):
+        "The tree as it looked before any operations were performed."
+        return self._homology_tree
 
+    @homology_tree.setter
+    def homology_tree(self, value):
+        self._homology_tree = value
+
+    @property
+    def masked_tree(self):
+        """
+        The tree after monophyletic masking and before the paralogy pruning
+        stage.
+        """
+        return self._masked_tree
+
+    @masked_tree.setter
+    def masked_tree(self, value):
+        self._masked_tree = value
+
+    def outgroups_to_str(self):
+        """
+        Returns a string that contains the outgroups that were used in this
+        run.
+        """
         if self.outgroup:
             if len(self.outgroup) == 1:
-                print("outgroup:\t\t\t\t{}".format(self.outgroup[0]))
+                return "outgroup:\t\t\t\t{}".format(self.outgroup[0])
             else:
-                print("outgroups:\t\t\t\t", end="")
+                outgroups = "outgroups:\t\t\t\t"
                 for index, otu in enumerate(self.outgroup):
                     if index == len(self.outgroup) - 1:
-                        print("{}".format(otu))
+                        outgroups += otu
                     else:
-                        print("{}, ".format(otu), end="")
+                        outgroups += "{}, ".format(otu)
+                return outgroups
 
-        print("# of sequences:\t\t\t\t{}".format(self.sequences))
-        print("# of OTUs:\t\t\t\t{}".format(self.taxa))
-        print("# of short sequences removed:\t\t{}".format(len(self.trimmed_seqs)))
-        print("# of long branched sequences removed\t{}".format(
-            len(self.lbs_removed)))
-
-        if self.monophylies_masked:
-            print("# of monophylies masked:\t\t{}".format(
-                len(self.monophylies_masked)))
-
-        if self.collapsed_nodes:
-            print("# of nodes collapsed into polytomies:\t{}".format(
-                self.collapsed_nodes))
-
-        if verbose:
-            if self.trimmed_seqs:
-                print("\nshort sequences removed:")
-                for trimmed_seq in self.trimmed_seqs:
-                    print("  {}".format(trimmed_seq))
-
-            if self.lbs_removed:
-                print("\nlong branched sequences removed:")
-                for long_branch in self.lbs_removed:
-                    print("  {}".format(long_branch))
-
+    def paralogs_to_str(self):
+        "Returns a string that contains the paralogs found in this run."
+        unique_paralogs = set()
         seen = set()
+        paralog_str = "paralogous OTUs: "
         if self.paralogs:
-            print("\nOTUs with paralogs:")
             for paralog in self.paralogs:
                 if not paralog.otu() in seen:
-                    print("  {}".format(paralog.otu()))
+                    unique_paralogs.add(paralog.otu())
                     seen.add(paralog.otu())
+            for index, paralog in enumerate(unique_paralogs):
+                if index == len(unique_paralogs) - 1:
+                    paralog_str += paralog
+                else:
+                    paralog_str += "{}, ".format(paralog)
+            return paralog_str
+        else:
+            return paralog_str + " none"
 
+    def msas_out_to_str(self):
+        """
+        Returns a string that contains the name of the files that were written
+        for this run.
+        """
+        msa_out_str = str()
+        for msa_out in self.msas_out:
+            if msa_out is self.msas_out[0]:
+                msa_out_str += "\n"
+            if msa_out is self.msas_out[-1]:
+                msa_out_str += "wrote: {}\n".format(str(msa_out))
+            else:
+                msa_out_str += "wrote: {}".format(str(msa_out))
+        return msa_out_str
+
+    def orthologs_to_str(self):
+        """
+        Returns a string that contains statistics for the orthologs found in
+        this run.
+        """
+        ortho_str = ""
         if self.orthologs:
             for index, subtree in enumerate(self.orthologs):
                 if subtree:
                     leaf_count = len(list(subtree.iter_leaves()))
-                    print("\northologous group #{}:\t\t\t\t".format(index + 1))
-                    print("  # of OTUs: \t\t\t\t{}".format(leaf_count))
-                    subtree.view()
-        elif self.prune_paralogs:
-            print("no orthologs were recovered")
+                    ortho_str += "\northologous group #{}:\t\t\t\t".format(index + 1)
+                    ortho_str += "\n  # of sequences:\t{}".format(leaf_count)
+                    ortho_str += "\n{}".format(subtree.view())
+        else:
+            ortho_str = "no orthologs were recovered"
+        return ortho_str
 
-    def to_txt(self, filename):
-        """
-        Takes a filename as an input and writes the records of this log to a
-        plain text file.
-        """
-        pass
+    def report(self, verbose, dir_out):
+        "Print a report of the records in this log."
+        report = """
+MSA:\t\t\t\t\t{}
+tree:\t\t\t\t\t{}
+{}
+# of sequences:\t\t\t\t{}
+# of OTUs:\t\t\t\t{}
+# of short sequences removed:\t\t{}
+# of long branched sequences removed:\t{}
+# of monophylies masked:\t\t{}
+# of nodes collapsed into polytomies:\t{}
+{}
+\ninput tree:\n{}
+\ntree before paralogy pruning:\n{}
+{}
+{}""".format(self.msa_file, self.tree_file, self.outgroups_to_str(),
+             self.sequences, self.taxa, len(self._trimmed_seqs),
+             len(self.lbs_removed), len(self.monophylies_masked),
+             self.collapsed_nodes, self.paralogs_to_str(),
+             self.homology_tree, self.masked_tree,
+             self.orthologs_to_str(), self.msas_out_to_str())
 
-    def to_csv(self, filename):
+        # write the report to a text file
+        timestamp = datetime.now().strftime("%Y-%m-%d")
+        log_out = "{}/{}_phylopypruner_run.log".format(dir_out, timestamp)
+        with open(log_out, "a") as log_file:
+            log_file.write(report)
+
+        # write the ortholog statistics to a CSV file
+        timestamp = datetime.now().strftime("%Y-%m-%d")
+        ortho_stats = "{}/{}_phylopypruner_orthologs.csv".format(dir_out,
+                                                                 timestamp)
+
+        for ortholog in self.orthologs:
+            self.to_csv(dir_out, ortholog)
+
+        if verbose:
+            print(report)
+
+    def to_csv(self, dir_out, ortholog):
         """
         Takes a filename as an input and writes the records in this log to a
         CSV file to the provided path.
         """
-        pass
+        timestamp = datetime.now().strftime("%Y-%m-%d")
+        ortho_stats = "{}/{}_phylopypruner_orthologs.csv".format(dir_out,
+                                                                 timestamp)
 
-    def merge_logs(self, log):
-        """
-        Takes a Log object as an input and merges the fields within that log
-        with this log.
-        """
-        pass
+        with open(ortho_stats, "a") as stats_file:
+            for ortholog in self.msas_out:
+                row = "{};{};{};{};{}\n".format(os.path.basename(str(ortholog)),
+                                                len(ortholog),
+                                                avg_seq_len(ortholog),
+                                                missing_data(ortholog),
+                                                cat_alignment(ortholog))
+                stats_file.write(row)
+
+def avg_seq_len(msa):
+    """
+    Takes a MultipleSequenceAlignment object as an input and returns the
+    average sequence length of the sequences within it.
+    """
+    seq_lens = 0
+    sequences = 0
+    for sequence in msa.sequences:
+        sequences += 1
+        seq_lens += len(sequence.ungapped())
+    if sequences > 0:
+        return round(seq_lens / sequences, 1)
+    else:
+        return 0
+
+def missing_data(msa):
+    "Returns the percent missing data within the ortholog."
+    sequences = 0
+    pct_missing = 0.0
+    for sequence in msa.sequences:
+        sequences += 1
+        ungapped = len(sequence.ungapped())
+        missing = len(sequence) - ungapped
+        if len(sequence) > 0:
+            pct_missing += float(missing) / float(len(sequence))
+    if sequences > 0:
+        return round(pct_missing / sequences, 3) * 100
+    else:
+        return 0
+
+def cat_alignment(msa):
+    "Returns the length of the alignment."
+    seq_lens = 0
+    # It doesn't matter which sequence we picked since they're
+    # aligned and missing positions are denoted by gaps.
+    sequence = msa.sequences[0]
+    seq_lens += len(sequence)
+    return seq_lens
