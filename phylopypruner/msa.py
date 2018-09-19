@@ -1,14 +1,10 @@
-"""
-Data type for storing a set of amino acid or nucleotide sequences.
-"""
+"Data type for storing a set of amino acid or nucleotide sequences."
 
 import re
 from sequence import Sequence
 
 class MultipleSequenceAlignment(object):
-    """
-    Represents a set of sequences.
-    """
+    "Represents a set of sequences."
     def __init__(self, filename="", extension=None):
         self._filename = filename
         self._extension = extension
@@ -39,9 +35,7 @@ class MultipleSequenceAlignment(object):
 
     @property
     def extension(self):
-        """
-        The file extension used for this multiple sequence alignment.
-        """
+        "The file extension used for this multiple sequence alignment."
         return self._extension
 
     @extension.setter
@@ -50,9 +44,7 @@ class MultipleSequenceAlignment(object):
 
     @property
     def sequences(self):
-        """
-        Returns a list of all sequences in this alignment.
-        """
+        "Returns a list of all sequences in this alignment."
         return self._sequences
 
     @sequences.setter
@@ -60,9 +52,7 @@ class MultipleSequenceAlignment(object):
         self._sequences = value
 
     def add_sequence(self, sequence=None, description="", sequence_data=""):
-        """
-        Add a sequence object to the sequences list in this alignment object.
-        """
+        "Add a sequence object to the sequences list in this alignment object."
         if not sequence:
             sequence = Sequence()
             sequence.description = description
@@ -96,15 +86,11 @@ class MultipleSequenceAlignment(object):
             yield sequence.description
 
     def iter_otus(self):
-        """
-        Returns an iterator object that includes all OTUs in this alignment.
-        """
+        "Returns an iterator object that includes all OTUs in this alignment."
         for sequence in self.sequences:
             yield sequence.otu
 
     def iter_identifiers(self):
-        """
-        Returns an iterator object that includes all IDs in this alignment.
-        """
+        "Returns an iterator object that includes all IDs in this alignment."
         for sequence in self.sequences:
             yield sequence.identifier

@@ -375,7 +375,7 @@ class TreeNode(object):
 
     def view(self):
         "Print this tree in ASCII characters."
-        print(self._get_ascii(compact=False, show_internal=False))
+        return self._get_ascii(compact=False, show_internal=False)
 
     def _asciiArt(self, char1='-', show_internal=True, compact=False, attributes=None):
         """
