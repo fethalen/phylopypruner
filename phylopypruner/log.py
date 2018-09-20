@@ -346,11 +346,14 @@ tree:\t\t\t\t\t{}
 
         with open(ortho_stats, "a") as stats_file:
             for ortholog in self.msas_out:
-                row = "{};{};{};{};{}\n".format(os.path.basename(str(ortholog)),
-                                                len(ortholog),
-                                                avg_seq_len(ortholog),
-                                                missing_data(ortholog),
-                                                cat_alignment(ortholog))
+                row = "{};{};{};{};{};{};{}\n".format(
+                    os.path.basename(str(ortholog)),
+                    len(ortholog),
+                    avg_seq_len(ortholog),
+                    shortest_sequence(ortholog),
+                    longest_sequence(ortholog),
+                    missing_data(ortholog),
+                    cat_alignment(ortholog))
                 stats_file.write(row)
 
 def avg_seq_len(msa):
@@ -391,3 +394,25 @@ def cat_alignment(msa):
     sequence = msa.sequences[0]
     seq_lens += len(sequence)
     return seq_lens
+
+def shortest_sequence(msa):
+    """
+    Returns the shortest sequence in the provided MultipleSequenceAlignment
+    object.
+    """
+    shortest = None
+    for sequence in msa.sequences:
+        if not shortest or shortest > len(sequence.ungapped()):
+            shortest = len(sequence.ungapped())
+    return shortest
+
+def longest_sequence(msa):
+    """
+    Returns the longest sequence in the provided MultipleSequenceAlignment
+    object.
+    """
+    longest = None
+    for sequence in msa.sequences:
+        if not longest or longest < len(sequence.ungapped()):
+            longest = len(sequence.ungapped())
+    return longest

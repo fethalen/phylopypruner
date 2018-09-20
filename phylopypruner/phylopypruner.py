@@ -18,6 +18,7 @@ example:
 
 """
 
+from __future__ import print_function
 import argparse
 import os
 import sys
@@ -33,19 +34,22 @@ from summary import Summary
 from msa import MultipleSequenceAlignment
 from log import Log
 from settings import Settings
+# ensures that input is working across both Python 2 and 3
+if hasattr(__builtins__, "raw_input"): input = raw_input
 
 VERSION = 0.1
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
                     ".frn"}
 NW_EXTENSIONS = {".newick", ".nw", ".tre"}
-HEADER = "id;sequences;avg_seq_len;pct_missing_data;alignment_len\n"
+HEADER = "id;sequences;avg_seq_len;shortest_seq;longest_seq;pct_missing_data;\
+alignment_len\n"
 
 def _warning(message):
     """
     Returns the provided message with the text 'warning: ' in bold red
     prepended.
     """
-    return "{}warning: {}{}".format("\033[91m\033[1m", "\033[0m", message)
+    return "{}warning{}: {}".format("\033[91m\033[1m", "\033[0m", message)
 
 NO_FILES = _warning("""Please provide either a multiple sequence alignment \
 (MSA) and a Newick tree,\nor a path to a directory containing multiple MSAs \
@@ -58,10 +62,6 @@ def _yes_or_no(question):
     True if the answer is yes and False if the answer is no.
     """
     # make input work the same way in both Python 2 and 3
-    try:
-        input = raw_input
-    except NameError:
-        pass
     answer = input(question + " (y/n): ".lower().rstrip())
     while not (answer == "y" or answer == "n"):
         print("type 'y' for yes and 'n' for no")
@@ -407,11 +407,18 @@ directory, overwrite?")
 
         print("PhyloPyPruner version {}".format(VERSION))
         print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-        for pair in corr_files:
+
+        total = len(corr_files)
+        for index, pair in enumerate(corr_files, 1):
             settings.fasta_file, settings.nw_file = corr_files[pair]
+            sys.stdout.flush()
+            print("current MSA: {}; current tree: {} ({}/{})".format(
+                settings.fasta_file, settings.nw_file, index, total), end="\r")
             summary.logs.append(_get_orthologs(settings, dir_in, dir_out,
                                                args.wrap, args.verbose))
+        print("")
 
+        summary.homolog_report()
         summary.report()
         summary.paralogy_frequency(dir_out)
 
