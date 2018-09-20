@@ -176,6 +176,11 @@ def _monophyletic_polytomy(node, msa=None):
     return leaves_to_remove
 
 def longest_isoform(msa, node):
+    """
+    Takes a TreeNode object as an input. Finds branches with repetetive OTUs
+    and masks them by replacing the repetetive sequences with the longest
+    sequence out of those sequences.
+    """
     masked = set()
     leaves_to_remove = set()
     monophylies = True
