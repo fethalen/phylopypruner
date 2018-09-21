@@ -40,7 +40,7 @@ if hasattr(__builtins__, "raw_input"): input = raw_input
 VERSION = 0.1
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
                     ".frn"}
-NW_EXTENSIONS = {".newick", ".nw", ".tre"}
+NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree"}
 HEADER = "id;sequences;avg_seq_len;shortest_seq;longest_seq;pct_missing_data;\
 alignment_len\n"
 
@@ -352,22 +352,20 @@ def main():
         os.makedirs(dir_out)
 
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
-    ortho_stats = "{}/{}_phylopypruner_orthologs.csv".format(dir_out,
-                                                             timestamp)
+    ortho_stats = "{}/{}_ppp_ortho_stats.csv".format(dir_out, timestamp)
 
     if os.path.isfile(ortho_stats):
         question = _warning("files from a previous run exists in the output \
 directory, overwrite?")
         if not _yes_or_no(question):
             exit()
-    ortho_stats = "{}/{}_phylopypruner_orthologs.csv".format(dir_out,
-                                                             timestamp)
+
     if os.path.isfile(ortho_stats):
         os.remove(ortho_stats)
     with open(ortho_stats, "w") as stats_file:
         stats_file.write(HEADER)
 
-    log_out = "{}/{}_phylopypruner_run.log".format(dir_out, timestamp)
+    log_out = "{}/{}_ppp_run.log".format(dir_out, timestamp)
     if os.path.isfile(log_out):
         os.remove(log_out)
 
@@ -412,7 +410,7 @@ directory, overwrite?")
         for index, pair in enumerate(corr_files, 1):
             settings.fasta_file, settings.nw_file = corr_files[pair]
             sys.stdout.flush()
-            print("current MSA: {}; current tree: {} ({}/{})".format(
+            print("processing MSA: {}; processing tree: {} ({}/{})".format(
                 settings.fasta_file, settings.nw_file, index, total), end="\r")
             summary.logs.append(_get_orthologs(settings, dir_in, dir_out,
                                                args.wrap, args.verbose))
