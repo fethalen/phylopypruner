@@ -320,14 +320,12 @@ tree:\t\t\t\t\t{}
 
         # write the report to a text file
         timestamp = datetime.now().strftime("%Y-%m-%d")
-        log_out = "{}/{}_phylopypruner_run.log".format(dir_out, timestamp)
+        log_out = "{}/{}_ppp_run.log".format(dir_out, timestamp)
         with open(log_out, "a") as log_file:
             log_file.write(report)
 
         # write the ortholog statistics to a CSV file
         timestamp = datetime.now().strftime("%Y-%m-%d")
-        ortho_stats = "{}/{}_phylopypruner_orthologs.csv".format(dir_out,
-                                                                 timestamp)
 
         for ortholog in self.orthologs:
             self.to_csv(dir_out, ortholog)
@@ -341,7 +339,7 @@ tree:\t\t\t\t\t{}
         CSV file to the provided path.
         """
         timestamp = datetime.now().strftime("%Y-%m-%d")
-        ortho_stats = "{}/{}_phylopypruner_orthologs.csv".format(dir_out,
+        ortho_stats = "{}/{}_ppp_ortho_stats.csv".format(dir_out,
                                                                  timestamp)
 
         with open(ortho_stats, "a") as stats_file:
