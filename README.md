@@ -41,6 +41,8 @@ these files reside.
 The program will automatically look for trees and alignments with the same name
 and run for each of these pair.
 
+### Options
+
 | **Command** | **Meaning** |
 |----|----|
 | `-h, --help` | display a help message and exit |
