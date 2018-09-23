@@ -9,6 +9,10 @@ from __future__ import print_function
 from datetime import datetime
 import os.path
 
+TIMESTAMP = datetime.now().strftime("%Y-%m-%d")
+ORTHO_STATS_PATH = "/{}_ppp_ortho_stats.csv".format(TIMESTAMP)
+LOG_PATH = "/{}_ppp_run.log".format(TIMESTAMP)
+
 class Log(object):
     """
     A record of a single run.
@@ -33,6 +37,8 @@ class Log(object):
         self._msas_out = []
         self._homology_tree = None
         self._masked_tree = None
+        self._masked_tree_str = None
+        self._settings = settings
 
     @property
     def version(self):
@@ -227,6 +233,27 @@ class Log(object):
     def masked_tree(self, value):
         self._masked_tree = value
 
+    @property
+    def masked_tree_str(self):
+        """
+        The tree after monophyletic masking and before the paralogy pruning
+        stage as a string.
+        """
+        return self._masked_tree_str
+
+    @masked_tree_str.setter
+    def masked_tree_str(self, value):
+        self._masked_tree_str = value
+
+    @property
+    def settings(self):
+        "The Settings object that stores the settings used in this log."
+        return self._settings
+
+    @settings.setter
+    def settings(self, value):
+        self._settings = value
+
     def outgroups_to_str(self):
         """
         Returns a string that contains the outgroups that were used in this
@@ -315,17 +342,11 @@ tree:\t\t\t\t\t{}
              self.sequences, self.taxa, len(self._trimmed_seqs),
              len(self.lbs_removed), len(self.monophylies_masked),
              self.collapsed_nodes, self.paralogs_to_str(),
-             self.homology_tree, self.masked_tree,
+             self.homology_tree, self.masked_tree_str,
              self.orthologs_to_str(), self.msas_out_to_str())
 
-        # write the report to a text file
-        timestamp = datetime.now().strftime("%Y-%m-%d")
-        log_out = "{}/{}_ppp_run.log".format(dir_out, timestamp)
-        with open(log_out, "a") as log_file:
+        with open(dir_out + LOG_PATH, "a") as log_file:
             log_file.write(report)
-
-        # write the ortholog statistics to a CSV file
-        timestamp = datetime.now().strftime("%Y-%m-%d")
 
         for ortholog in self.orthologs:
             self.to_csv(dir_out, ortholog)
@@ -338,11 +359,7 @@ tree:\t\t\t\t\t{}
         Takes a filename as an input and writes the records in this log to a
         CSV file to the provided path.
         """
-        timestamp = datetime.now().strftime("%Y-%m-%d")
-        ortho_stats = "{}/{}_ppp_ortho_stats.csv".format(dir_out,
-                                                                 timestamp)
-
-        with open(ortho_stats, "a") as stats_file:
+        with open(dir_out + ORTHO_STATS_PATH, "a") as stats_file:
             for ortholog in self.msas_out:
                 row = "{};{};{};{};{};{};{}\n".format(
                     os.path.basename(str(ortholog)),

@@ -12,6 +12,7 @@ class Settings(object):
         self._min_support = arguments.min_support
         self._trim_lb = arguments.trim_lb
         self._outgroup = arguments.outgroup
+        self._exclude = arguments.exclude
         self._root = arguments.root
         self._mask = arguments.mask
         self._prune = arguments.prune
@@ -105,3 +106,12 @@ class Settings(object):
     @prune.setter
     def prune(self, value):
         self._prune = value
+
+    @property
+    def exclude(self):
+        "A list of taxa to exclude."
+        return self._exclude
+
+    @exclude.setter
+    def exclude(self, value):
+        self._exclude = value
