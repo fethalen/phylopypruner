@@ -27,10 +27,12 @@ import shutil
 import fasta
 import newick
 import filtering
+import decontamination
 import mask_monophylies
 import root
 from prune_paralogs import prune_paralogs
 from summary import Summary
+from summary import mk_sum_out_title
 from msa import MultipleSequenceAlignment
 from log import Log
 from settings import Settings
@@ -43,6 +45,10 @@ FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
 NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree"}
 HEADER = "id;sequences;avg_seq_len;shortest_seq;longest_seq;pct_missing_data;\
 alignment_len\n"
+TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
+ORTHO_STATS_PATH = "/{}_ppp_ortho_stats.csv".format(TIMESTAMP)
+LOG_PATH = "/{}_ppp_run.log".format(TIMESTAMP)
+ORTHOLOGS_PATH = "/{}_orthologs".format(TIMESTAMP)
 
 def _warning(message):
     """
@@ -190,6 +196,10 @@ def _run(settings, msa, tree):
         if not pruning_method == "MO":
             tree = root.outgroup(tree, outgroup)
 
+    # exclude taxa within the list settings.exclude
+    if settings.exclude:
+        tree = filtering.exclude(tree, settings.exclude)
+
     # mask monophyletic groups
     if settings.mask:
         if settings.mask == "pdist":
@@ -198,7 +208,8 @@ def _run(settings, msa, tree):
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         log.monophylies_masked.update(masked_seqs)
 
-    log.masked_tree = tree.view()
+    log.masked_tree = tree
+    log.masked_tree_str = tree.view()
 
     # exit if number of OTUs < threshold
     if min_taxa:
@@ -322,6 +333,24 @@ def parse_args():
                         type=str,
                         choices=["LS", "MI", "MO", "RT", "1to1"],
                         help="prune paralogs using this method")
+    parser.add_argument("--exclude",
+                        nargs='+',
+                        metavar="<OTU>",
+                        default=None,
+                        type=str,
+                        help="a list of OTUs to exclude in this run")
+    parser.add_argument("--jackknife",
+                        default=False,
+                        action="store_true",
+                        help="exclude all combinations of taxons and generate\
+                         statistics for each ")
+    parser.add_argument("--rogue-taxon",
+                        default=None,
+                        metavar="<factor>",
+                        type=int,
+                        help="remove OTUs with a paralogy frequency that is \
+                              than <factor> times more frequent than the \
+                              standard deviation of all OTUs together.")
     parser.add_argument("--wrap",
                         metavar="<max column>",
                         default=None,
@@ -351,27 +380,22 @@ def main():
     if not os.path.isdir(dir_out):
         os.makedirs(dir_out)
 
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d")
-    ortho_stats = "{}/{}_ppp_ortho_stats.csv".format(dir_out, timestamp)
-
-    if os.path.isfile(ortho_stats):
+    if os.path.isfile(dir_out + ORTHO_STATS_PATH):
         question = _warning("files from a previous run exists in the output \
 directory, overwrite?")
         if not _yes_or_no(question):
             exit()
 
-    if os.path.isfile(ortho_stats):
-        os.remove(ortho_stats)
-    with open(ortho_stats, "w") as stats_file:
+    if os.path.isfile(dir_out + ORTHO_STATS_PATH):
+        os.remove(dir_out + ORTHO_STATS_PATH)
+    with open(dir_out + ORTHO_STATS_PATH, "w") as stats_file:
         stats_file.write(HEADER)
 
-    log_out = "{}/{}_ppp_run.log".format(dir_out, timestamp)
-    if os.path.isfile(log_out):
-        os.remove(log_out)
+    if os.path.isfile(dir_out + LOG_PATH):
+        os.remove(dir_out + LOG_PATH)
 
-    orthologs_out = dir_out + "/orthologs"
-    if os.path.isdir(orthologs_out):
-        shutil.rmtree(orthologs_out)
+    if os.path.isdir(dir_out + ORTHOLOGS_PATH):
+        shutil.rmtree(dir_out + ORTHOLOGS_PATH)
 
     if args.msa and args.tree:
         # run for a single pair of files
@@ -410,15 +434,25 @@ directory, overwrite?")
         for index, pair in enumerate(corr_files, 1):
             settings.fasta_file, settings.nw_file = corr_files[pair]
             sys.stdout.flush()
-            print("processing MSA: {}; processing tree: {} ({}/{})".format(
-                settings.fasta_file, settings.nw_file, index, total), end="\r")
+            print("processing MSA: {}; processing tree: {} ({}/{} file \
+pairs)".format(settings.fasta_file, settings.nw_file, index, total),
+                  end="\r")
             summary.logs.append(_get_orthologs(settings, dir_in, dir_out,
                                                args.wrap, args.verbose))
         print("")
 
-        summary.homolog_report()
-        summary.report()
-        summary.paralogy_frequency(dir_out)
+        mk_sum_out_title(dir_out)
+        homolog_report = summary.homolog_report(dir_out)
+        ortholog_report = summary.report("orthologs", dir_out)
+        print("{}\n{}".format(homolog_report, ortholog_report))
+        paralog_freq = summary.paralogy_frequency(dir_out)
+
+    if args.rogue_taxon:
+        decontamination.rogue_taxon_removal(summary, args.rogue_taxon,
+                                            paralog_freq, dir_out)
+
+    if args.jackknife:
+        decontamination.jackknife(summary, dir_out)
 
 if __name__ == "__main__":
     main()

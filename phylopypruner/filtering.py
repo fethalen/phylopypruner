@@ -2,6 +2,8 @@
 Tools for filtering tree nodes and sequences.
 """
 
+import copy
+
 def _is_short_sequence(sequence, treshold):
     """
     Return true if the provided sequence is shorter than the provided treshold.
@@ -15,6 +17,24 @@ def too_few_otus(tree, treshold):
     """
     if len(list(tree.iter_otus())) < treshold:
         return True
+
+def _leaves_to_exclude(node, otus):
+    for leaf in node.iter_leaves():
+        if leaf.otu() in otus:
+            return True
+
+def exclude(node, otus):
+    """
+    Takes a TreeNode object and a list of OTUs to exclude as an input. Returns
+    the same TreeNode object but with the OTUs in the list removed.
+    """
+    node_excluded = copy.copy(node)
+    while _leaves_to_exclude(node_excluded, otus):
+        for leaf in node_excluded.iter_leaves():
+            if leaf.otu() in otus:
+                leaf.delete()
+                break
+    return node_excluded
 
 def trim_short_seqs(msa, tree, treshold):
     """
