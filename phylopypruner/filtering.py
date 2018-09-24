@@ -36,6 +36,22 @@ def exclude(node, otus):
                 break
     return node_excluded
 
+def _short_seqs(msa, tree, treshold):
+    """
+    Takes an MSA object, a TreeNode object and a treshold as an input. Returns
+    True if there are sequences that are shorter than the provided treshold
+    within the MSA.
+    """
+    for leaf in tree.iter_leaves():
+        match = msa.get_sequence(leaf.name)
+
+        if match:
+            sequence = match
+
+            if _is_short_sequence(sequence, treshold):
+                return True
+    return False
+
 def trim_short_seqs(msa, tree, treshold):
     """
     Takes a TreeNode object, an MSA object and a treshold as an input. Remove
@@ -44,16 +60,17 @@ def trim_short_seqs(msa, tree, treshold):
     """
     nodes_to_remove = set()
 
-    for leaf in tree.iter_leaves():
-        match = msa.get_sequence(leaf.name)
+    while _short_seqs(msa, tree, treshold):
+        for leaf in tree.iter_leaves():
+            match = msa.get_sequence(leaf.name)
 
-        if match:
-            sequence = match
+            if match:
+                sequence = match
 
             if _is_short_sequence(sequence, treshold):
                 nodes_to_remove.add(leaf)
 
-    tree = tree.remove_nodes(nodes_to_remove)
+        tree.remove_nodes(nodes_to_remove)
 
     return nodes_to_remove
 
@@ -92,7 +109,7 @@ def prune_long_branches(node, factor):
         if leaf.dist > treshold:
             leaves_to_remove.add(leaf)
 
-    node = node.remove_nodes(leaves_to_remove)
+    node.remove_nodes(leaves_to_remove)
     return leaves_to_remove
 
 def collapse_nodes(node, treshold):

@@ -71,6 +71,7 @@ def _yes_or_no(question):
     answer = input(question + " (y/n): ".lower().rstrip())
     while not (answer == "y" or answer == "n"):
         print("type 'y' for yes and 'n' for no")
+        answer = input(question + " (y/n): ".lower().rstrip())
     if answer[0] == "y":
         return True
     elif answer[0] == "n":
@@ -175,9 +176,19 @@ def _run(settings, msa, tree):
     if min_seq:
         log.trimmed_seqs = filtering.trim_short_seqs(msa, tree, min_seq)
 
+    # exit if number of OTUs < threshold
+    if min_taxa:
+        if filtering.too_few_otus(tree, min_taxa):
+            return log
+
     # trim long branches
     if trim_lb:
         log.lbs_removed = list(filtering.prune_long_branches(tree, trim_lb))
+
+    # exit if number of OTUs < threshold
+    if min_taxa:
+        if filtering.too_few_otus(tree, min_taxa):
+            return log
 
     # collapse weakly supported nodes into polytomies
     if min_support:
@@ -191,6 +202,11 @@ def _run(settings, msa, tree):
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         log.monophylies_masked = masked_seqs
 
+    # exit if number of OTUs < threshold
+    if min_taxa:
+        if filtering.too_few_otus(tree, min_taxa):
+            return log
+
     # root by outgroup
     if outgroup:
         if not pruning_method == "MO":
@@ -199,6 +215,11 @@ def _run(settings, msa, tree):
     # exclude taxa within the list settings.exclude
     if settings.exclude:
         tree = filtering.exclude(tree, settings.exclude)
+
+    # exit if number of OTUs < threshold
+    if min_taxa:
+        if filtering.too_few_otus(tree, min_taxa):
+            return log
 
     # mask monophyletic groups
     if settings.mask:
@@ -214,7 +235,6 @@ def _run(settings, msa, tree):
     # exit if number of OTUs < threshold
     if min_taxa:
         if filtering.too_few_otus(tree, min_taxa):
-            print("too few OTUs in tree {}".format(settings.nw_file))
             return log
 
     # get a list of paralogs
@@ -342,8 +362,8 @@ def parse_args():
     parser.add_argument("--jackknife",
                         default=False,
                         action="store_true",
-                        help="exclude all combinations of taxons and generate\
-                         statistics for each ")
+                        help="leave out OTUs one by one and save statistics \
+                        for each OTU removed")
     parser.add_argument("--rogue-taxon",
                         default=None,
                         metavar="<factor>",

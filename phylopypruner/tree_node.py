@@ -184,10 +184,9 @@ class TreeNode(object):
                 # no node to remove could be found
                 break
 
-        # for leaf in self.iter_leaves():
-        #     if not leaf.name:
-        #         leaf.parent.remove_child(leaf)
-        #         leaf.parent = None
+        for leaf in self.iter_leaves():
+            if leaf.name is None:
+                leaf.delete()
 
         return self
 
