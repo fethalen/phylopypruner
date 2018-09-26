@@ -15,8 +15,8 @@ def otus(summary):
     "Returns a set of all OTUs within all of the trees in the Summary object."
     otus_in_summary = set()
     for log in summary.logs:
-        otus = set(list(log.masked_tree.iter_otus()))
-        if otus:
+        if log.masked_tree:
+            otus = set(list(log.masked_tree.iter_otus()))
             otus_in_summary.update(otus)
 
     return otus_in_summary
