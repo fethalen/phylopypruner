@@ -8,7 +8,7 @@ class Settings(object):
         self._fasta_file = arguments.msa
         self._nw_file = arguments.tree
         self._min_taxa = arguments.min_taxa
-        self._min_seq = arguments.min_seq
+        self._min_len = arguments.min_len
         self._min_support = arguments.min_support
         self._trim_lb = arguments.trim_lb
         self._outgroup = arguments.outgroup
@@ -45,13 +45,13 @@ class Settings(object):
         self._min_taxa = value
 
     @property
-    def min_seq(self):
+    def min_len(self):
         "Minimum number of positions allowed in a sequence."
-        return self._min_seq
+        return self._min_len
 
-    @min_seq.setter
-    def min_seq(self, value):
-        self._min_seq = value
+    @min_len.setter
+    def min_len(self, value):
+        self._min_len = value
 
     @property
     def min_support(self):

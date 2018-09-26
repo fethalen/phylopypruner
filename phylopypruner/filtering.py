@@ -19,6 +19,8 @@ def too_few_otus(tree, treshold):
         return True
 
 def _leaves_to_exclude(node, otus):
+    if not node:
+        return False
     for leaf in node.iter_leaves():
         if leaf.otu() in otus:
             return True
@@ -34,6 +36,13 @@ def exclude(node, otus):
             if leaf.otu() in otus:
                 leaf.delete()
                 break
+
+    if node_excluded:
+        while node_excluded.empty_leaves():
+            for leaf in node_excluded.iter_leaves():
+                if not leaf.name:
+                    leaf.delete()
+                    break
     return node_excluded
 
 def _short_seqs(msa, tree, treshold):
@@ -47,7 +56,6 @@ def _short_seqs(msa, tree, treshold):
 
         if match:
             sequence = match
-
             if _is_short_sequence(sequence, treshold):
                 return True
     return False
@@ -67,8 +75,8 @@ def trim_short_seqs(msa, tree, treshold):
             if match:
                 sequence = match
 
-            if _is_short_sequence(sequence, treshold):
-                nodes_to_remove.add(leaf)
+                if _is_short_sequence(sequence, treshold):
+                    nodes_to_remove.add(leaf)
 
         tree.remove_nodes(nodes_to_remove)
 

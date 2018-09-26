@@ -151,13 +151,21 @@ def prune_paralogs(method, tree, min_taxa, outgroup):
         AssertionError("unknown paralogy pruning method: '{}'".format(method))
 
     if method == "LS":
-        subtrees.append(largest_subtree(tree, min_taxa))
+        tree = largest_subtree(tree, min_taxa)
+        if tree:
+            subtrees.append(tree)
     elif method == "MI":
-        subtrees = list(maximum_inclusion(tree, min_taxa))
+        trees = list(maximum_inclusion(tree, min_taxa))
+        if trees:
+            subtrees = trees
     elif method == "MO":
-        subtrees = list(monophyletic_outgroups(tree, min_taxa, outgroup))
+        trees = list(monophyletic_outgroups(tree, min_taxa, outgroup))
+        if trees:
+            subtrees = trees
     elif method == "RT":
-        subtrees.append(rooted_tree(tree, min_taxa, outgroup))
+        trees = rooted_tree(tree, min_taxa, outgroup)
+        if trees:
+            subtrees.append(trees)
     elif method == "1to1":
         if one_to_one_orthologs(tree):
             subtrees.append(tree)

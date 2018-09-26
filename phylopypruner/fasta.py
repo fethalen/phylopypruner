@@ -28,6 +28,8 @@ def read(filename):
                 sequence_data = ""
             else:
                 sequence_data += line
+        if sequence_data:
+            msa.add_sequence(None, description, sequence_data)
     return msa
 
 def write(msa, max_column):
