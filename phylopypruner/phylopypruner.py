@@ -12,7 +12,7 @@ r"""
   tutorial and explanations of the implemented algorithms.
 
 example:
-  ./phylopypruner.py --msa 16s.fa --tree 16s.tre --min-taxa 4 --min-seq 200
+  ./phylopypruner.py --msa 16s.fa --tree 16s.tre --min-taxa 4 --min-len 200
     --min-support 0.7 --trim-lb 5 --outgroup Drosophila --root midpoint
     --mask pdist --prune MI
 
@@ -24,6 +24,7 @@ import os
 import sys
 import datetime
 import shutil
+from textwrap import wrap
 import fasta
 import newick
 import filtering
@@ -33,7 +34,6 @@ import root
 from prune_paralogs import prune_paralogs
 from summary import Summary
 from summary import mk_sum_out_title
-from msa import MultipleSequenceAlignment
 from log import Log
 from settings import Settings
 # ensures that input is working across both Python 2 and 3
@@ -43,7 +43,7 @@ VERSION = 0.1
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
                     ".frn"}
 NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree"}
-HEADER = "id;sequences;avg_seq_len;shortest_seq;longest_seq;pct_missing_data;\
+HEADER = "id;sequences;seq_len_avg;shortest_seq;longest_seq;pct_missing_data;\
 alignment_len\n"
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 ORTHO_STATS_PATH = "/{}_ppp_ortho_stats.csv".format(TIMESTAMP)
@@ -55,11 +55,12 @@ def _warning(message):
     Returns the provided message with the text 'warning: ' in bold red
     prepended.
     """
-    return "{}warning{}: {}".format("\033[91m\033[1m", "\033[0m", message)
+    return "\n".join(wrap("{}warning{}: {}".format("\033[91m\033[1m",
+                                                   "\033[0m", message), 80))
 
-NO_FILES = _warning("""Please provide either a multiple sequence alignment \
-(MSA) and a Newick tree,\nor a path to a directory containing multiple MSAs \
-and Newick trees. Run\nPhyloPyPruner using the '-h' or '--help' flag for \
+NO_FILES = _warning("""Please provide either a multiple sequence alignment
+(MSA) and a Newick tree, or a path to a directory containing multiple MSAs
+and Newick trees. Run PhyloPyPruner using the '-h' or '--help' flag for
 additional instructions.""")
 
 def _yes_or_no(question):
@@ -97,64 +98,49 @@ def _no_files(args):
 
 def _validate_arguments(args):
     "Performs a series of checks to validate the input before execution."
+    valid_arguments = True
+
     if _no_files(args):
         print(NO_FILES)
-        exit()
+        valid_arguments = False
+
     if not args.outgroup and args.prune == "MO" or \
         not args.outgroup and args.prune == "RT":
         print(_warning("trying to run {}, but no outgroup has been\
  specified".format(args.prune)))
+        valid_arguments = False
+
+    if args.min_support:
+        if args.min_support < 0 or args.min_support > 100:
+            print(_warning("minimum support value ('--min-support') has to be\
+either in percentage (1-100) or in decimal format between 0.0 - 1.0"))
+            valid_arguments = False
+        elif args.min_support > 1:
+            # convert from percentage to floating point
+            args.min_support = args.min_support / 100
+
+    if args.min_len and args.min_len < 1:
+        print(_warning("minimum sequence length ('--min-len') has to be a\
+ positive integer (1, 2, 3, 4, ...)"))
+        valid_arguments = False
+
+    if args.min_taxa and args.min_taxa < 1:
+        print(_warning("minimum number of taxa ('--min-taxa') has to be a\
+ positive integer (1, 2, 3, 4, ...)"))
+        valid_arguments = False
+
+    if args.trim_lb and args.trim_lb <= 0:
+        print(_warning("the factor for removing long branches ('--trim-lb')\
+has to be a positive number"))
+        valid_arguments = False
+
+    if not valid_arguments:
         exit()
-
-def _get_sequences(msa, tree):
-    """
-    Takes a MultipleSequenceAlignment object and a TreeNode object as an input.
-    Returns a MultipleSequenceAlignment object that contains the subset of
-    sequences in the MSA that includes all sequences within the tree, provided
-    that they do exist.
-    """
-    msa_out = MultipleSequenceAlignment()
-
-    for name in tree.iter_names():
-        match = msa.get_sequence(name)
-
-        if not match:
-            continue
-
-        msa_out.add_sequence(match)
-
-    return msa_out
-
-def _file_out(path, directory=None, index=""):
-    """
-    Takes the path to an MSA and an optional path to a directory as an input.
-    Extracts the base name and extension from the provided path. If no directory
-    has been specified, then the directory is also extracted from the path.
-    Returns the path to a file in the following format:
-      <directory>/<basename>_pruned<extension>
-
-    If an index has been provided, then the output will be in the following
-    format:
-      <directory>/<basename>_pruned_<index><extension>
-    """
-    if not directory:
-        directory = os.path.dirname(path)
-    filename = os.path.basename(path)
-    basename, extension = os.path.splitext(filename)
-
-    dir_out = directory + "/orthologs"
-    if not os.path.isdir(dir_out):
-        os.makedirs(dir_out)
-
-    if index:
-        index = "_{}".format(index)
-
-    return "{}/{}_pruned{}{}".format(dir_out, basename, index, extension)
 
 def _run(settings, msa, tree):
     """
     Takes a dictionary that specifies a set of settings as an input. The
-    dictionary should contain the following keys: msa, tree, min_taxa, min_seq,
+    dictionary should contain the following keys: msa, tree, min_taxa, min_len,
     min_support, trim_lb, outgroup, root, mask, and prune. Runs PhyloPyPruner
     once using these settings.
     """
@@ -162,37 +148,29 @@ def _run(settings, msa, tree):
     _validate_input(msa, tree, settings.nw_file)
 
     log = Log(VERSION, msa, tree, settings)
-    min_taxa = settings.min_taxa
-    min_seq = settings.min_seq
-    min_support = settings.min_support
-    trim_lb = settings.trim_lb
-    outgroup = settings.outgroup
-    # rooting_method = settings.root
-    pruning_method = settings.prune
-
     log.homology_tree = tree.view()
 
     # remove short sequences
-    if min_seq:
-        log.trimmed_seqs = filtering.trim_short_seqs(msa, tree, min_seq)
+    if settings.min_len:
+        log.trimmed_seqs = filtering.trim_short_seqs(msa, tree, settings.min_len)
 
     # exit if number of OTUs < threshold
-    if min_taxa:
-        if filtering.too_few_otus(tree, min_taxa):
+    if settings.min_taxa:
+        if filtering.too_few_otus(tree, settings.min_taxa):
             return log
 
     # trim long branches
-    if trim_lb:
-        log.lbs_removed = list(filtering.prune_long_branches(tree, trim_lb))
+    if settings.trim_lb:
+        log.lbs_removed = list(filtering.prune_long_branches(tree, settings.trim_lb))
 
     # exit if number of OTUs < threshold
-    if min_taxa:
-        if filtering.too_few_otus(tree, min_taxa):
+    if settings.min_taxa:
+        if filtering.too_few_otus(tree, settings.min_taxa):
             return log
 
     # collapse weakly supported nodes into polytomies
-    if min_support:
-        log.pruned_sequences = filtering.collapse_nodes(tree, min_support)
+    if settings.min_support:
+        log.pruned_sequences = filtering.collapse_nodes(tree, settings.min_support)
 
     # mask monophyletic groups
     if settings.mask:
@@ -203,22 +181,22 @@ def _run(settings, msa, tree):
         log.monophylies_masked = masked_seqs
 
     # exit if number of OTUs < threshold
-    if min_taxa:
-        if filtering.too_few_otus(tree, min_taxa):
+    if settings.min_taxa:
+        if filtering.too_few_otus(tree, settings.min_taxa):
             return log
 
     # root by outgroup
-    if outgroup:
-        if not pruning_method == "MO":
-            tree = root.outgroup(tree, outgroup)
+    if settings.outgroup:
+        if not settings.prune == "MO":
+            tree = root.outgroup(tree, settings.outgroup)
 
     # exclude taxa within the list settings.exclude
     if settings.exclude:
         tree = filtering.exclude(tree, settings.exclude)
 
     # exit if number of OTUs < threshold
-    if min_taxa:
-        if filtering.too_few_otus(tree, min_taxa):
+    if settings.min_taxa:
+        if filtering.too_few_otus(tree, settings.min_taxa):
             return log
 
     # mask monophyletic groups
@@ -233,48 +211,29 @@ def _run(settings, msa, tree):
     log.masked_tree_str = tree.view()
 
     # exit if number of OTUs < threshold
-    if min_taxa:
-        if filtering.too_few_otus(tree, min_taxa):
+    if settings.min_taxa:
+        if filtering.too_few_otus(tree, settings.min_taxa):
             return log
 
     # get a list of paralogs
     log.paralogs = tree.paralogs()
 
     # prune paralogs
-    log.orthologs = prune_paralogs(pruning_method, tree, min_taxa, outgroup)
+    log.orthologs = prune_paralogs(settings.prune, tree,
+                                   settings.min_taxa, settings.outgroup)
 
     return log
 
-def _get_orthologs(settings, directory="", dir_out=None, wrap=None,
-                   verbose=False):
-    extension_out = os.path.splitext(settings.fasta_file)[1]
+def _get_orthologs(settings, directory="", dir_out=None, verbose=False):
     fasta_path = "{}{}".format(directory, settings.fasta_file)
     nw_path = "{}{}".format(directory, settings.nw_file)
     msa = fasta.read(fasta_path)
     nw_file = newick.read(nw_path)
     log = _run(settings, msa, nw_file)
 
-    for index, ortholog in enumerate(log.orthologs):
-        if len(log.orthologs) is 1:
-            file_out = _file_out(fasta_path, dir_out)
-        else:
-            file_out = _file_out(fasta_path, dir_out, index + 1)
-        if ortholog:
-            msa_out = MultipleSequenceAlignment(file_out, extension_out)
-            for leaf in ortholog.iter_leaves():
-                seq = msa.get_sequence(leaf.name)
-                if seq:
-                    msa_out.add_sequence(seq)
-            if len(msa_out) > 0:
-                log.msas_out.append(msa_out)
-                fasta.write(msa_out, wrap)
-
+    log.get_msas_out(dir_out)
     log.report(verbose, dir_out)
     return log
-
-def _auto():
-    # configurations = itertools.product()
-    pass
 
 def parse_args():
     """
@@ -310,7 +269,7 @@ def parse_args():
                         type=int,
                         default=4,
                         help="minimum number of OTUs allowed in output")
-    parser.add_argument("--min-seq",
+    parser.add_argument("--min-len",
                         metavar="<threshold>",
                         default=40,
                         type=int,
@@ -320,11 +279,12 @@ def parse_args():
                         default=None,
                         type=float,
                         help="collapse nodes with a support value below\
-                              <threshold> into polytomies")
+                              <threshold> into polytomies; in percentage\
+                              or decimal format")
     parser.add_argument("--trim-lb",
                         default=None,
                         metavar="<factor>",
-                        type=int,
+                        type=float,
                         help="remove sequences with a branch length that is\
                               <factor> times longer than the standard\
                               deviation of all branches")
@@ -363,11 +323,13 @@ def parse_args():
                         default=False,
                         action="store_true",
                         help="leave out OTUs one by one and save statistics \
-                        for each OTU removed")
-    parser.add_argument("--rogue-taxon",
+                        for each OTU removed in the summary; note that no \
+                        data is produced, use the --exclude flag to exclude \
+                        OTUs in a subsequent analysis")
+    parser.add_argument("--trim-freq-paralogs",
                         default=None,
                         metavar="<factor>",
-                        type=int,
+                        type=float,
                         help="remove OTUs with a paralogy frequency that is \
                               than <factor> times more frequent than the \
                               standard deviation of all OTUs together.")
@@ -417,11 +379,12 @@ directory, overwrite?")
     if os.path.isdir(dir_out + ORTHOLOGS_PATH):
         shutil.rmtree(dir_out + ORTHOLOGS_PATH)
 
+    print("PhyloPyPruner version {}".format(VERSION))
+    print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
+
     if args.msa and args.tree:
         # run for a single pair of files
-        print("PhyloPyPruner version {}".format(VERSION))
-        print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-        summary.logs.append(_get_orthologs(settings, "", dir_out, args.wrap,
+        summary.logs.append(_get_orthologs(settings, "", dir_out,
                                            args.verbose))
     elif args.dir:
         # run for multiple files in directory
@@ -447,10 +410,13 @@ directory, overwrite?")
                 else:
                     corr_files[filename] = (file,)
 
-        print("PhyloPyPruner version {}".format(VERSION))
-        print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
-
         total = len(corr_files)
+        if total < 1:
+            # no file pairs found in the provided directory
+            print(_warning("no file pairs were found in the provided\
+ directory"))
+            exit()
+
         for index, pair in enumerate(corr_files, 1):
             settings.fasta_file, settings.nw_file = corr_files[pair]
             sys.stdout.flush()
@@ -458,21 +424,23 @@ directory, overwrite?")
 pairs)".format(settings.fasta_file, settings.nw_file, index, total),
                   end="\r")
             summary.logs.append(_get_orthologs(settings, dir_in, dir_out,
-                                               args.wrap, args.verbose))
+                                               args.verbose))
         print("")
-
         mk_sum_out_title(dir_out)
         homolog_report = summary.homolog_report(dir_out)
         ortholog_report = summary.report("orthologs", dir_out)
-        print("{}\n{}".format(homolog_report, ortholog_report))
         paralog_freq = summary.paralogy_frequency(dir_out)
 
-    if args.rogue_taxon:
-        decontamination.rogue_taxon_removal(summary, args.rogue_taxon,
-                                            paralog_freq, dir_out)
+    if args.trim_freq_paralogs:
+        ortholog_report, summary = decontamination.trim_freq_paralogs(
+            summary, args.trim_freq_paralogs, paralog_freq, dir_out)
 
     if args.jackknife:
         decontamination.jackknife(summary, dir_out)
+
+    print("{}\n{}".format(homolog_report, ortholog_report))
+
+    summary.write_msas(args.wrap)
 
 if __name__ == "__main__":
     main()

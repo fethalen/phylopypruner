@@ -77,7 +77,10 @@ class TreeNode(object):
 
     @support.setter
     def support(self, value):
-        self._support = float(value)
+        support_value = float(value)
+        if support_value > 1 and support_value <= 100:
+            support_value = support_value / 100
+        self._support = support_value
 
     def add_child(self, child=None, name='', dist=0.0, support=1.0):
         "Adds a new child to this node."

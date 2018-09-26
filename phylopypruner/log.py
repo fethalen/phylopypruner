@@ -8,6 +8,9 @@ Store information about performed operations.
 from __future__ import print_function
 from datetime import datetime
 import os.path
+from msa import MultipleSequenceAlignment
+from tree_node import TreeNode
+from settings import Settings
 
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d")
 ORTHO_STATS_PATH = "/{}_ppp_ortho_stats.csv".format(TIMESTAMP)
@@ -18,7 +21,8 @@ class Log(object):
     A record of a single run.
     """
 
-    def __init__(self, version, msa, tree, settings):
+    def __init__(self, version, msa=MultipleSequenceAlignment, tree=TreeNode,
+                 settings=Settings):
         self._version = version
         self._msa = msa
         self._tree = tree
@@ -371,6 +375,35 @@ tree:\t\t\t\t\t{}
                     cat_alignment(ortholog))
                 stats_file.write(row)
 
+    def msa_out_path(self, dir_out, index=""):
+        msa_in_path = str(self.msa)
+        msa_in_filename = os.path.basename(msa_in_path)
+        basename, extension = os.path.splitext(msa_in_filename)
+
+        orthologs_dir = "{}/{}_orthologs".format(dir_out, TIMESTAMP)
+        if not os.path.isdir(orthologs_dir):
+            os.makedirs(orthologs_dir)
+
+        if index:
+            index = "_{}".format(index)
+
+        return("{}/{}_pruned{}{}".format(orthologs_dir, basename, index, extension),
+               extension)
+
+    def get_msas_out(self, dir_out):
+        for index, ortholog in enumerate(self.orthologs):
+            if len(self.orthologs) is 1:
+                msa_out_path, extension = self.msa_out_path(dir_out)
+            else:
+                msa_out_path, extension = self.msa_out_path(dir_out, index)
+
+            msa_out = MultipleSequenceAlignment(msa_out_path, extension)
+            for leaf in ortholog.iter_leaves():
+                msa_out.add_sequence(self.msa.get_sequence(leaf.name))
+
+            if len(msa_out) > 0:
+                self.msas_out.append(msa_out)
+
 def avg_seq_len(msa):
     """
     Takes a MultipleSequenceAlignment object as an input and returns the
@@ -431,3 +464,29 @@ def longest_sequence(msa):
         if not longest or longest < len(sequence.ungapped()):
             longest = len(sequence.ungapped())
     return longest
+
+def _file_out(path, dir_out=None, index=""):
+    """
+    Takes the path to an MSA and an optional path to a directory as an input.
+    Extracts the base name and extension from the provided path. If no directory
+    has been specified, then the directory is also extracted from the path.
+    Returns the path to a file in the following format:
+      <dir_out>/<basename>_pruned<extension>
+
+    If an index has been provided, then the output will be in the following
+    format:
+      <dir_out>/<basename>_pruned_<index><extension>
+    """
+    if not directory:
+        directory = os.path.dirname(path)
+    filename = os.path.basename(path)
+    basename, extension = os.path.splitext(filename)
+
+    dir_out = directory + "/{}_orthologs".format(TIMESTAMP)
+    if not os.path.isdir(dir_out):
+        os.makedirs(dir_out)
+
+    if index:
+        index = "_{}".format(index)
+
+    return "{}/{}_pruned{}{}".format(dir_out, basename, index, extension)
