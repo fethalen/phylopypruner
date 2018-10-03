@@ -82,8 +82,8 @@ class Summary(object):
             for otu, freq in paralog_freq.items():
                 csv_out.write("{};{}\n".format(otu, freq))
 
-        otus = paralog_freq.keys()
-        freq = paralog_freq.values()
+        otus = list(paralog_freq.keys())
+        freq = list(paralog_freq.values())
 
         if MATPLOTLIB:
             plt.barh(otus, freq, alpha=0.5)

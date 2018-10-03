@@ -31,7 +31,6 @@ import filtering
 import decontamination
 import mask_monophylies
 import root
-import groups
 from prune_paralogs import prune_paralogs
 from summary import Summary
 from summary import mk_sum_out_title
