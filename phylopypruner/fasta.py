@@ -4,7 +4,7 @@ Module for working with the FASTA file format.
 
 from os import path
 from textwrap import wrap
-from multiple_sequence_alignment import MultipleSequenceAlignment
+from msa import MultipleSequenceAlignment
 
 def read(filename):
     """

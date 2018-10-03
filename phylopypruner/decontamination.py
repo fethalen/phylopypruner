@@ -4,6 +4,7 @@ from __future__ import print_function
 import sys
 import copy
 import datetime
+from collections import defaultdict
 from itertools import combinations
 import filtering
 from summary import Summary
@@ -11,28 +12,15 @@ from prune_paralogs import prune_paralogs
 
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 
-def otus(summary):
-    "Returns a set of all OTUs within all of the trees in the Summary object."
-    otus_in_summary = set()
-    for log in summary.logs:
-        if log.masked_tree:
-            otus = set(list(log.masked_tree.iter_otus()))
-            otus_in_summary.update(otus)
-
-    return otus_in_summary
-
 def jackknife(summary, dir_out):
-    otus_in_summary = otus(summary)
-    otu_count = len(otus_in_summary)
-
-    resampling = set(combinations(otus_in_summary, otu_count - 1))
+    resampling = set(combinations(summary.otus(), len(summary.otus()) - 1))
     total = len(resampling)
     resamples = set()
 
     for index, combination in enumerate(resampling, 1):
         summary_copy = copy.deepcopy(summary)
         resample_summary = Summary()
-        excluded = list(otus_in_summary.difference(combination))
+        excluded = list(summary.otus().difference(combination))
 
         sys.stdout.flush()
         print("jackknife resampling ({}/{} subsamples)".format(
@@ -80,7 +68,47 @@ def _std(data):
         raise ValueError('variance requires at least two data points')
     return (_sdm(data) / len(data)) ** 0.5
 
-def trim_freq_paralogs(summary, factor, paralog_freq, dir_out):
+def prune_by_exclusion(summary, otus, dir_out):
+    """
+    Takes a Summary object, a list of OTUs and the path to the output directory
+    as an input. Returns a new Summary object that is the summary after
+    paralogy pruning with the OTUs within the list excluded.
+    """
+    # creating a copy of the summary prevents making changes to the trees in
+    # that summary
+    summary_copy = copy.deepcopy(summary)
+    summary_out = Summary()
+    alignments_count = len(summary_copy.logs)
+    excluded_str = "+".join(otu for otu in otus)
+    excluded_str += "_excluded"
+
+    for index, log in enumerate(summary_copy.logs, 1):
+        sys.stdout.flush()
+        print("paralogy pruning with OTUs removed ({}/{} trees)".format(
+            index, alignments_count), end="\r")
+
+        log_copy = copy.deepcopy(log)
+        pruning_method = log_copy.settings.prune
+        min_taxa = log_copy.settings.min_taxa
+        outgroup = log_copy.settings.outgroup
+        tree = log_copy.masked_tree
+        tree_excluded = filtering.exclude(tree, list(otus))
+        log_copy.msas_out = []
+        log_copy.settings.exclude = list(otus)
+        if not tree_excluded:
+            continue
+        log_copy.orthologs = prune_paralogs(pruning_method,
+                                            tree_excluded,
+                                            min_taxa,
+                                            outgroup)
+        log_copy.get_msas_out(dir_out)
+        summary_out.logs.append(log_copy)
+    print("")
+
+    report = summary_out.report(excluded_str, dir_out)
+    return summary_out, report
+
+def trim_freq_paralogs(summary, factor, paralog_freq):
     treshold = _std(list(paralog_freq.values())) * factor
     rogue_taxa = set()
 
@@ -98,34 +126,52 @@ def trim_freq_paralogs(summary, factor, paralog_freq, dir_out):
     print("OTUs with frequent paralogs: " +
           ", ".join(otu for otu in rogue_taxa))
 
+    return rogue_taxa
 
-    summary_copy = copy.deepcopy(summary)
-    rtr_summary = Summary()
-    total = len(summary_copy.logs)
+def trim_divergent_otus(summary, factor):
+    """
+    Takes a Summary object, an integer and the path to an output directory as
+    an input. Calculates the average pairwise distance for each OTU within
+    <summary>. OTUs with an average pairwise distance that is <factor> times
+    the standard deviation of all average pairwise distances are removed from
+    the trees within the Summary object's logs. All trees are then pruned using
+    the same method that was provided in the summary.
+    """
+    otu_dists = defaultdict(float) # OTU is key, distance is value
+    dists_count = defaultdict(int) # OTU is key, frequency is value
+    otus_above_threshold = list()
+    total = len(summary)
 
-    for index, log in enumerate(summary_copy.logs, 1):
+    for index, log in enumerate(summary.logs, 1):
+
         sys.stdout.flush()
-        print("paralogy pruning with frequent paralogs removed ({}/{} file \
-pairs)".format(index, total), end="\r")
+        print("calculating pairwise distances ({}/{} trees)".format(
+            index, total), end="\r")
 
-        rtr_log = copy.deepcopy(log)
-        pruning_method = rtr_log.settings.prune
-        min_taxa = rtr_log.settings.min_taxa
-        outgroup = rtr_log.settings.outgroup
-        rtr_tree = rtr_log.masked_tree
-        tree_excluded = filtering.exclude(rtr_tree, list(rogue_taxa))
-        rtr_log.msas_out = []
-        rtr_log.settings.exclude = list(rogue_taxa)
-        if not tree_excluded:
-            continue
-        rtr_log.orthologs = prune_paralogs(pruning_method,
-                                           tree_excluded,
-                                           min_taxa,
-                                           outgroup)
-        rtr_log.get_msas_out(dir_out)
-        rtr_summary.logs.append(rtr_log)
-
+        dists_in_tree = log.masked_tree.distances()
+        for pair in dists_in_tree:
+            leaf_a, leaf_b = pair
+            otu_a = leaf_a.otu()
+            otu_b = leaf_b.otu()
+            otu_dists[otu_a] += dists_in_tree[pair]
+            otu_dists[otu_b] += dists_in_tree[pair]
+            dists_count[otu_a] += 1
+            dists_count[otu_b] += 1
     print("")
-    rtr_summary_report = rtr_summary.report(rogue_taxa_str, dir_out)
 
-    return rtr_summary_report, rtr_summary
+    for otu in dists_count:
+        otu_dists[otu] = round(otu_dists[otu] / dists_count[otu], 2)
+
+    threshold = _std(list(otu_dists.values())) * factor
+
+    for otu in otu_dists:
+        if otu_dists[otu] > threshold:
+            otus_above_threshold.append(otu)
+
+    if otus_above_threshold:
+        print("OTUs with an average pairwise distance above threshold: \
+{}".format(", ".join(otus_above_threshold)))
+    else:
+        print("no OTUs with an average pairwise distance above threshold")
+
+    return otus_above_threshold

@@ -94,3 +94,32 @@ class MultipleSequenceAlignment(object):
         "Returns an iterator object that includes all IDs in this alignment."
         for sequence in self.sequences:
             yield sequence.identifier
+
+    def missing_data(self):
+        """
+        Returns the percentage of missing data of all sequences within this
+        alignment.
+        """
+        no_of_sequences = len(self)
+        missing_data = 0
+
+        for sequence in self.sequences:
+            missing_data += sequence.missing_data()
+
+        if no_of_sequences > 0:
+            return missing_data / no_of_sequences
+        else:
+            return 0
+
+    def otus(self):
+        "Returns a list of the OTUs present within this alignment."
+        otus_in_alignment = set()
+        for sequence in self.sequences:
+            otus_in_alignment.add(sequence.otu)
+        return otus_in_alignment
+
+    def alignment_len(self):
+        """
+        Returns the length of this alignment.
+        """
+        return len(self.sequences[0])

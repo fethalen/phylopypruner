@@ -31,6 +31,7 @@ import filtering
 import decontamination
 import mask_monophylies
 import root
+import groups
 from prune_paralogs import prune_paralogs
 from summary import Summary
 from summary import mk_sum_out_title
@@ -113,7 +114,7 @@ def _validate_arguments(args):
     if args.min_support:
         if args.min_support < 0 or args.min_support > 100:
             print(_warning("minimum support value ('--min-support') has to be\
-either in percentage (1-100) or in decimal format between 0.0 - 1.0"))
+ either in percentage (1-100) or in decimal format between 0.0 - 1.0"))
             valid_arguments = False
         elif args.min_support > 1:
             # convert from percentage to floating point
@@ -267,11 +268,11 @@ def parse_args():
     parser.add_argument("--min-taxa",
                         metavar="<threshold>",
                         type=int,
-                        default=4,
+                        default=None,
                         help="minimum number of OTUs allowed in output")
     parser.add_argument("--min-len",
                         metavar="<threshold>",
-                        default=40,
+                        default=None,
                         type=int,
                         help="remove sequences shorter than <threshold>")
     parser.add_argument("--min-support",
@@ -299,17 +300,17 @@ def parse_args():
     parser.add_argument("--root",
                         default=None,
                         type=str,
-                        choices=["midpoint", "clock", "MAD"],
+                        choices=["midpoint", "molecular_clock"],
                         help="reroot tree using this rooting method if an\
                               outgroup hasn't been provided or if outgroup\
                               rooting fails")
     parser.add_argument("--mask",
-                        default=None,
+                        default="pdist",
                         type=str,
                         choices=["longest", "pdist"],
                         help="mask monophylies using this method")
     parser.add_argument("--prune",
-                        default=None,
+                        default="LS",
                         type=str,
                         choices=["LS", "MI", "MO", "RT", "1to1"],
                         help="prune paralogs using this method")
@@ -319,6 +320,14 @@ def parse_args():
                         default=None,
                         type=str,
                         help="a list of OTUs to exclude in this run")
+    parser.add_argument("--include",
+                        nargs='+',
+                        metavar="<OTU>",
+                        default=None,
+                        type=str,
+                        help="always include these OTUs, even if they were \
+                        flagged as problematic by '--trim-freq-paralogs' or \
+                        '--trim-divergent'")
     parser.add_argument("--jackknife",
                         default=False,
                         action="store_true",
@@ -332,7 +341,15 @@ def parse_args():
                         type=float,
                         help="remove OTUs with a paralogy frequency that is \
                               than <factor> times more frequent than the \
-                              standard deviation of all OTUs together.")
+                              standard deviation of all OTUs together")
+    parser.add_argument("--trim-divergent",
+                        default=None,
+                        metavar="<factor>",
+                        type=float,
+                        help="remove OTUs where the average pairwise distance \
+                              of the sequences for that OTU is larger than \
+                              <factor> times the average pairwise distance of \
+                              all sequences")
     parser.add_argument("--wrap",
                         metavar="<max column>",
                         default=None,
@@ -418,7 +435,11 @@ directory, overwrite?")
             exit()
 
         for index, pair in enumerate(corr_files, 1):
-            settings.fasta_file, settings.nw_file = corr_files[pair]
+            try:
+                settings.fasta_file, settings.nw_file = corr_files[pair]
+            except:
+                # corresponding file not found
+                continue
             sys.stdout.flush()
             print("processing MSA: {}; processing tree: {} ({}/{} file \
 pairs)".format(settings.fasta_file, settings.nw_file, index, total),
@@ -431,9 +452,22 @@ pairs)".format(settings.fasta_file, settings.nw_file, index, total),
         ortholog_report = summary.report("orthologs", dir_out)
         paralog_freq = summary.paralogy_frequency(dir_out)
 
+    otus_to_exclude = []
+
+    if args.trim_divergent:
+        otus_to_exclude += decontamination.trim_divergent_otus(
+            summary, args.trim_divergent)
+
     if args.trim_freq_paralogs:
-        ortholog_report, summary = decontamination.trim_freq_paralogs(
-            summary, args.trim_freq_paralogs, paralog_freq, dir_out)
+        otus_to_exclude += decontamination.trim_freq_paralogs(
+            summary, args.trim_freq_paralogs, paralog_freq)
+
+    if otus_to_exclude:
+        if args.include:
+            otus_to_exclude = [otu for otu in otus_to_exclude if not otu in
+                               args.include]
+        summary, ortholog_report = decontamination.prune_by_exclusion(
+            summary, otus_to_exclude, dir_out)
 
     if args.jackknife:
         decontamination.jackknife(summary, dir_out)
