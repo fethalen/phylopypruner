@@ -15,7 +15,7 @@ get a barplot of the paralog frequency".format("\033[92m\033[1m", "\033[0m"))
     MATPLOTLIB = False
 
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
-SUM_HEADER = "id;alignments;sequences;sequences_avg;otus_avg;seq_len_avg;\
+SUM_HEADER = "id;alignments;sequences;otus;sequences_avg;otus_avg;seq_len_avg;\
 shortest_seq;longest_seq;pct_missing_data;cat_alignment_len\n"
 SUM_PATH = "/{}_ppp_summary.csv".format(TIMESTAMP)
 FREQ_PLOT_FILE = "/{}_ppp_paralog_freq.png".format(TIMESTAMP)
@@ -54,14 +54,28 @@ class Summary(object):
             os.remove(dir_out + FREQ_CSV_FILE)
 
         seen = set()
-        paralog_freq = defaultdict(int)
+        paralog_freq = defaultdict(int) # key is OTU, value is no. of paralogs
+        presence = defaultdict(int) # key is OTU, value is
+        first_iteration = True
         for log in self.logs:
+            otus_in_alignment = log.msa.otus()
+            for otu in otus_in_alignment:
+                presence[otu] += 1
+
             for paralog in log.paralogs:
                 otu = paralog.otu()
                 # start counting at the first multiple of an OTU
                 if otu in seen:
                     paralog_freq[otu] += 1
                 seen.add(otu)
+
+        # normalize paralogy frequency by how often the OTU is present
+        for otu in presence:
+            if not otu in paralog_freq:
+                paralog_freq[otu] = 0
+            else:
+                paralog_freq[otu] = round(
+                        (float(paralog_freq[otu]) / float(presence[otu])) * 100, 3)
 
         with open(dir_out + FREQ_CSV_FILE, "w") as csv_out:
             csv_out.write("otu;paralogs\n")
@@ -74,7 +88,7 @@ class Summary(object):
         if MATPLOTLIB:
             plt.barh(otus, freq, alpha=0.5)
             plt.ylabel("OTU")
-            plt.xlabel("frequency")
+            plt.xlabel("paralogy frequency / times present (%)")
             plt.title("Paralog Frequency")
             plt.tight_layout()
             fig = plt.gcf()
@@ -227,34 +241,36 @@ class Summary(object):
 
     def homolog_missing_data(self):
         "Returns the percent missing data within the homologs."
-        sequences = 0
         pct_missing = 0.0
+        no_of_alignments = 0
+        no_of_otus = len(self.homolog_otus())
+
         for log in self.logs:
-            for sequence in log.msa.sequences:
-                sequences += 1
-                ungapped = len(sequence.ungapped())
-                missing = len(sequence) - ungapped
-                if len(sequence) > 0:
-                    pct_missing += float(missing) / float(len(sequence))
-        if sequences > 0:
-            return round(pct_missing / sequences, 3) * 100
+            no_of_alignments += 1
+            otus_missing = no_of_otus - len(log.msa.otus())
+            pct_missing += float(otus_missing) / float(no_of_otus)
+            pct_missing += log.msa.missing_data()
+
+        if no_of_alignments > 0:
+            return round(pct_missing / no_of_alignments, 3) * 100
         else:
             return 0
 
     def missing_data(self):
         "Returns the percent missing data within the orthologs."
-        sequences = 0
         pct_missing = 0.0
+        no_of_alignments = 0
+        no_of_otus = len(self.otus())
+
         for log in self.logs:
             for msa_out in log.msas_out:
-                for sequence in msa_out.sequences:
-                    sequences += 1
-                    ungapped = len(sequence.ungapped())
-                    missing = len(sequence) - ungapped
-                    if len(sequence) > 0:
-                        pct_missing += float(missing) / float(len(sequence))
-        if sequences > 0:
-            return round(pct_missing / sequences, 3) * 100
+                no_of_alignments += 1
+                otus_missing = no_of_otus - len(msa_out.otus())
+                pct_missing += float(otus_missing) / float(no_of_otus)
+                pct_missing += msa_out.missing_data()
+
+        if no_of_alignments > 0:
+            return round(pct_missing / no_of_alignments, 3) * 100
         else:
             return 0
 
@@ -263,14 +279,11 @@ class Summary(object):
         Returns the length of the concatenated alignment, if we were to
         concatenate all orthologs together.
         """
-        seq_lens = 0
+        cat_alignment_len = 0
         for log in self.logs:
             for msa_out in log.msas_out:
-                # It doesn't matter which sequence we picked since they're
-                # aligned and missing positions are denoted by gaps.
-                sequence = msa_out.sequences[0]
-                seq_lens += len(sequence)
-        return seq_lens
+                cat_alignment_len += msa_out.alignment_len()
+        return cat_alignment_len
 
     def homolog_cat_alignment(self):
         """
@@ -290,6 +303,7 @@ Homolog report
 --------------
 # of alignments:\t\t\t{}
 # of sequences:\t\t\t\t{}
+# of OTUs:\t\t\t\t{}
 avg # of sequences per alignment:\t{}
 avg # of OTUs:\t\t\t\t{}
 avg sequence length (ungapped):\t\t{}
@@ -299,6 +313,7 @@ longest sequence (ungapped):\t\t{}
 concatenated alignment length:\t\t{}""".format(
     self.homolog_seq_files(),
     self.homolog_seqs(),
+    len(self.homolog_otus()),
     self.homolog_avg_seqs(),
     self.homolog_avg_otus(),
     self.homolog_avg_seq_len(),
@@ -307,10 +322,11 @@ concatenated alignment length:\t\t{}""".format(
     self.homolog_missing_data(),
     self.homolog_cat_alignment())
 
-        row = "{};{};{};{};{};{};{};{};{};{}\n".format(
+        row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
             "homologs",
             self.homolog_seq_files(),
             self.homolog_seqs(),
+            len(self.homolog_otus()),
             self.homolog_avg_seqs(),
             self.homolog_avg_otus(),
             self.homolog_avg_seq_len(),
@@ -331,6 +347,7 @@ Ortholog report
 ---------------
 # of alignments:\t\t\t{}
 # of sequences:\t\t\t\t{}
+# of OTUs:\t\t\t\t{}
 avg # of sequences per alignment:\t{}
 avg # of OTUs:\t\t\t\t{}
 avg sequence length (ungapped):\t\t{}
@@ -340,6 +357,7 @@ longest sequence (ungapped):\t\t{}
 concatenated alignment length:\t\t{}""".format(
     self.sequence_files(),
     self.sequences(),
+    len(self.otus()),
     self.avg_sequences(),
     self.avg_otus(),
     self.avg_seq_len(),
@@ -348,10 +366,11 @@ concatenated alignment length:\t\t{}""".format(
     self.missing_data(),
     self.cat_alignment())
 
-        row = "{};{};{};{};{};{};{};{};{};{}\n".format(
+        row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
             title,
             self.sequence_files(),
             self.sequences(),
+            len(self.otus()),
             self.avg_sequences(),
             self.avg_otus(),
             self.avg_seq_len(),
@@ -374,6 +393,28 @@ concatenated alignment length:\t\t{}""".format(
         for log in self.logs:
             for msa in log.msas_out:
                 fasta.write(msa, wrap)
+
+    def homolog_otus(self):
+        "Returns a set of all OTUs within the homologs."
+        otus = set()
+
+        for log in self.logs:
+            tree = log.masked_tree
+            if tree:
+                for leaf in tree.iter_leaves():
+                    if leaf.name:
+                        otus.add(leaf.otu())
+
+        return otus
+
+    def otus(self):
+        "Returns a set of all OTUs within this Summary object."
+        otus_in_summary = set()
+        for log in self.logs:
+            for msa_out in log.msas_out:
+                otus_in_summary.update(msa_out.otus())
+
+        return otus_in_summary
 
 def mk_sum_out_title(dir_out):
     """

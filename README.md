@@ -18,7 +18,9 @@ Wiki](https://gitlab.com/fethalen/phylopypruner/wikis).
 * Collapse weakly supported nodes into polytomies
 * Five different paralogy pruning algorithms
 * Measure and remove OTUs with frequent paralogs
-* Get rid of problematic OTUs using taxon jackknifing
+* Identify problematic OTUs using taxon jackknifing
+* Exclude certain OTUs
+* Specify taxonomical groups and see how often they form a phylogenetic group
 * Mask monophylies by choosing the longest sequence or using pairwise distance
 
 ### Input data

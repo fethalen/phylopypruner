@@ -391,6 +391,12 @@ tree:\t\t\t\t\t{}
                extension)
 
     def get_msas_out(self, dir_out):
+        """
+        Takes an output directory as an input and generates a list of
+        MultipleSequenceAlignments based on the TreeNode objects within
+        this Log object's list of orthologs. The MSAs are stored in this logs
+        list of MSAs called 'msas_out'.
+        """
         for index, ortholog in enumerate(self.orthologs):
             if len(self.orthologs) is 1:
                 msa_out_path, extension = self.msa_out_path(dir_out)
@@ -398,8 +404,12 @@ tree:\t\t\t\t\t{}
                 msa_out_path, extension = self.msa_out_path(dir_out, index)
 
             msa_out = MultipleSequenceAlignment(msa_out_path, extension)
+
             for leaf in ortholog.iter_leaves():
-                msa_out.add_sequence(self.msa.get_sequence(leaf.name))
+                try:
+                    msa_out.add_sequence(self.msa.get_sequence(leaf.name))
+                except:
+                    pass
 
             if len(msa_out) > 0:
                 self.msas_out.append(msa_out)

@@ -7,6 +7,7 @@ import re
 AMINO_ACIDS = "^[ABCDEFGHIKLMNPQRSTUVWYZX*-.]*$"
 NUCLEOTIDES = "^[ATKMBVCNSWDGUYRH-.]*$"
 IUPAC_CODES = (AMINO_ACIDS, NUCLEOTIDES)
+GAP_CHARACTERS = {"-", "?", "x"}
 
 class Sequence(object):
     """
@@ -38,7 +39,7 @@ class Sequence(object):
 
     @property
     def description(self):
-        """A description or name of the sequence."""
+        "A description or name of the sequence."
         return self._description
 
     @description.setter
@@ -104,18 +105,26 @@ class Sequence(object):
         """
         Return this sequence's GC content as a floating point number.
         """
-        sequence = self.sequence_data
-        seq_lower = sequence.lower()
+        seq_lower = self.sequence_data.lower()
         nucleotides = 'acgt'
         for base in seq_lower:
             if not base in nucleotides:
                 print('Expected a nucleotide base (a, c, g, t), but found {} \
                         in sequence {}.'.format(base, self.description))
         gc_count = seq_lower.count('g') + seq_lower.count('c')
-        return round(float(gc_count) / len(sequence), 2)
+        return round(float(gc_count) / len(self.sequence_data), 2)
 
     def ungapped(self):
         """
-        Return this sequence without any gap character ('-').
+        Return this sequence without any gap character. Gap characters that are
+        considered include dash ('-'), question mark ('?') and
+        uppercase/lowercase X.
         """
-        return self.sequence_data.replace("-", "")
+        seq_ungapped = self.sequence_data.lower()
+        for character in GAP_CHARACTERS:
+            seq_ungapped = seq_ungapped.replace(character, "")
+        return seq_ungapped
+
+    def missing_data(self):
+        "Returns the percentage of missing data in this sequence."
+        return float(len(self) - len(self.ungapped())) / float(len(self))

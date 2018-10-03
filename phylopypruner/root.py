@@ -39,12 +39,8 @@ def midpoint(tree):
     Takes a TreeNode object as an input, calculates the tip to tip distances
     and then roots the tree halfway between the two longest tips.
     """
-    pass
-    # longest_a, longest_b = None
-    #
-    # for node in tree.traverse_postorder():
-    #     if not longest_a:
-    #         longest_a = node.distance_to(
+    for pair in tree.distances():
+        print(pair)
 
 def molecular_clock(tree):
     """

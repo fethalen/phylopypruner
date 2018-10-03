@@ -251,6 +251,28 @@ class TreeNode(object):
 
         return False
 
+    def distances(self):
+        """
+        Return the distance for all pairs of leaves within this TreeNode
+        object.
+        """
+        distances = dict()
+
+        for leaf_a in self.iter_leaves():
+            for leaf_b in self.iter_leaves():
+                if leaf_a is leaf_b:
+                    continue
+
+                leaves_in_key = False
+                for key in distances:
+                    if leaf_a and leaf_b in key:
+                        leaves_in_key = True
+
+                if not leaves_in_key:
+                    distances[(leaf_a, leaf_b)] = leaf_a.distance_to(leaf_b)
+
+        return distances
+
     def is_monophyletic_outgroup(self, outgroups):
         """
         Takes a list of OTUs as an input. Returns true if this node only
