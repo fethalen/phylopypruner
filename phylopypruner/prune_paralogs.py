@@ -28,8 +28,9 @@ def largest_subtree(node, min_taxa):
             continue
 
         size = sum(1 for _ in branch.iter_leaves())
-        if size < min_taxa:
-            continue
+        if min_taxa:
+            if size < min_taxa:
+                continue
 
         if not max_subtree:
             max_subtree = branch
