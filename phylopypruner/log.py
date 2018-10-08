@@ -6,11 +6,12 @@ Store information about performed operations.
 """
 
 from __future__ import print_function
+from __future__ import absolute_import
 from datetime import datetime
 import os.path
-from msa import MultipleSequenceAlignment
-from tree_node import TreeNode
-from settings import Settings
+from phylopypruner.msa import MultipleSequenceAlignment
+from phylopypruner.tree_node import TreeNode
+from phylopypruner.settings import Settings
 
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d")
 ORTHO_STATS_PATH = "/{}_ppp_ortho_stats.csv".format(TIMESTAMP)
@@ -326,7 +327,7 @@ class Log(object):
             ortho_str = "no orthologs were recovered"
         return ortho_str
 
-    def report(self, verbose, dir_out):
+    def report(self, dir_out):
         "Print a report of the records in this log."
         report = """
 MSA:\t\t\t\t\t{}
@@ -354,9 +355,6 @@ tree:\t\t\t\t\t{}
 
         for ortholog in self.orthologs:
             self.to_csv(dir_out, ortholog)
-
-        if verbose:
-            print(report)
 
     def to_csv(self, dir_out, ortholog):
         """

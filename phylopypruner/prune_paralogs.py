@@ -5,7 +5,8 @@ Implements various paralog pruning algorithms, used for finding orthologs in a
 gene tree.
 """
 
-import root
+from __future__ import absolute_import
+from phylopypruner import root
 
 def _has_enough_taxa(node, min_taxa):
     """

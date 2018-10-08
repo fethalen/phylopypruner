@@ -1,8 +1,9 @@
-"A collection of Log objects from previous runs."
+"Module for working with collections of Log objects."
 
+from __future__ import absolute_import
 import os
 import datetime
-import fasta
+from phylopypruner import fasta
 from textwrap import wrap
 from collections import defaultdict
 try:
@@ -83,16 +84,17 @@ class Summary(object):
                 csv_out.write("{};{}\n".format(otu, freq))
 
         otus = list(paralog_freq.keys())
+        indexes = range(len(otus))
         freq = list(paralog_freq.values())
 
         if MATPLOTLIB:
-            plt.barh(otus, freq, alpha=0.5)
+            plt.barh(indexes, freq, alpha=0.5)
+            plt.yticks(list(indexes), otus)
             plt.ylabel("OTU")
             plt.xlabel("paralogy frequency / times present (%)")
             plt.title("Paralog Frequency")
-            plt.tight_layout()
             fig = plt.gcf()
-            fig.set_size_inches(18.5, 10.5)
+            fig.set_size_inches(20.0, 15.0)
             plt.savefig(dir_out + FREQ_PLOT_FILE, dpi=150)
 
         return paralog_freq

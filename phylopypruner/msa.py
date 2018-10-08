@@ -1,7 +1,8 @@
 "Data type for storing a set of amino acid or nucleotide sequences."
 
+from __future__ import absolute_import
 import re
-from sequence import Sequence
+from phylopypruner.sequence import Sequence
 
 class MultipleSequenceAlignment(object):
     "Represents a set of sequences."

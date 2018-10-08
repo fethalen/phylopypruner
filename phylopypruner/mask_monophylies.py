@@ -6,8 +6,9 @@ Implements various algorithms for monophyly masking, used to prune away
 in-paralogs, isoforms, or other moonophyletic groups within the same OTU.
 """
 
+from __future__ import absolute_import
 from collections import defaultdict
-from tree_node import TreeNode
+from phylopypruner.tree_node import TreeNode
 
 def _get_new_root(node):
     # workaround to get rid of empty nodes at root
