@@ -1,18 +1,37 @@
-"Module for running various decontamination tools."
+"""Module for dealing with contamination-like issues.
+"""
 
 from __future__ import print_function
+from __future__ import absolute_import
 import sys
 import copy
 import datetime
 from collections import defaultdict
 from itertools import combinations
-import filtering
-from summary import Summary
-from prune_paralogs import prune_paralogs
+from phylopypruner import filtering
+from phylopypruner.summary import Summary
+from phylopypruner.prune_paralogs import prune_paralogs
 
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 
 def jackknife(summary, dir_out):
+    """Exclude each OTUs within the summary, one by one, perform paralogy
+    pruning and output summary statistics of the output alignments for each
+    subsample.
+
+    Parameters
+    ----------
+    summary : Summary object
+        Perform paralogy pruning on the Log object's masked tree attribute, for
+        each Log object within this Summary's logs attribute.
+    dir_out : str
+        Write the statistics for each case to the summary file within this
+        directory.
+
+    Returns
+    -------
+    None
+    """
     resampling = set(combinations(summary.otus(), len(summary.otus()) - 1))
     total = len(resampling)
     resamples = set()
@@ -52,24 +71,74 @@ def jackknife(summary, dir_out):
         summary.report("{}_excluded".format(excluded), dir_out)
 
 def _mean(data):
-    """ Return the sample arithmetic mean of data, a sequence of real-valued
-    numbers. The average of the empty list, '[]', is 0.
+    """Returns the sample arithmetic mean of data. 0 is returned if an empty
+    list was provided.
+
+    Parameters
+    ----------
+    data : list of floats
+
+    Returns
+    _______
+    out: float
+        The sample arithmetic mean of data.
     """
     return float(sum(data)) / max(len(data), 1)
 
 def _sdm(data):
-    """ Return the sum of square deviations of data.
+    """Returns the squared deviations from the mean (SDM) of data.
+
+    Parameters
+    ----------
+    data : list of floats
+
+    Returns
+    -------
+    out : float
+        The sum of square deviations of data.
     """
     return sum((x - _mean(data))**2 for x in data)
 
 def _std(data):
-    "Return the population standard deviation of data."
+    """Return the population standard deviation of data.
+
+    Parameters
+    ----------
+    data : list of floats
+
+    Returns
+    -------
+    out : float
+        The population standard deviation of data.
+    """
+
     if len(data) < 2:
         raise ValueError('variance requires at least two data points')
     return (_sdm(data) / len(data)) ** 0.5
 
 def prune_by_exclusion(summary, otus, dir_out):
-    """
+    """Exclude the OTUs within the provided list of OTUs from the masked trees
+    within summary, perform paralogy pruning and output statistics and
+    alignments for each ortholog recovered.
+
+    Parameters
+    ----------
+    summary : Summary object
+        Prune masked trees within the logs of this summary.
+    otus : list of strings
+        Exclude OTUs within this list from the trees in the summary.
+    dir_out : str
+        Output statistics to this directory.
+
+    Returns
+    -------
+    summary_out : Summary object
+        A new summary that was generated after performing paralogy pruning on
+        the masked trees within the input summary with the OTUs within the
+        provided list removed.
+    report : str
+        Printable statistics of the summary_out
+
     Takes a Summary object, a list of OTUs and the path to the output directory
     as an input. Returns a new Summary object that is the summary after
     paralogy pruning with the OTUs within the list excluded.
@@ -108,34 +177,58 @@ def prune_by_exclusion(summary, otus, dir_out):
     report = summary_out.report(excluded_str, dir_out)
     return summary_out, report
 
-def trim_freq_paralogs(summary, factor, paralog_freq):
+def trim_freq_paralogs(factor, paralog_freq):
+    """Returns a set of OTUs with a paralogy frequency that is factor times
+    larger than the standard deviation of the paralogy frequency of all OTUs.
+
+    Parameters
+    ----------
+    factor : float
+        Set the threshold to be this float multiplied by the standard deviation
+        of the paralogy frequency of all OTUs.
+    paralog_freq : dictionary
+        Paralogy frequency for each OTU, where key is OTU and paralogy
+        frequency is value.
+
+    Returns
+    _______
+    otus_above_threshold : list
+        A set of OTUs with a paralogy frequency above the threshold.
+    """
     treshold = _std(list(paralog_freq.values())) * factor
-    rogue_taxa = set()
+    otus_above_threshold = list()
 
     for otu in paralog_freq:
         if paralog_freq[otu] > treshold:
-            rogue_taxa.add(otu)
+            otus_above_threshold.append(otu)
 
-    rogue_taxa_str = "+".join(otu for otu in rogue_taxa)
-    rogue_taxa_str += "_excluded"
-
-    if not rogue_taxa:
+    if not otus_above_threshold:
         print("OTUs with frequent paralogs: none")
         return
 
     print("OTUs with frequent paralogs: " +
-          ", ".join(otu for otu in rogue_taxa))
+          ", ".join(otu for otu in otus_above_threshold))
 
-    return rogue_taxa
+    return otus_above_threshold
 
 def trim_divergent_otus(summary, factor):
-    """
-    Takes a Summary object, an integer and the path to an output directory as
-    an input. Calculates the average pairwise distance for each OTU within
-    <summary>. OTUs with an average pairwise distance that is <factor> times
-    the standard deviation of all average pairwise distances are removed from
-    the trees within the Summary object's logs. All trees are then pruned using
-    the same method that was provided in the summary.
+    """Return a list of OTUs in the summary with an average pairwise distance
+    that is larger than factor times the standard deviation of the pairwise
+    distance of all OTUs.
+
+    Parameters
+    ----------
+    summary : Summary object
+        The pairwise distance is derived from the trees within this Summary
+        object.
+    factor : float
+        Set the threshold to be this float times the standard deviation of the
+        pairwise distance for all OTUs.
+
+    Returns
+    ------
+    otus_above_threshold : list
+        List of OTUs above the established threshold.
     """
     otu_dists = defaultdict(float) # OTU is key, distance is value
     dists_count = defaultdict(int) # OTU is key, frequency is value
@@ -147,6 +240,10 @@ def trim_divergent_otus(summary, factor):
         sys.stdout.flush()
         print("calculating pairwise distances ({}/{} trees)".format(
             index, total), end="\r")
+
+        if not log.masked_tree:
+            # case were a 'masked tree' was not created due to too few OTUs
+            continue
 
         dists_in_tree = log.masked_tree.distances()
         for pair in dists_in_tree:

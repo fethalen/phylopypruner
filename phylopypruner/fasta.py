@@ -2,9 +2,10 @@
 Module for working with the FASTA file format.
 """
 
+from __future__ import absolute_import
 from os import path
 from textwrap import wrap
-from msa import MultipleSequenceAlignment
+from phylopypruner import msa
 
 def read(filename):
     """
@@ -16,29 +17,29 @@ def read(filename):
     sequence_data = ""
     description = ""
     extension = path.splitext(filename)[1]
-    msa = MultipleSequenceAlignment(filename, extension)
+    alignment = msa.MultipleSequenceAlignment(filename, extension)
 
     with open(filename) as fasta_file:
         for line in fasta_file:
             line = line.rstrip()
             if line.startswith(">"):
                 if sequence_data:
-                    msa.add_sequence(None, description, sequence_data)
+                    alignment.add_sequence(None, description, sequence_data)
                 description = line[1:]
                 sequence_data = ""
             else:
                 sequence_data += line
         if sequence_data:
-            msa.add_sequence(None, description, sequence_data)
-    return msa
+            alignment.add_sequence(None, description, sequence_data)
+    return alignment
 
-def write(msa, max_column):
+def write(alignment, max_column):
     """
     Takes a multiple sequence alignment object and a path as an input. Writes
     all sequences within that alignment to the provided filename.
     """
-    with open(msa.filename, "w") as fasta_file:
-        for sequence in msa.sequences:
+    with open(alignment.filename, "w") as fasta_file:
+        for sequence in alignment.sequences:
             if max_column:
                 seq_data = "\n".join(wrap(sequence.sequence_data, max_column))
             else:

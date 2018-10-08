@@ -1,15 +1,23 @@
 PhyloPyPruner
 -------------
 
-PhyloPyPruner is a phylogenetic tree-based orthology inference program for
-refining orthology inference made by graph-based (or phenetic) approaches.
+PhyloPyPruner is a tree-based orthology inference program for refining
+orthology inference made by a graph-based approach. In addition to implementing
+previously published paralogy pruning algorithms seen in
+[PhyloTreePruner](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3825643/),
+[UPhO](https://academic.oup.com/mbe/article/33/8/2117/2578877),
+[Agalma](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3840672/) and [Yang and
+Smith's
+phylogenomic_dataset_construction](https://www.ncbi.nlm.nih.gov/pubmed/25158799),
+this software provides tools for identifying and getting rid of operational
+taxonomical units (OTUs) that display contamination-like issues.
 
-PhyloPyPruner is under active development. I appreciate if you try it on your
-own data and [leave feedback](mailto:felix.thalen.1430@student.lu.se).
+PhyloPyPruner is currently under active development and I would appreciate it
+if you try this software on your own data and [leave
+feedback](mailto:felix.thalen.1430@student.lu.se).
 
-To get a list of options, either run the software without any parameters or by
-using the `-h` or `--help` flag. For more details, please see [the
-Wiki](https://gitlab.com/fethalen/phylopypruner/wikis).
+See [the Wiki](https://gitlab.com/fethalen/phylopypruner/wikis) for more
+details.
 
 ### Features
 
@@ -23,13 +31,34 @@ Wiki](https://gitlab.com/fethalen/phylopypruner/wikis).
 * Specify taxonomical groups and see how often they form a phylogenetic group
 * Mask monophylies by choosing the longest sequence or using pairwise distance
 
-### Input data
+### Installation
+
+This software runs under both Python 3 and 2.7. There are no external
+dependencies, but the plotting library [Matplotlib](https://matplotlib.org/)
+may be installed for generating paralog frequency plots.
+
+You can install PhyloPyPruner using pip.
+
+```bash
+pip install --user phylopypruner
+```
+
+### Usage
+
+Once installed, execute this software like so:
+
+```bash
+python -m phylopypruner
+```
+
+To get a list of options, either run the software without any arguments or, by
+using the `-h` or `--help` flag.
 
 Either provide a single multiple sequence alignment (MSA) and a Newick tree by
 using the `--msa` and `--tree` flags:
 
-```
-./phylopypruner --msa 16s.fas --tree 16s.tre
+```bash
+python -m phylopypruner --msa 16s.fas --tree 16s.tre
 ```
 
 or, provide a `path` to an input directory, containing multiple trees and
@@ -47,8 +76,8 @@ sequences](https://www.bioinformatics.org/sms/iupac.html).
 For inputting multiple files, you provide a path to the directory in which
 these files reside.
 
-```
-./phylopypruner --dir <path>
+```bash
+python -m phylopypruner --dir <path>
 ```
 
 The program will automatically look for trees and alignments with the same name
@@ -56,7 +85,7 @@ and run for each of these pair.
 
 ### Output files
 
-The following files are generated after running this program:
+The following files are generated after running this program.
 
 * `<timestamp>_<orthologs>/...` – output alignments
 * `<timestamp>_ppp_summary.log` – summary statistics for all alignments
@@ -64,6 +93,9 @@ The following files are generated after running this program:
 * `<timestamp>_ppp_ortho_stats.csv` – statistics for output alignments
 * `<timestamp>_ppp_paralog_freq.csv` – paralogy frequency data
 * `<timestamp>_ppp_paralog_freq.png` – paralogy frequency plot\*
+
+If no output directory has been specified by the `--output` flag, then output
+files will be located within the same directory as the input alignment files.
 
 \* – only produced if [Matplotlib](https://matplotlib.org/) is installed
 
