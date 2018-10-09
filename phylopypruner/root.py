@@ -42,13 +42,6 @@ def outgroup(tree, outgroups):
             return tree.reroot(branch), rooted
     return rooted
 
-def _longest_tip_to_tip_dist(node):
-    """
-    Takes a TreeNode object as an input. Calculates the tip to tip distances
-    between the given node and the rest of the leaves within the tree and
-    returns the longest distance.
-    """
-
 def midpoint(tree):
     """Calculate the tip to tip distances of the provided tree root the tree
     halfway between the two longest tips.
@@ -100,10 +93,4 @@ def midpoint(tree):
     if closest_node:
         print(closest_node.view())
 
-    return tree
-
-def molecular_clock(tree):
-    """
-    Takes a TreeNode object as an input ...
-    """
     return tree

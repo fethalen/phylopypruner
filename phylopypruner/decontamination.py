@@ -41,9 +41,9 @@ def jackknife(summary, dir_out):
         resample_summary = Summary()
         excluded = list(summary.otus().difference(combination))
 
-        sys.stdout.flush()
         print("jackknife resampling ({}/{} subsamples)".format(
             index, total), end="\r")
+        sys.stdout.flush()
 
         for log in summary_copy.logs:
             resample_log = copy.deepcopy(log)
@@ -111,7 +111,6 @@ def _std(data):
     out : float
         The population standard deviation of data.
     """
-
     if len(data) < 2:
         raise ValueError('variance requires at least two data points')
     return (_sdm(data) / len(data)) ** 0.5
@@ -237,9 +236,9 @@ def trim_divergent_otus(summary, factor):
 
     for index, log in enumerate(summary.logs, 1):
 
-        sys.stdout.flush()
-        print("calculating pairwise distances ({}/{} trees)".format(
+        print("comparing pairwise distances ({}/{} trees)".format(
             index, total), end="\r")
+        sys.stdout.flush()
 
         if not log.masked_tree:
             # case were a 'masked tree' was not created due to too few OTUs

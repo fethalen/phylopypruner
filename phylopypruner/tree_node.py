@@ -133,10 +133,18 @@ class TreeNode(object):
         return len(self.children) is 2
 
     def reroot(self, node):
-        """
-        Takes a TreeNode object as an input. If the provided TreeNode object
-        exists within this tree, then go ahead and reroot the tree using that
-        node.
+        """Root this node at the provided node.
+
+        Parameters
+        ----------
+        node : TreeNode object
+            The TreeNode object that becomes the new root, must exist within
+            this TreeNode object.
+
+        Returns
+        -------
+        root : TreeNode object
+            This tree rooted at the provided node.
         """
         if not isinstance(node, TreeNode):
             raise TypeError("{} must be a Treeroot object".format(node))
@@ -162,7 +170,8 @@ class TreeNode(object):
         sister = node.parent
         node.delete()
         root = TreeNode()
-        root.children = [node, sister]
+        root.add_child(node)
+        root.add_child(sister)
         self = root
         return self
 
