@@ -4,6 +4,7 @@
 Class for reading and writing to or from a Newick file.
 """
 
+from __future__ import absolute_import
 import re
 from collections import Counter
 
@@ -53,7 +54,7 @@ def read(path, root=None):
 
         # Create a new node if no node has been assigned.
         if not root:
-            from tree_node import TreeNode
+            from phylopypruner.tree_node import TreeNode
             root = TreeNode()
 
         node = None

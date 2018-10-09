@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-#pylint: disable=too-many-branches
-#pylint: disable=too-many-locals
 
 # Author: Felix Thalen
 # Date: July 24, 2018
@@ -25,6 +23,7 @@ import os
 import sys
 import datetime
 import shutil
+import pkg_resources
 from textwrap import wrap
 from phylopypruner import fasta
 from phylopypruner import newick
@@ -40,7 +39,7 @@ from phylopypruner.settings import Settings
 # ensures that input is working across both Python 2 and 3
 if hasattr(__builtins__, "raw_input"): input = raw_input
 
-VERSION = "0.1.3"
+VERSION = pkg_resources.require("phylopypruner")[0].version
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
                     ".frn"}
 NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree"}
@@ -248,7 +247,7 @@ def parse_args():
     Parse the arguments provided by the user.
     """
     parser = argparse.ArgumentParser(usage=__doc__)
-    parser.add_argument("-v", "--version",
+    parser.add_argument("-v", "-V", "--version",
                         action="version",
                         version=str(VERSION),
                         help="display the version number and exit")
@@ -410,6 +409,7 @@ directory, overwrite?")
     if args.msa and args.tree:
         # run for a single pair of files
         summary.logs.append(_get_orthologs(settings, "", dir_out))
+
     elif args.dir:
         # run for multiple files in directory
         if not args.dir[-1] == "/":
@@ -447,17 +447,17 @@ directory, overwrite?")
             except:
                 # corresponding file not found
                 continue
-            sys.stdout.flush()
             print("processing MSA: {}; processing tree: {} ({}/{} file \
 pairs)".format(settings.fasta_file, settings.nw_file, index, total),
                   end="\r")
+            sys.stdout.flush()
             summary.logs.append(_get_orthologs(settings, dir_in, dir_out))
         print("")
         mk_sum_out_title(dir_out)
-        homolog_report = summary.homolog_report(dir_out)
-        ortholog_report = summary.report("orthologs", dir_out)
-        paralog_freq = summary.paralogy_frequency(dir_out)
 
+    homolog_report = summary.homolog_report(dir_out)
+    ortholog_report = summary.report("orthologs", dir_out)
+    paralog_freq = summary.paralogy_frequency(dir_out)
     otus_to_exclude = []
 
     if args.trim_divergent:

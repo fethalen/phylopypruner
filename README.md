@@ -6,11 +6,11 @@ orthology inference made by a graph-based approach. In addition to implementing
 previously published paralogy pruning algorithms seen in
 [PhyloTreePruner](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3825643/),
 [UPhO](https://academic.oup.com/mbe/article/33/8/2117/2578877),
-[Agalma](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3840672/) and [Yang and
-Smith's
-phylogenomic_dataset_construction](https://www.ncbi.nlm.nih.gov/pubmed/25158799),
-this software provides tools for identifying and getting rid of operational
-taxonomical units (OTUs) that display contamination-like issues.
+[Agalma](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3840672/) and
+[Phylogenomic Dataset
+Reconstruction](https://www.ncbi.nlm.nih.gov/pubmed/25158799), this software
+provides tools for identifying and getting rid of operational taxonomical units
+(OTUs) that display contamination-like issues.
 
 PhyloPyPruner is currently under active development and I would appreciate it
 if you try this software on your own data and [leave
@@ -19,19 +19,21 @@ feedback](mailto:felix.thalen.1430@student.lu.se).
 See [the Wiki](https://gitlab.com/fethalen/phylopypruner/wikis) for more
 details.
 
-### Features
+## Feature list
 
 * Remove short sequences
-* Remove sequences with long branches
+* Remove relatively long branches
 * Collapse weakly supported nodes into polytomies
-* Five different paralogy pruning algorithms
-* Measure and remove OTUs with frequent paralogs
-* Identify problematic OTUs using taxon jackknifing
-* Exclude certain OTUs
-* Specify taxonomical groups and see how often they form a phylogenetic group
-* Mask monophylies by choosing the longest sequence or using pairwise distance
+* Prune paralogs using 1 out of 5 methods
+* Measure paralogy frequency
+* Remove OTUs with relatively high paralogy frequency
+* Mask monophylies by keepipng the longest sequence or the sequence with the shortest pairwise distance
+* Exclude individual OTUs entirely
+* Root trees using outgroup or midpoint rooting
+* Get rid of OTUs with sequences that display relatively high pairwise distance
+* Measure impact of individual OTUs using taxon jackknifing
 
-### Installation
+## Installation
 
 This software runs under both Python 3 and 2.7. There are no external
 dependencies, but the plotting library [Matplotlib](https://matplotlib.org/)
@@ -43,7 +45,7 @@ You can install PhyloPyPruner using pip.
 pip install --user phylopypruner
 ```
 
-### Usage
+## Usage
 
 Once installed, execute this software like so:
 
@@ -83,7 +85,7 @@ python -m phylopypruner --dir <path>
 The program will automatically look for trees and alignments with the same name
 and run for each of these pair.
 
-### Output files
+## Output files
 
 The following files are generated after running this program.
 
