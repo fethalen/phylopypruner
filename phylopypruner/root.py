@@ -40,7 +40,7 @@ def outgroup(tree, outgroups):
         if branch.is_monophyletic_outgroup(outgroups):
             rooted = True
             return tree.reroot(branch), rooted
-    return rooted
+    return tree, rooted
 
 def midpoint(tree):
     """Calculate the tip to tip distances of the provided tree root the tree

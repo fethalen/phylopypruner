@@ -14,7 +14,9 @@ except ImportError:
     print("{}suggestion{}: install Matplotlib (https://matplotlib.org/) to \
 get a barplot of the paralog frequency".format("\033[92m\033[1m", "\033[0m"))
     MATPLOTLIB = False
-
+HAVE_DISPLAY = "DISPLAY" in os.environ
+if not HAVE_DISPLAY:
+    MATPLOTLIB = False
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUM_HEADER = "id;alignments;sequences;otus;sequences_avg;otus_avg;seq_len_avg;\
 shortest_seq;longest_seq;pct_missing_data;cat_alignment_len\n"
