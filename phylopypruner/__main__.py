@@ -194,8 +194,6 @@ def _run(settings, msa, tree):
     if not rooted and settings.root:
         if settings.root == "midpoint":
             tree = root.midpoint(tree)
-        elif settings.root == "molecular_clock":
-            tree = root.molecular_clock(tree)
 
     # exclude taxa within the list settings.exclude
     if settings.exclude:

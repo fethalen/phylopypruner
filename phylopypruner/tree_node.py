@@ -172,6 +172,39 @@ class TreeNode(object):
         root = TreeNode()
         root.add_child(node)
         root.add_child(sister)
+
+        # remove unifurcations
+        for node in root.traverse_preorder():
+            parent = node.parent
+            if not parent:
+                continue
+
+            if len(parent) is 1 and not parent.is_root():
+                # Case where a child was removed from a bifurcating node; replace
+                # the node with the child.
+                child = parent.children[0]
+                parent.remove_child(child)
+                parent.name = child.name
+                parent.dist = parent.dist + child.dist
+                parent.support = child.support
+                parent.children = child.children
+
+        # remove empty leaves
+        while root.empty_leaves():
+            for leaf in root.iter_leaves():
+                if not leaf.name:
+                    leaf.delete()
+                    break
+
+        # workaround to make sure that child's parent is the same node as to
+        # which the child belongs to
+        for node in root.traverse_preorder():
+            if not node.children:
+                continue
+
+            for child in node.children:
+                child.parent = node
+
         self = root
         return self
 
@@ -363,7 +396,6 @@ class TreeNode(object):
         distance += node.dist
         parent = node.parent
 
-        # traverse provided node
         while parent:
             if parent is smallest_subtree:
                 return distance
