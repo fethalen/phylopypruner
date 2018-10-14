@@ -1,5 +1,4 @@
-"""Module for dealing with contamination-like issues.
-"""
+"Module for dealing with contamination-like issues."
 
 from __future__ import print_function
 from __future__ import absolute_import
@@ -271,3 +270,53 @@ def trim_divergent_otus(summary, factor):
         print("no OTUs with an average pairwise distance above threshold")
 
     return otus_above_threshold
+
+def trim_divergent_seqs(node, factor):
+    """Iterate over all multiple sequence alignments within the provided
+    summary and remove sequences with a pairwise distance that is larger than
+    factor times the standard deviation of the pairwise distance of all
+    sequences within that single gene.
+
+    Parameters
+    ----------
+    summary : Summary object
+        The pairwise distance is derived from the trees within this Summary
+        object.
+    factor : float
+        Set the threshold to be this float times the standard deviation of the
+        pairwise distance for all OTUs.
+
+    Returns
+    ------
+    seqs_above_threshold : list
+        List of OTUs above the established threshold.
+    """
+    seqs_above_threshold = 0
+
+    seq_dists = defaultdict(float) # leaf is key, distance is value
+    seq_count = defaultdict(int) # leaf is key, presence is value
+    avg_dists = defaultdict(float) # leaf is key, average distance is value
+    nodes_to_remove = set()
+
+    dists_in_tree = node.distances()
+    for pair in dists_in_tree:
+        leaf_a, leaf_b = pair
+        seq_dists[leaf_a] += dists_in_tree[pair]
+        seq_dists[leaf_b] += dists_in_tree[pair]
+        seq_count[leaf_a] += 1
+        seq_count[leaf_b] += 1
+
+    for leaf in seq_dists:
+        avg_dists[leaf] = round(seq_dists[leaf] / seq_count[leaf], 2)
+
+    print(avg_dists.values())
+    threshold = _std(list(avg_dists.values())) * factor
+
+    for leaf in avg_dists:
+        if avg_dists[leaf] > threshold:
+            seqs_above_threshold += 1
+            nodes_to_remove.add(leaf)
+
+    node.remove_nodes(nodes_to_remove)
+
+    return seqs_above_threshold
