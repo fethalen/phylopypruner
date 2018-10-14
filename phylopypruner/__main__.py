@@ -23,8 +23,8 @@ import os
 import sys
 import datetime
 import shutil
-import pkg_resources
 from textwrap import wrap
+import pkg_resources
 from phylopypruner import fasta
 from phylopypruner import newick
 from phylopypruner import filtering
@@ -162,6 +162,13 @@ def _run(settings, msa, tree):
     # trim long branches
     if settings.trim_lb:
         log.lbs_removed = list(filtering.prune_long_branches(tree, settings.trim_lb))
+
+    # trim divergent sequences
+    if settings.trim_divergent_seqs:
+        log.lbs_removed = list(filtering.prune_long_branches(
+            tree, settings.trim_divergent_seqs))
+        seqs_removed = decontamination.trim_divergent_seqs(tree, settings.trim_divergent_seqs)
+        print("trimmed {} divergent sequence".format(seqs_removed))
 
     # exit if number of OTUs < threshold
     if settings.min_taxa:
@@ -350,13 +357,21 @@ def parse_args():
                         help="remove OTUs with a paralogy frequency (PF) \
                               larger than <factor> times the standard \
                               deviation of the PF for all OTUs")
-    parser.add_argument("--trim-divergent",
+    parser.add_argument("--trim-divergent-otus",
                         default=None,
                         metavar="<factor>",
                         type=float,
                         help="remove OTUs with an average pairwise distance \
                              (PD) that is larger than <factor> times the \
                              standard deviation of the PD for all OTUs")
+    parser.add_argument("--trim-divergent-seqs",
+                        default=None,
+                        metavar="<factor>",
+                        type=float,
+                        help="remove individual sequences with an average \
+                              pairwise distance (PD) that is larger than \
+                              <factor> times the standard deviation of the PD \
+                              for all OTUs")
     parser.add_argument("--wrap",
                         metavar="<max column>",
                         default=None,
@@ -458,9 +473,9 @@ pairs)".format(settings.fasta_file, settings.nw_file, index, total),
     paralog_freq = summary.paralogy_frequency(dir_out)
     otus_to_exclude = []
 
-    if args.trim_divergent:
+    if args.trim_divergent_otus:
         otus_to_exclude += decontamination.trim_divergent_otus(
-            summary, args.trim_divergent)
+            summary, args.trim_divergent_otus)
 
     if args.trim_freq_paralogs:
         otus_to_exclude += decontamination.trim_freq_paralogs(

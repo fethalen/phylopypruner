@@ -16,6 +16,7 @@ class Settings(object):
         self._root = arguments.root
         self._mask = arguments.mask
         self._prune = arguments.prune
+        self._trim_divergent_seqs = arguments.trim_divergent_seqs
 
     @property
     def fasta_file(self):
@@ -115,3 +116,12 @@ class Settings(object):
     @exclude.setter
     def exclude(self, value):
         self._exclude = value
+
+    @property
+    def trim_divergent_seqs(self):
+        "Trim divergent sequence threshold."
+        return self._trim_divergent_seqs
+
+    @trim_divergent_seqs.setter
+    def trim_divergent_seqs(self, value):
+        self._trim_divergent_seqs = value
