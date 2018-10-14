@@ -10,8 +10,8 @@ previously published paralogy pruning algorithms seen in
 [Agalma](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3840672/) and
 [Phylogenomic Dataset
 Reconstruction](https://www.ncbi.nlm.nih.gov/pubmed/25158799), this software
-provides tools for identifying and getting rid of operational taxonomical units
-(OTUs) that display contamination-like issues.
+also provides methods for identifying and getting rid of operational
+taxonomical units (OTUs) that display contamination-like issues.
 
 PhyloPyPruner is currently under active development and I would appreciate it
 if you try this software on your own data and [leave
@@ -20,12 +20,12 @@ feedback](mailto:felix.thalen.1430@student.lu.se).
 See [the Wiki](https://gitlab.com/fethalen/phylopypruner/wikis) for more
 details.
 
-## Feature list
+## Features
 
 * Remove short sequences
 * Remove relatively long branches
 * Collapse weakly supported nodes into polytomies
-* Prune paralogs using 1 out of 5 methods
+* Prune paralogs using one out of five methods
 * Measure paralogy frequency
 * Remove OTUs with relatively high paralogy frequency
 * Mask monophylies by keepipng the longest sequence or the sequence with the shortest pairwise distance
@@ -37,8 +37,8 @@ details.
 ## Installation
 
 This software runs under both Python 3 and 2.7. There are no external
-dependencies, but the plotting library [Matplotlib](https://matplotlib.org/)
-may be installed for generating paralog frequency plots.
+dependencies, but [the plotting library Matplotlib](https://matplotlib.org/)
+can be installed for generating paralog frequency plots.
 
 You can install PhyloPyPruner using pip.
 
@@ -54,8 +54,8 @@ Once installed, execute this software like so:
 python -m phylopypruner
 ```
 
-To get a list of options, either run the software without any arguments or, by
-using the `-h` or `--help` flag.
+To get a list of options, run the software without any arguments or use the
+`-h` or `--help` flag.
 
 Either provide a single multiple sequence alignment (MSA) and a Newick tree by
 using the `--msa` and `--tree` flags:
@@ -90,15 +90,29 @@ and run for each of these pair.
 
 The following files are generated after running this program.
 
-* `<timestamp>_<orthologs>/...` – output alignments
-* `<timestamp>_ppp_summary.log` – summary statistics for all alignments
-* `<timestamp>_ppp_run.log` – detailed report of each performed action
-* `<timestamp>_ppp_ortho_stats.csv` – statistics for output alignments
-* `<timestamp>_ppp_paralog_freq.csv` – paralogy frequency data
-* `<timestamp>_ppp_paralog_freq.png` – paralogy frequency plot\*
+```
+<output directory>/
+├── <timestamp>_ppp_summary.csv
+├── <timestamp>_ppp_ortho_stats.csv
+├── <timestamp>_ppp_run.log
+├── <timestamp>_ppp_paralog_freq.csv
+├── <timestamp>_ppp_paralog_freq.png*
+└── <timestamp>_orthologs/
+│   ├── 1_pruned.fas
+│   ├── 2_pruned.fas
+│   ├── 3_pruned.fas
+│   └── 4_pruned.fas
+...
+```
 
-If no output directory has been specified by the `--output` flag, then output
-files will be located within the same directory as the input alignment files.
+If `<output directory>` has not been specified by the `--output` flag, then
+output files will be stored within the same directory as the input alignment
+file(s). See the [Output files
+section](https://gitlab.com/fethalen/phylopypruner/wikis/Output-Files) within
+[the Wiki](https://gitlab.com/fethalen/phylopypruner/wikis/home) for a more
+detailed
+[explanation](https://gitlab.com/fethalen/phylopypruner/wikis/Output-Files#explanation)
+of each individual output file.
 
 \* – only produced if [Matplotlib](https://matplotlib.org/) is installed
 
