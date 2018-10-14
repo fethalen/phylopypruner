@@ -1,4 +1,5 @@
 <img src="doc/images/ppp_icon_only.png" width="200">
+
 PhyloPyPruner
 -------------
 
