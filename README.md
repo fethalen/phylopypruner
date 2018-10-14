@@ -1,5 +1,4 @@
-![PhyloPyPruner][logo]
-[logo]: https://gitlab.com/fethalen/phylopypruner/tree/master/doc/images/ppp_logo.png "PhyloPyPruner"
+![PhyloPyPruner](https://gitlab.com/fethalen/phylopypruner/tree/master/doc/images/ppp_logo.png)
 
 PhyloPyPruner is a tree-based orthology inference program for refining
 orthology inference made by a graph-based approach. In addition to implementing
