@@ -1,4 +1,4 @@
-<img src="doc/images/ppp_logo.png" width="220" class="center">
+<p align="center"><img src="doc/images/ppp_logo.png" width="230" class="center"></p>
 
 PhyloPyPruner is a tree-based orthology inference program for refining
 orthology inference made by a graph-based approach. In addition to implementing
