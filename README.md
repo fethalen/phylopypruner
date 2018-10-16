@@ -52,17 +52,20 @@ To get a list of options, run the software without any arguments or use the
 sequence alignment (MSA) in FASTA format and a Newick tree or, the path to a
 directory containing multiple trees and alignments.
 
-**Example 1.** Providing a single corresponding tree and alignment.
+**Example 1.** Providing a single corresponding tree and alignment. In this
+case monophyletic masking will be performed by choosing the sequence with the
+shorter pairwise distance to its sister group and paralogy pruning will be done
+using the largest subtree (LS) algorithm.
 
 ```bash
 python -m phylopypruner --msa <filename>.fas --tree <filename>.tre
 ```
 
-**Example 2.** Run PhyloPyPruner on every MSA and tree pair within the
-directory within `<path>`. Don't include orthologs with fewer than 10 OTUs,
-remove sequence shorter than 100 positions, collapse nodes with a support value
-lower than 80% into polytomies, remove branches that are 5 times longer than
-the standard deviation of all branch lengths and remove OTUs with a paralogy
+**Example 2.** Run PhyloPyPruner for every MSA and tree pair within the
+directory in `<path>`. Don't include orthologs with fewer than 10 OTUs, remove
+sequence shorter than 100 positions, collapse nodes with a support value lower
+than 80% into polytomies, remove branches that are 5 times longer than the
+standard deviation of all branch lengths and remove OTUs with a paralogy
 frequency that is larger than 5 times the standard deviation of the paralogy
 frequency for all OTUs.
 
@@ -70,6 +73,23 @@ frequency for all OTUs.
 python -m phylopypruner --dir <path> --min-taxa 10 --min-len 100 --min-support
 80 --trim-lb 5 --trim-freq-paralogs 5
 ```
+
+**Example 3.** Run PhyloPyPruner for every MSA and tree pair within the
+directory in `<path>`. Mask monophylies by choosing the longest sequence, prune
+paralogs using the maximum inclusion (MI) algorithm, remove OTUs with sequences
+with an average pairwise distance that is 10 times larger than the standard
+deviation of the average pairwise distance of the sequences for all OTUs and
+generate statistics for the removal of OTUs using taxon jackknifing.
+
+```bash
+python -m phylopypruner --dir <path> --mask longest --prune MI --trim-divergent
+10 --jackknife
+```
+
+>>>
+**Note:** Taxon jackknifing multiplies the execution time by the amount of OTUs
+available within each input alignment.
+>>>
 
 FASTA descriptions and Newick names must match and has to be in one of the
 following formats: `OTU|ID` or `OTU@ID`, where `OTU` is the operational
