@@ -1,4 +1,5 @@
-<p align="center"><img src="doc/images/ppp_logo.png" width="230" class="center"></p>
+PhyloPyPruner
+-------------
 
 PhyloPyPruner is a tree-based orthology inference program for refining
 orthology inference made by a graph-based approach. In addition to implementing
@@ -30,7 +31,7 @@ details.
 * Exclude individual OTUs entirely
 * Root trees using outgroup or midpoint rooting
 * Get rid of OTUs with sequences that display relatively high pairwise distance
-* Measure impact of individual OTUs using taxon jackknifing
+* Measure the impact of individual OTUs using taxon jackknifing
 
 ## Installation
 
@@ -46,43 +47,32 @@ pip install --user phylopypruner
 
 ## Usage
 
-Once installed, execute this software like so:
-
-```bash
-python -m phylopypruner
-```
-
 To get a list of options, run the software without any arguments or use the
-`-h` or `--help` flag.
+`-h` or `--help` flag. PhyloPyPruner requires either a corresponding multiple
+sequence alignment (MSA) in FASTA format and a Newick tree or, the path to a
+directory containing multiple trees and alignments.
 
-Either provide a single multiple sequence alignment (MSA) and a Newick tree by
-using the `--msa` and `--tree` flags:
+**Ex 1.** Single tree and alignment.
 
 ```bash
-python -m phylopypruner --msa 16s.fas --tree 16s.tre
+python -m phylopypruner --msa <filename>.fas --tree <filename>.tre
 ```
 
-or, provide a `path` to an input directory, containing multiple trees and
-alignments, by typing `--dir path`.
+**Example 2.** Multiple trees and alignment.
 
-FASTA descriptions and Newick names must match and has to be in one of the
-following formats: `OTU|ID` or `OTU@ID`, where `OTU` is the operational
-taxonomical unit (usually the species) and `ID` is a unique annotation or
-sequence identifier. For example: `>Meiomenia_swedmarki|Contig00001_Hsp90`.
-
-Sequence descriptions and tree names are not allowed to deviate from each
-other. Sequence data needs to be [valid IUPAC nucleotide or amino acid
-sequences](https://www.bioinformatics.org/sms/iupac.html).
-
-For inputting multiple files, you provide a path to the directory in which
-these files reside.
+Multiple alignments:
 
 ```bash
 python -m phylopypruner --dir <path>
 ```
 
-The program will automatically look for trees and alignments with the same name
-and run for each of these pair.
+FASTA descriptions and Newick names must match and has to be in one of the
+following formats: `OTU|ID` or `OTU@ID`, where `OTU` is the operational
+taxonomical unit (usually the species) and `ID` is a unique annotation or
+sequence identifier. For example: `>Meiomenia_swedmarki|Contig00001_Hsp90`.
+Sequence descriptions and tree names are not allowed to deviate from each
+other. Sequence data needs to be [valid IUPAC nucleotide or amino acid
+sequences](https://www.bioinformatics.org/sms/iupac.html).
 
 ## Output files
 
