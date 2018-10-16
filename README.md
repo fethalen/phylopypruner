@@ -52,18 +52,29 @@ To get a list of options, run the software without any arguments or use the
 sequence alignment (MSA) in FASTA format and a Newick tree or, the path to a
 directory containing multiple trees and alignments.
 
-**Ex 1.** Single tree and alignment.
+**Example 1.** Providing a single corresponding tree and alignment.
 
 ```bash
 python -m phylopypruner --msa <filename>.fas --tree <filename>.tre
 ```
 
-**Example 2.** Multiple trees and alignment.
-
-Multiple alignments:
+**Example 2.** Providing a path to multiple trees and alignments.
 
 ```bash
 python -m phylopypruner --dir <path>
+```
+
+**Example 2.** Run PhyloPyPruner on every MSA and tree pair within the
+directory within `<path>`. Don't include orthologs with fewer than 10 OTUs,
+remove sequence shorter than 100 positions, collapse nodes with a support value
+lower than 80% into polytomies, remove branches that are 5 times longer than
+the standard deviation of all branch lengths and remove OTUs with a paralogy
+frequency that is larger than 5 times the standard deviation of the paralogy
+frequency for all OTUs.
+
+```bash
+python -m phylopypruner --dir <path> --min-taxa 10 --min-len 100 --min-support
+80 --trim-lb 5 --trim-freq-paralogs 5
 ```
 
 FASTA descriptions and Newick names must match and has to be in one of the
