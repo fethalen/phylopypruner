@@ -58,12 +58,6 @@ directory containing multiple trees and alignments.
 python -m phylopypruner --msa <filename>.fas --tree <filename>.tre
 ```
 
-**Example 2.** Providing a path to multiple trees and alignments.
-
-```bash
-python -m phylopypruner --dir <path>
-```
-
 **Example 2.** Run PhyloPyPruner on every MSA and tree pair within the
 directory within `<path>`. Don't include orthologs with fewer than 10 OTUs,
 remove sequence shorter than 100 positions, collapse nodes with a support value
