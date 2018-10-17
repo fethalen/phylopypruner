@@ -78,7 +78,7 @@ class Summary(object):
                 paralog_freq[otu] = 0
             else:
                 paralog_freq[otu] = round(
-                        (float(paralog_freq[otu]) / float(presence[otu])) * 100, 3)
+                    (float(paralog_freq[otu]) / float(presence[otu])) * 100, 3)
 
         with open(dir_out + FREQ_CSV_FILE, "w") as csv_out:
             csv_out.write("otu;paralogs\n")
@@ -90,14 +90,14 @@ class Summary(object):
         freq = list(paralog_freq.values())
 
         if MATPLOTLIB:
-            plt.barh(indexes, freq, alpha=0.5)
+            plt.barh(y=indexes, width=freq, color="black", edgecolor="black", alpha=0.5)
             plt.yticks(list(indexes), otus)
             plt.ylabel("OTU")
-            plt.xlabel("paralogy frequency / times present (%)")
+            plt.xlabel("number of paralogs / times present in alignments")
             plt.title("Paralog Frequency")
             fig = plt.gcf()
-            fig.set_size_inches(20.0, 15.0)
-            plt.savefig(dir_out + FREQ_PLOT_FILE, dpi=150)
+            fig.set_size_inches(12.0, len(otus) * 0.17)
+            plt.savefig(dir_out + FREQ_PLOT_FILE, bbox_inches='tight', dpi=300)
 
         return paralog_freq
 
