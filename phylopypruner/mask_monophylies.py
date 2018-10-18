@@ -82,7 +82,10 @@ def _longest_seq(node, msa):
     longest = None
     for leaf in node.iter_leaves():
         seq_len = _sequence_len(msa, leaf.name)
-        if not longest or seq_len > longest:
+        if not longest:
+            longest = seq_len
+            leaf_to_keep = leaf
+        elif seq_len > longest:
             longest = seq_len
             leaf_to_keep = leaf
     return leaf_to_keep

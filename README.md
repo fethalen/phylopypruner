@@ -1,16 +1,38 @@
 PhyloPyPruner
 -------------
 
-PhyloPyPruner is a tree-based orthology inference program for refining
-orthology inference made by a graph-based approach. In addition to implementing
-previously published paralogy pruning algorithms seen in
+PhyloPyPruner is a Python package for tree-based orthology inference that is
+used to refine the output of a graph-based approach (e.g.,
+[OrthoMCL](https://www.ncbi.nlm.nih.gov/pubmed/12952885),
+[OrthoFinder](https://www.ncbi.nlm.nih.gov/pubmed/26243257) or
+[HaMStR](https://www.ncbi.nlm.nih.gov/pubmed/19586527)) by removing sequences
+related through gene duplication. In addition to filters and algorithms seen in
+pre-existing tools such as
 [PhyloTreePruner](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3825643/),
 [UPhO](https://academic.oup.com/mbe/article/33/8/2117/2578877),
 [Agalma](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3840672/) and
 [Phylogenomic Dataset
-Reconstruction](https://www.ncbi.nlm.nih.gov/pubmed/25158799), this software
-also provides methods for identifying and getting rid of operational
-taxonomical units (OTUs) that display contamination-like issues.
+Reconstruction](https://www.ncbi.nlm.nih.gov/pubmed/25158799), this package
+provide new methods for differentiating contamination-like sequences from
+paralogs.
+
+What do we mean by 'contamination-like'? Contaminant sequences present in even
+a single taxon can cause tree-based approaches to erroneously infer paralogy
+and unnecessarily exclude many sequences. We define contamination-like
+sequences as those interpreted as paralogs by earlier tree-based approaches,
+but, based on their position in a tree relative to other sequences from the
+same taxon, and a lack of evidence for paralogy in other taxa, are most likely
+the result of exogenous contamination, misalignment, sequencing errors, etc.
+
+In addition to the new methods for resolving contamination-like issues, by
+providing earlier tree-based approaches as a single executable, PhyloPyPruner
+have unique combination of features such as:
+
+* allowing polytomies in input trees for all paralogy pruning algorithms
+* collapsing weakly supported nodes into polytomies in combination with all
+    paralogy pruning algorithms
+* rooting trees after monophyly masking in combination with the 'largest subtree
+    (LS)' paralogy pruning algorithm
 
 PhyloPyPruner is currently under active development and I would appreciate it
 if you try this software on your own data and [leave
@@ -22,16 +44,19 @@ details.
 ## Features
 
 * Remove short sequences
-* Remove relatively long branches
+* Remove sequences with a long branch length relative to others
 * Collapse weakly supported nodes into polytomies
 * Prune paralogs using one out of five methods
-* Measure paralogy frequency
-* Remove OTUs with relatively high paralogy frequency
 * Mask monophylies by keepipng the longest sequence or the sequence with the shortest pairwise distance
-* Exclude individual OTUs entirely
-* Root trees using outgroup or midpoint rooting
-* Get rid of OTUs with sequences that display relatively high pairwise distance
-* Measure the impact of individual OTUs using taxon jackknifing
+* Root the tree using midpoint or outgroup rooting
+* Calculate and visualize _paralogy frequency (PF)_, the number of paralogs
+  for an OTU divided by the number of alignments that said OTU is present in
+* Exclude OTUs with a high PF relative to all OTUs
+* Remove OTUs with an average pairwise distance that is high relative to all
+    OTUs
+* Ignore OTUs one-by-one during tree-based orthology inference and identify
+    OTUs whose exclusion improves metrics of supermatrix quality such as the
+    number of output alignments or missing data
 
 ## Installation
 
@@ -78,12 +103,13 @@ python -m phylopypruner --dir <path> --min-taxa 10 --min-len 100 --min-support
 directory in `<path>`. Mask monophylies by choosing the longest sequence, prune
 paralogs using the maximum inclusion (MI) algorithm, remove OTUs with sequences
 with an average pairwise distance that is 10 times larger than the standard
-deviation of the average pairwise distance of the sequences for all OTUs and
-generate statistics for the removal of OTUs using taxon jackknifing.
+deviation of the average pairwise distance of the sequences for all OTUs,
+generate statistics for the removal of OTUs using taxon jackknifing and root at
+the outgroups in `<names of outgroups>`.
 
 ```bash
 python -m phylopypruner --dir <path> --mask longest --prune MI --trim-divergent
-10 --jackknife
+10 --jackknife --outgroup <names of outgroups>
 ```
 
 >>>
@@ -98,6 +124,10 @@ sequence identifier. For example: `>Meiomenia_swedmarki|Contig00001_Hsp90`.
 Sequence descriptions and tree names are not allowed to deviate from each
 other. Sequence data needs to be [valid IUPAC nucleotide or amino acid
 sequences](https://www.bioinformatics.org/sms/iupac.html).
+
+![](doc/images/output_example.png)
+**Figure 1.** Example of what the printed output looks like after running
+PhyloPyPruner with the `--trim-freq-paralogs` flag.
 
 ## Output files
 
@@ -128,5 +158,8 @@ detailed
 of each individual output file.
 
 \* – only produced if [Matplotlib](https://matplotlib.org/) is installed
+
+![](doc/images/paralog_freq.png)
+**Figure 2.** Example of the paralogy frequency (PF) plot.
 
 © [Kocot Lab](https://www.kocotlab.com/) 2018

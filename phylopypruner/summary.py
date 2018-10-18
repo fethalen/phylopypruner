@@ -93,7 +93,7 @@ class Summary(object):
                 paralog_freq[otu] = 0
             else:
                 paralog_freq[otu] = round(
-                    (float(paralog_freq[otu]) / float(presence[otu])) * 100, 3)
+                    (float(paralog_freq[otu]) / float(presence[otu])) * 100, 1)
 
         with open(dir_out + FREQ_CSV_FILE, "w") as csv_out:
             csv_out.write("otu;paralogs\n")
@@ -271,7 +271,7 @@ class Summary(object):
             pct_missing += log.msa.missing_data()
 
         if no_of_alignments > 0:
-            return round((pct_missing / no_of_alignments) * 100, 3)
+            return round((pct_missing / no_of_alignments) * 100, 1)
         else:
             return 0
 
@@ -289,7 +289,7 @@ class Summary(object):
                 pct_missing += msa_out.missing_data()
 
         if no_of_alignments > 0:
-            return round((pct_missing / no_of_alignments) * 100, 3)
+            return round((pct_missing / no_of_alignments) * 100, 1)
         else:
             return 0
 
@@ -330,8 +330,8 @@ class Summary(object):
             Overview statistics of the summary.
         """
         homolog_report = """
-Homolog report
---------------
+Input Alignments
+----------------
 # of alignments:\t\t\t{}
 # of sequences:\t\t\t\t{}
 # of OTUs:\t\t\t\t{}
@@ -387,8 +387,8 @@ concatenated alignment length:\t\t{}""".format(
             Overview statistics of the summary.
         """
         report = """
-Ortholog report
----------------
+Output Alignments
+-----------------
 # of alignments:\t\t\t{}
 # of sequences:\t\t\t\t{}
 # of OTUs:\t\t\t\t{}
