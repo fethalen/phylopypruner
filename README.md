@@ -126,7 +126,7 @@ other. Sequence data needs to be [valid IUPAC nucleotide or amino acid
 sequences](https://www.bioinformatics.org/sms/iupac.html).
 
 <img src="doc/images/output_example.png" alt="Output Example"
-width="750"/>\
+width="650"/>\
 **Figure 1.** Example of what the printed output looks like after running
 PhyloPyPruner with the `--trim-freq-paralogs` flag.
 
