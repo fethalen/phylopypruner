@@ -111,6 +111,8 @@ def prune_long_branches(node, factor):
 
     for leaf in node.iter_leaves():
         dists.append(leaf.dist)
+    if len(dists) < 2:
+        return leaves_to_remove
     treshold = _std(dists) * factor
 
     for leaf in node.iter_leaves():

@@ -18,8 +18,8 @@ HAVE_DISPLAY = "DISPLAY" in os.environ
 if not HAVE_DISPLAY:
     MATPLOTLIB = False
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
-SUM_HEADER = "id;alignments;sequences;otus;sequences_avg;otus_avg;seq_len_avg;\
-shortest_seq;longest_seq;pct_missing_data;cat_alignment_len\n"
+SUM_HEADER = "id;alignments;sequences;otus;meanSequences;meanOtus;meanSeqLen;\
+shortestSeq;longestSeq;pctMissingData;catAlignmentLen\n"
 SUM_PATH = "/{}_ppp_summary.csv".format(TIMESTAMP)
 FREQ_PLOT_FILE = "/{}_ppp_paralog_freq.png".format(TIMESTAMP)
 FREQ_CSV_FILE = "/{}_ppp_paralog_freq.csv".format(TIMESTAMP)
@@ -50,6 +50,21 @@ class Summary(object):
         self._logs = value
 
     def paralogy_frequency(self, dir_out):
+        """Calculate the paralogy frequency (PF) for all OTUs within this
+        summary, where paralogy frequency is the number of paralogs divided by
+        the number of alignments that each OTU is present in. Output the
+        statistics in form of a CSV file, a PNG plot and return a dictionary.
+
+        Parameters
+        ----------
+        dir_out : str
+            Path to the directory to which you wish to output the PF plot.
+
+        Returns
+        -------
+        paralog_freq : dict
+            Dictionary where a OTU string is key and PF, as a float, is the value.
+        """
         if os.path.isfile(dir_out + FREQ_PLOT_FILE):
             os.remove(dir_out + FREQ_PLOT_FILE)
 
@@ -93,7 +108,7 @@ class Summary(object):
             plt.barh(y=indexes, width=freq, color="black", edgecolor="black", alpha=0.5)
             plt.yticks(list(indexes), otus)
             plt.ylabel("OTU")
-            plt.xlabel("number of paralogs / times present in alignments")
+            plt.xlabel("number of paralogs / number of alignments OTU is in")
             plt.title("Paralog Frequency")
             fig = plt.gcf()
             fig.set_size_inches(12.0, len(otus) * 0.17)
@@ -118,7 +133,7 @@ class Summary(object):
         "Returns the average number of sequences within the homolog phylogeny."
         seq_files = self.homolog_seq_files()
         if seq_files > 0:
-            return self.homolog_seqs() / seq_files
+            return int(self.homolog_seqs() / seq_files)
         else:
             return 0
 
@@ -131,7 +146,7 @@ class Summary(object):
                 sequences += 1
                 seq_lens += len(sequence.ungapped())
         if sequences > 0:
-            return seq_lens / sequences
+            return int(seq_lens / sequences)
         else:
             return 0
 
@@ -194,7 +209,7 @@ class Summary(object):
         "Returns the average number of sequences per sequence file."
         no_of_files = self.sequence_files()
         if no_of_files > 0:
-            return self.sequences() / self.sequence_files()
+            return int(self.sequences() / self.sequence_files())
         else:
             return 0
 
@@ -212,7 +227,7 @@ class Summary(object):
                     ortholog_count += 1
 
         if ortholog_count > 0:
-            return otus_total / ortholog_count
+            return int(otus_total / ortholog_count)
         else:
             return 0
 
@@ -239,7 +254,7 @@ class Summary(object):
             otus_total += len(otus)
             ortholog_count += 1
         if ortholog_count > 0:
-            return otus_total / ortholog_count
+            return int(otus_total / ortholog_count)
         else:
             return 0
 
@@ -256,7 +271,7 @@ class Summary(object):
             pct_missing += log.msa.missing_data()
 
         if no_of_alignments > 0:
-            return round(pct_missing / no_of_alignments, 3) * 100
+            return round((pct_missing / no_of_alignments) * 100, 3)
         else:
             return 0
 
@@ -274,7 +289,7 @@ class Summary(object):
                 pct_missing += msa_out.missing_data()
 
         if no_of_alignments > 0:
-            return round(pct_missing / no_of_alignments, 3) * 100
+            return round((pct_missing / no_of_alignments) * 100, 3)
         else:
             return 0
 
@@ -301,7 +316,19 @@ class Summary(object):
         return seq_lens
 
     def homolog_report(self, dir_out):
-        "Output summary statistics for the input files."
+        """Output a summary of the input alignments. Title is always
+        'homologs'.
+
+        Parameters
+        ----------
+        dir_out : str
+            Path to the output directory that the summary file is saved to.
+
+        Return
+        ------
+        report : str
+            Overview statistics of the summary.
+        """
         homolog_report = """
 Homolog report
 --------------
@@ -345,7 +372,20 @@ concatenated alignment length:\t\t{}""".format(
         return homolog_report
 
     def report(self, title, dir_out):
-        "Output a summary of the files for this run."
+        """Output a summary of the files for this run.
+
+        Parameters
+        ----------
+        title : str
+            The ID of the summary file.
+        dir_out : str
+            Path to the output directory that the summary file is saved to.
+
+        Return
+        ------
+        report : str
+            Overview statistics of the summary.
+        """
         report = """
 Ortholog report
 ---------------
