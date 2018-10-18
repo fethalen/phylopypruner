@@ -43,8 +43,8 @@ VERSION = pkg_resources.require("phylopypruner")[0].version
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
                     ".frn"}
 NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree"}
-HEADER = "id;sequences;seq_len_avg;shortest_seq;longest_seq;pct_missing_data;\
-alignment_len\n"
+HEADER = "id;sequences;meanSeqLen;shortestSeq;longestSeq;pctMissingData;\
+alignmentLen\n"
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 ORTHO_STATS_PATH = "/{}_ppp_ortho_stats.csv".format(TIMESTAMP)
 LOG_PATH = "/{}_ppp_run.log".format(TIMESTAMP)
@@ -198,9 +198,9 @@ def _run(settings, msa, tree):
         if not settings.prune == "MO":
             tree, rooted = root.outgroup(tree, settings.outgroup)
 
-    if not rooted and settings.root:
-        if settings.root == "midpoint":
-            tree = root.midpoint(tree)
+    # if not rooted and settings.root:
+    #     if settings.root == "midpoint":
+    #         tree = root.midpoint(tree)
 
     # exclude taxa within the list settings.exclude
     if settings.exclude:
@@ -474,12 +474,16 @@ pairs)".format(settings.fasta_file, settings.nw_file, index, total),
     otus_to_exclude = []
 
     if args.trim_divergent_otus:
-        otus_to_exclude += decontamination.trim_divergent_otus(
+        divergent_otus = decontamination.trim_divergent_otus(
             summary, args.trim_divergent_otus)
+        if divergent_otus:
+            otus_to_exclude += divergent_otus
 
     if args.trim_freq_paralogs:
-        otus_to_exclude += decontamination.trim_freq_paralogs(
+        freq_paralogs = decontamination.trim_freq_paralogs(
             args.trim_freq_paralogs, paralog_freq)
+        if freq_paralogs:
+            otus_to_exclude += freq_paralogs
 
     if otus_to_exclude:
         if args.include:
