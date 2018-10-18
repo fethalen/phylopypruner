@@ -13,8 +13,9 @@ pre-existing tools such as
 [Agalma](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3840672/) and
 [Phylogenomic Dataset
 Reconstruction](https://www.ncbi.nlm.nih.gov/pubmed/25158799), this package
-provide new methods for differentiating contamination-like sequences from
-paralogs.
+provide new methods for differentiating [contamination-like
+sequences](https://gitlab.com/fethalen/phylopypruner/wikis/About-PhyloPyPruner#contamination-like-issues-)
+from paralogs.
 
 What do we mean by 'contamination-like'? Contaminant sequences present in even
 a single taxon can cause tree-based approaches to erroneously infer paralogy
