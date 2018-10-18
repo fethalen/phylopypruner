@@ -126,7 +126,7 @@ other. Sequence data needs to be [valid IUPAC nucleotide or amino acid
 sequences](https://www.bioinformatics.org/sms/iupac.html).
 
 <img src="doc/images/output_example.png" alt="Output Example"
-width="700"/></br>
+width="750"/>\
 **Figure 1.** Example of what the printed output looks like after running
 PhyloPyPruner with the `--trim-freq-paralogs` flag.
 
@@ -160,7 +160,7 @@ of each individual output file.
 
 \* – only produced if [Matplotlib](https://matplotlib.org/) is installed
 
-<img src="doc/images/paralog_freq.png" alt="Paralogy Frequency Plot" width="800"/></br>
+<img src="doc/images/paralog_freq.png" alt="Paralogy Frequency Plot" width="800"/>\
 **Figure 2.** Example of the paralogy frequency (PF) plot.
 
 © [Kocot Lab](https://www.kocotlab.com/) 2018
