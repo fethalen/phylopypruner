@@ -17,14 +17,6 @@ provide new methods for differentiating [contamination-like
 sequences](https://gitlab.com/fethalen/phylopypruner/wikis/About-PhyloPyPruner#contamination-like-issues-)
 from paralogs.
 
-What do we mean by 'contamination-like'? Contaminant sequences present in even
-a single taxon can cause tree-based approaches to erroneously infer paralogy
-and unnecessarily exclude many sequences. We define contamination-like
-sequences as those interpreted as paralogs by earlier tree-based approaches,
-but, based on their position in a tree relative to other sequences from the
-same taxon, and a lack of evidence for paralogy in other taxa, are most likely
-the result of exogenous contamination, misalignment, sequencing errors, etc.
-
 In addition to the new methods for resolving contamination-like issues, by
 providing earlier tree-based approaches as a single executable, PhyloPyPruner
 have unique combination of features such as:
