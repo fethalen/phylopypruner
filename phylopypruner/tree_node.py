@@ -376,9 +376,29 @@ class TreeNode(object):
         if not isinstance(node, TreeNode):
             raise TypeError("{} must be a TreeNode object".format(node))
 
-        distance = 0
+        distance = 0.0
 
         if node is self:
+            return distance
+
+        # We need a different approach if this node is a root or if the
+        # provided node is a root.
+        if self.is_root():
+            root = self
+            leaf = node
+        elif node.is_root():
+            root = node
+            leaf = self
+        else:
+            root = None
+
+        if root:
+            distance += root.dist
+            parent = leaf.parent
+
+            while parent:
+                distance += parent.dist
+                parent = parent.parent
             return distance
 
         distance += self.dist

@@ -4,13 +4,13 @@
 # Date: July 24, 2018
 
 r"""
-  PhyloPyPruner: tree-based orthology inference with tools for dealing with
-  contamination-like issues.
+  PhyloPyPruner: Tree-based Orthology Inference with Tools for Resolving
+  Contamination-like Issues
 
   See the wiki (https://gitlab.com/fethalen/phylopypruner/wikis/home) for
   details.
 
-example usage:
+example:
   ./phylopypruner.py --msa 16s.fa --tree 16s.tre --min-taxa 4 --min-len 200
     --min-support 0.7 --trim-lb 5 --outgroup Drosophila --root midpoint
     --mask longest --prune MI
@@ -71,7 +71,7 @@ def _yes_or_no(question):
     # make input work the same way in both Python 2 and 3
     answer = input(question + " (y/n): ".lower().rstrip())
     while not (answer == "y" or answer == "n"):
-        print("type 'y' for yes and 'n' for no")
+        sys.stderr.write("type 'y' for yes and 'n' for no")
         answer = input(question + " (y/n): ".lower().rstrip())
     if answer[0] == "y":
         return True
@@ -198,9 +198,10 @@ def _run(settings, msa, tree):
         if not settings.prune == "MO":
             tree, rooted = root.outgroup(tree, settings.outgroup)
 
-    # if not rooted and settings.root:
-    #     if settings.root == "midpoint":
-    #         tree = root.midpoint(tree)
+    # root the tree by midpoint rooting
+    if not rooted and settings.root:
+        if settings.root == "midpoint":
+            tree = root.midpoint(tree)
 
     # exclude taxa within the list settings.exclude
     if settings.exclude:
@@ -430,7 +431,7 @@ directory, overwrite?")
         else:
             dir_in = args.dir
         if not os.path.isdir(dir_in):
-            print(_warning("input directory {} does not exist".format(dir_in)))
+            sys.stderr.write(_warning("input directory {} does not exist".format(dir_in)))
             exit()
         # corresponding files; filename is key, values are tuple pairs where
         # MSA comes first and tree second
@@ -450,7 +451,7 @@ directory, overwrite?")
         total = len(corr_files)
         if total < 1:
             # no file pairs found in the provided directory
-            print(_warning("no file pairs were found in the provided\
+            sys.stderr.write(_warning("no file pairs were found in the provided\
  directory"))
             exit()
 

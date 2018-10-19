@@ -66,31 +66,21 @@ def midpoint(tree):
     if not longest_dist or not node_a or not node_b:
         return tree
 
-    mid = longest_dist / 2.0
-    parent = node_a.parent
-    while parent:
-        if node_a and node_b in parent.traverse_preorder():
-            # smallest node that includes both nodes under comparision
-            smallest_subtree = parent
-        parent = parent.parent
-
+    mid_dist = longest_dist / 2.0
     closest_diff = None
-    closest_node = None
-    for node_c in smallest_subtree.traverse_preorder():
-        print(node_a.view())
-        print(node_b.view())
-        print(node_c.view())
-        print(smallest_subtree.view())
-        diff_a = abs(mid - node_a.distance_to(node_c))
-        diff_b = abs(mid - node_b.distance_to(node_c))
+    midpoint_node = None
+
+    for node_c in tree.traverse_preorder():
+        diff_a = abs(mid_dist - node_a.distance_to(node_c))
+        diff_b = abs(mid_dist - node_b.distance_to(node_c))
         if not closest_diff or diff_a < closest_diff or diff_b < closest_diff:
             if diff_a < diff_b:
                 closest_diff = diff_a
             else:
                 closest_diff = diff_b
-            closest_node = node_c
+            midpoint_node = node_c
 
-    if closest_node:
-        print(closest_node.view())
-
-    return tree
+    if midpoint_node:
+        return tree.reroot(midpoint_node)
+    else:
+        return tree
