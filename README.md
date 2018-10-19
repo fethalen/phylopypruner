@@ -17,9 +17,8 @@ provide new methods for differentiating [contamination-like
 sequences](https://gitlab.com/fethalen/phylopypruner/wikis/About-PhyloPyPruner#contamination-like-issues-)
 from paralogs.
 
-In addition to the new methods for resolving contamination-like issues, by
-providing earlier tree-based approaches as a single executable, PhyloPyPruner
-have unique combination of features such as:
+By providing earlier tree-based approaches as a single executable,
+PhyloPyPruner also has a unique combination of features such as:
 
 * allowing polytomies in input trees for all paralogy pruning algorithms
 * collapsing weakly supported nodes into polytomies in combination with all
