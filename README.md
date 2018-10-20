@@ -53,10 +53,10 @@ details.
 By providing earlier tree-based approaches as a single executable,
 PhyloPyPruner also has a unique combination of features such as:
 
-* allowing polytomies in input trees for all paralogy pruning algorithms
-* collapsing weakly supported nodes into polytomies in combination with all
+* Allowing polytomies in input trees for all paralogy pruning algorithms
+* Collapsing weakly supported nodes into polytomies in combination with all
     paralogy pruning algorithms
-* rooting trees after monophyly masking in combination with the 'largest subtree
+* Rooting trees after monophyly masking in combination with the 'largest subtree
     (LS)' paralogy pruning algorithm
 
 ## Installation
