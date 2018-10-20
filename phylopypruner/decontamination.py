@@ -209,114 +209,66 @@ def trim_freq_paralogs(factor, paralog_freq):
 
     return otus_above_threshold
 
-def trim_divergent_otus(summary, factor):
-    """Return a list of OTUs in the summary with an average pairwise distance
-    that is larger than factor times the standard deviation of the pairwise
-    distance of all OTUs.
+def trim_divergent(node, divergence_threshold=0.25):
+    """For each OTU with more than one sequence present in the provided node:
+    calculate the ratio of the maximum pairwise distance of the sequences
+    within the OTU compared to the average pairwise distance for that OTU
+    compared to every other sequence. Delete every sequence from that OTU
+    entirely if the ratio exceeds the divergence threshold.
 
     Parameters
     ----------
-    summary : Summary object
-        The pairwise distance is derived from the trees within this Summary
-        object.
-    factor : float
-        Set the threshold to be this float times the standard deviation of the
-        pairwise distance for all OTUs.
-
-    Returns
-    ------
-    otus_above_threshold : list
-        List of OTUs above the established threshold.
-    """
-    otu_dists = defaultdict(float) # OTU is key, distance is value
-    dists_count = defaultdict(int) # OTU is key, frequency is value
-    otus_above_threshold = list()
-    total = len(summary)
-
-    for index, log in enumerate(summary.logs, 1):
-
-        print("comparing pairwise distances ({}/{} trees)".format(
-            index, total), end="\r")
-        sys.stdout.flush()
-
-        if not log.masked_tree:
-            # case were a 'masked tree' was not created due to too few OTUs
-            continue
-
-        dists_in_tree = log.masked_tree.distances()
-        for pair in dists_in_tree:
-            leaf_a, leaf_b = pair
-            otu_a = leaf_a.otu()
-            otu_b = leaf_b.otu()
-            otu_dists[otu_a] += dists_in_tree[pair]
-            otu_dists[otu_b] += dists_in_tree[pair]
-            dists_count[otu_a] += 1
-            dists_count[otu_b] += 1
-    print("")
-
-    for otu in dists_count:
-        otu_dists[otu] = round(otu_dists[otu] / dists_count[otu], 2)
-
-    threshold = _std(list(otu_dists.values())) * factor
-
-    for otu in otu_dists:
-        if otu_dists[otu] > threshold:
-            otus_above_threshold.append(otu)
-
-    if otus_above_threshold:
-        print("OTUs with an average pairwise distance above threshold: \
-{}".format(", ".join(otus_above_threshold)))
-    else:
-        print("no OTUs with an average pairwise distance above threshold")
-
-    return otus_above_threshold
-
-def trim_divergent_seqs(node, factor):
-    """Iterate over all multiple sequence alignments within the provided
-    summary and remove sequences with a pairwise distance that is larger than
-    factor times the standard deviation of the pairwise distance of all
-    sequences within that single gene.
-
-    Parameters
-    ----------
-    summary : Summary object
-        The pairwise distance is derived from the trees within this Summary
-        object.
-    factor : float
-        Set the threshold to be this float times the standard deviation of the
-        pairwise distance for all OTUs.
+    node : TreeNode object
+        The node that you want wish to delete divergent sequences from.
+    divergence_threshold : float
+        Divergence threshold in percent.
 
     Returns
     ------
     seqs_above_threshold : list
         List of OTUs above the established threshold.
     """
-    seqs_above_threshold = 0
-
-    seq_dists = defaultdict(float) # leaf is key, distance is value
-    seq_count = defaultdict(int) # leaf is key, presence is value
-    avg_dists = defaultdict(float) # leaf is key, average distance is value
+    # maximum pairwise distance within OTUs ({OTU: max_pdist})
+    in_otus_max_dist = defaultdict(float)
+    # pairwises pairwise distance between one OTU's sequences and other OTU's
+    # sequences ({OTU: [dist_1, dist_2, ...]})
+    out_otus_dists = defaultdict(list)
+    # average pairwise distance between one OTU's sequences and another OTU's
+    # sequences ({OTU: avg_pdist})
+    out_otus_avg_dist = dict()
+    # ratio between the maximum pairwise distance of the in-OTUs and the
+    # average pairwise distance of the out-OTUs
+    in_out_ratio = dict()
+    otus_above_threshold = list()
     nodes_to_remove = set()
+    otus_removed = 0
 
-    dists_in_tree = node.distances()
-    for pair in dists_in_tree:
-        leaf_a, leaf_b = pair
-        seq_dists[leaf_a] += dists_in_tree[pair]
-        seq_dists[leaf_b] += dists_in_tree[pair]
-        seq_count[leaf_a] += 1
-        seq_count[leaf_b] += 1
+    for paralog in node.paralogs():
+        for leaf in node.iter_leaves():
+            if paralog is leaf:
+                continue
 
-    for leaf in seq_dists:
-        avg_dists[leaf] = round(seq_dists[leaf] / seq_count[leaf], 2)
+            if paralog.otu() == leaf.otu():
+                if (not in_otus_max_dist[paralog.otu()] or
+                        paralog.distance_to(leaf) >
+                        in_otus_max_dist[paralog.otu()]):
+                    in_otus_max_dist[paralog.otu()] = paralog.distance_to(leaf)
+            else:
+                out_otus_dists[paralog.otu()].append(paralog.distance_to(leaf))
 
-    print(avg_dists.values())
-    threshold = _std(list(avg_dists.values())) * factor
+    for otu in out_otus_dists:
+        out_otus_avg_dist[otu] = sum(out_otus_dists[otu]) / float(len(out_otus_dists[otu]))
 
-    for leaf in avg_dists:
-        if avg_dists[leaf] > threshold:
-            seqs_above_threshold += 1
+    for otu in out_otus_avg_dist:
+        in_out_ratio = in_otus_max_dist[otu] / out_otus_avg_dist[otu]
+        if in_out_ratio > divergence_threshold:
+            otus_above_threshold.append(otu)
+
+    for leaf in node.iter_leaves():
+        if leaf.otu() in otus_above_threshold:
             nodes_to_remove.add(leaf)
+            otus_removed += 1
 
     node.remove_nodes(nodes_to_remove)
 
-    return seqs_above_threshold
+    return otus_removed

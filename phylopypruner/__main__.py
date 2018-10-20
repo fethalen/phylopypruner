@@ -119,6 +119,15 @@ def _validate_arguments(args):
             # convert from percentage to floating point
             args.min_support = args.min_support / 100
 
+    if args.trim_divergent:
+        if args.trim_divergent < 0 or args.trim_divergent > 100:
+            print(_warning("the divergence threshold ('--trim-divergent') has to be\
+ either in percentage (1-100) or in decimal format between 0.0 - 1.0"))
+            valid_arguments = False
+        elif args.trim_divergent > 1:
+            # convert from percentage to floating point
+            args.trim_divergent = args.trim_divergent / 100
+
     if args.min_len and args.min_len < 1:
         print(_warning("minimum sequence length ('--min-len') has to be a\
  positive integer (1, 2, 3, 4, ...)"))
@@ -163,13 +172,6 @@ def _run(settings, msa, tree):
     if settings.trim_lb:
         log.lbs_removed = list(filtering.prune_long_branches(tree, settings.trim_lb))
 
-    # trim divergent sequences
-    if settings.trim_divergent_seqs:
-        log.lbs_removed = list(filtering.prune_long_branches(
-            tree, settings.trim_divergent_seqs))
-        seqs_removed = decontamination.trim_divergent_seqs(tree, settings.trim_divergent_seqs)
-        print("trimmed {} divergent sequence".format(seqs_removed))
-
     # exit if number of OTUs < threshold
     if settings.min_taxa:
         if filtering.too_few_otus(tree, settings.min_taxa):
@@ -186,6 +188,10 @@ def _run(settings, msa, tree):
         elif settings.mask == "longest":
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         log.monophylies_masked = masked_seqs
+
+    # trim divergent sequences
+    if settings.trim_divergent:
+        seqs_removed = decontamination.trim_divergent(tree, settings.trim_divergent)
 
     # exit if number of OTUs < threshold
     if settings.min_taxa:
@@ -358,21 +364,13 @@ def parse_args():
                         help="remove OTUs with a paralogy frequency (PF) \
                               larger than <factor> times the standard \
                               deviation of the PF for all OTUs")
-    parser.add_argument("--trim-divergent-otus",
+    parser.add_argument("--trim-divergent",
                         default=None,
-                        metavar="<factor>",
+                        metavar="<percentage>",
                         type=float,
-                        help="remove OTUs with an average pairwise distance \
-                             (PD) that is larger than <factor> times the \
-                             standard deviation of the PD for all OTUs")
-    parser.add_argument("--trim-divergent-seqs",
-                        default=None,
-                        metavar="<factor>",
-                        type=float,
-                        help="remove individual sequences with an average \
-                              pairwise distance (PD) that is larger than \
-                              <factor> times the standard deviation of the PD \
-                              for all OTUs")
+                        help="remove OTUs from sequences where the ratio of \
+                        in-OTU to out-OTU sequences is higher than the \
+                        provided threshold")
     parser.add_argument("--wrap",
                         metavar="<max column>",
                         default=None,
@@ -473,12 +471,6 @@ pairs)".format(settings.fasta_file, settings.nw_file, index, total),
     ortholog_report = summary.report("orthologs", dir_out)
     paralog_freq = summary.paralogy_frequency(dir_out)
     otus_to_exclude = []
-
-    if args.trim_divergent_otus:
-        divergent_otus = decontamination.trim_divergent_otus(
-            summary, args.trim_divergent_otus)
-        if divergent_otus:
-            otus_to_exclude += divergent_otus
 
     if args.trim_freq_paralogs:
         freq_paralogs = decontamination.trim_freq_paralogs(
