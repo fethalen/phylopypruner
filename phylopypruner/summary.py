@@ -49,7 +49,7 @@ class Summary(object):
     def logs(self, value):
         self._logs = value
 
-    def paralogy_frequency(self, dir_out):
+    def paralogy_frequency(self, dir_out, factor=None):
         """Calculate the paralogy frequency (PF) for all OTUs within this
         summary, where paralogy frequency is the number of paralogs divided by
         the number of alignments that each OTU is present in. Output the
@@ -59,6 +59,10 @@ class Summary(object):
         ----------
         dir_out : str
             Path to the directory to which you wish to output the PF plot.
+
+        factor : float
+            Used to visualize where the threshold for frequent paralogy cutoff
+            was set.
 
         Returns
         -------
@@ -71,6 +75,7 @@ class Summary(object):
         if os.path.isfile(dir_out + FREQ_CSV_FILE):
             os.remove(dir_out + FREQ_CSV_FILE)
 
+        threshold = None
         seen = set()
         paralog_freq = defaultdict(int) # key is OTU, value is no. of paralogs
         presence = defaultdict(int) # key is OTU, value is
@@ -95,6 +100,9 @@ class Summary(object):
                 paralog_freq[otu] = round(
                     (float(paralog_freq[otu]) / float(presence[otu])) * 100, 1)
 
+        if factor:
+            threshold = _std(list(paralog_freq.values())) * factor
+
         with open(dir_out + FREQ_CSV_FILE, "w") as csv_out:
             csv_out.write("otu;paralogs\n")
             for otu, freq in paralog_freq.items():
@@ -110,6 +118,12 @@ class Summary(object):
             plt.ylabel("OTU")
             plt.xlabel("number of paralogs / number of alignments OTU is in")
             plt.title("Paralog Frequency")
+            if threshold:
+                plt.axvline(x=threshold,
+                            color="red",
+                            label="cutoff = {}".format(round(threshold, 3)),
+                            linestyle="--")
+                plt.legend(loc='upper right', fontsize=14)
             fig = plt.gcf()
             fig.set_size_inches(12.0, len(otus) * 0.17)
             plt.savefig(dir_out + FREQ_PLOT_FILE, bbox_inches='tight', dpi=300)
@@ -469,3 +483,50 @@ def mk_sum_out_title(dir_out):
 
     with open(dir_out + SUM_PATH, "w") as sum_out_file:
         sum_out_file.write(SUM_HEADER)
+
+def _mean(data):
+    """Returns the sample arithmetic mean of data. 0 is returned if an empty
+    list was provided.
+
+    Parameters
+    ----------
+    data : list of floats
+
+    Returns
+    _______
+    out: float
+        The sample arithmetic mean of data.
+    """
+    return float(sum(data)) / max(len(data), 1)
+
+def _sdm(data):
+    """Returns the squared deviations from the mean (SDM) of data.
+
+    Parameters
+    ----------
+    data : list of floats
+
+    Returns
+    -------
+    out : float
+        The sum of square deviations of data.
+    """
+    return sum((x - _mean(data))**2 for x in data)
+
+def _std(data):
+    """Return the population standard deviation of data.
+
+    Parameters
+    ----------
+    data : list of floats
+
+    Returns
+    -------
+    out : float
+        The population standard deviation of data.
+    """
+    if len(data) < 2:
+        raise ValueError('variance requires at least two data points')
+    return (_sdm(data) / len(data)) ** 0.5
+
+
