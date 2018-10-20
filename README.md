@@ -17,15 +17,6 @@ provide new methods for differentiating [contamination-like
 sequences](https://gitlab.com/fethalen/phylopypruner/wikis/About-PhyloPyPruner#contamination-like-issues-)
 from paralogs.
 
-By providing earlier tree-based approaches as a single executable,
-PhyloPyPruner also has a unique combination of features such as:
-
-* allowing polytomies in input trees for all paralogy pruning algorithms
-* collapsing weakly supported nodes into polytomies in combination with all
-    paralogy pruning algorithms
-* rooting trees after monophyly masking in combination with the 'largest subtree
-    (LS)' paralogy pruning algorithm
-
 PhyloPyPruner is currently under active development and I would appreciate it
 if you try this software on your own data and [leave
 feedback](mailto:felix.thalen.1430@student.lu.se).
@@ -35,20 +26,38 @@ details.
 
 ## Features
 
-* Remove short sequences
-* Remove sequences with a long branch length relative to others
-* Collapse weakly supported nodes into polytomies
-* Prune paralogs using one out of five methods
-* Mask monophylies by keepipng the longest sequence or the sequence with the shortest pairwise distance
-* Root the tree using midpoint or outgroup rooting
-* Calculate and visualize _paralogy frequency (PF)_, the number of paralogs
-  for an OTU divided by the number of alignments that said OTU is present in
-* Exclude OTUs with a high PF relative to all OTUs
-* Remove OTUs with an average pairwise distance that is high relative to all
-    OTUs
-* Ignore OTUs one-by-one during tree-based orthology inference and identify
-    OTUs whose exclusion improves metrics of supermatrix quality such as the
-    number of output alignments or missing data
+* Filters:
+  * Remove short sequences
+  * Remove sequences with a long branch length relative to others
+  * Collapse weakly supported nodes into polytomies
+* Tree-based orthology inference:
+  * Mask monophylies by keepipng the longest sequence or the sequence with the shortest pairwise distance
+  * Root the tree using midpoint or outgroup rooting
+  * Prune paralogs using one out of five methods
+* "Decontamination":
+  * _Paralogy frequency (PF)_ – calculate the number of paralogs for an OTU divided
+      by the number of alignments that said OTU is present in. Visualizing PF
+      can help identify 'problem taxa' with contamination (or partial genome
+      duplications, etc). PhyloPyPruner can be configured to automatically
+      remove OTUs with high PF and critical OTUs can be 'protected' from
+      removal using the `--include` flag.
+  * _Trim divergent_ – identify and exclude OTUs on an per-alignment basis,
+      where the ratio between the maximum pairwise distance within the OTU and
+      the average pairwise distances with the other sequences exceeds a
+      user-defined _divergence threshold_.
+  * _Taxon jackknifing_ excludes OTUs one-by-one during orthology inference. This
+      enables the user to identify OTUs whose exclusion improves metrics of
+      supermatrix quality such as number of alignments retained or percent
+      missing data.
+
+By providing earlier tree-based approaches as a single executable,
+PhyloPyPruner also has a unique combination of features such as:
+
+* allowing polytomies in input trees for all paralogy pruning algorithms
+* collapsing weakly supported nodes into polytomies in combination with all
+    paralogy pruning algorithms
+* rooting trees after monophyly masking in combination with the 'largest subtree
+    (LS)' paralogy pruning algorithm
 
 ## Installation
 
