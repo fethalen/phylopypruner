@@ -26,7 +26,7 @@ details.
 
 ## Features
 
-* Filters:
+* Prefiltering:
   * Remove short sequences
   * Remove sequences with a long branch length relative to others
   * Collapse weakly supported nodes into polytomies
@@ -34,7 +34,7 @@ details.
   * Mask monophylies by keepipng the longest sequence or the sequence with the shortest pairwise distance
   * Root the tree using midpoint or outgroup rooting
   * Prune paralogs using one out of five methods
-* "Decontamination":
+* Decontamination:
   * _Paralogy frequency (PF)_ – calculate the number of paralogs for an OTU divided
       by the number of alignments that said OTU is present in. Visualizing PF
       can help identify 'problem taxa' with contamination (or partial genome

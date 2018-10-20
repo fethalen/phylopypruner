@@ -3,17 +3,10 @@
 # Author: Felix Thalen
 # Date: July 24, 2018
 
-r"""
-  PhyloPyPruner: Tree-based Orthology Inference with Tools for Resolving
-  Contamination-like Issues
-
-  See the wiki (https://gitlab.com/fethalen/phylopypruner/wikis/home) for
-  details.
-
-example:
-  ./phylopypruner.py --msa 16s.fa --tree 16s.tre --min-taxa 4 --min-len 200
-    --min-support 0.7 --trim-lb 5 --outgroup Drosophila --root midpoint
-    --mask longest --prune MI
+"""
+PhyloPyPruner is a Python package for tree-based orthology inference that is
+used to refine the output of a graph-based approach by removing sequences
+related via gene duplication. See gitlab.com/fethalen/phylopypruner for details.
 """
 
 from __future__ import print_function
@@ -258,119 +251,17 @@ def parse_args():
     """
     Parse the arguments provided by the user.
     """
-    parser = argparse.ArgumentParser(usage=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-v", "-V", "--version",
                         action="version",
                         version=str(VERSION),
                         help="display the version number and exit")
-    parser.add_argument("--msa",
-                        metavar="<MSA>",
-                        type=str,
-                        help="path to a multiple sequence alignment (MSA) in \
-                              FASTA format")
-    parser.add_argument("--tree",
-                        metavar="<tree>",
-                        type=str,
-                        help="path to a Newick tree file")
-    parser.add_argument("--dir",
-                        metavar="<directory>",
-                        type=str,
-                        default=None,
-                        help="path to a directory containing multiple MSAs \
-                              and trees")
     parser.add_argument("--output",
                         metavar="<directory>",
                         type=str,
                         default=None,
                         help="set output directory; same as the input \
                               directory by default")
-    parser.add_argument("--min-taxa",
-                        metavar="<threshold>",
-                        type=int,
-                        default=None,
-                        help="minimum number of OTUs allowed in output")
-    parser.add_argument("--min-len",
-                        metavar="<threshold>",
-                        default=None,
-                        type=int,
-                        help="remove sequences shorter than <threshold>")
-    parser.add_argument("--min-support",
-                        metavar="<threshold>",
-                        default=None,
-                        type=float,
-                        help="collapse nodes with a support value below \
-                              <threshold> into polytomies; in percent \
-                              or in decimal format (0.0-1.0)")
-    parser.add_argument("--trim-lb",
-                        default=None,
-                        metavar="<factor>",
-                        type=float,
-                        help="remove sequences with a branch length <factor> \
-                              times larger the standard deviation of all \
-                              branches within its tree")
-    parser.add_argument("--outgroup",
-                        nargs='+',
-                        metavar="<OTU>",
-                        default=None,
-                        type=str,
-                        help="root trees using one or more outgroup OTUs if \
-                              at least one outgroup OTU is present and that \
-                              the ones that are present are non-repetetive \
-                              and form a monophyletic group")
-    parser.add_argument("--root",
-                        default=None,
-                        type=str,
-                        choices=["midpoint", "molecular_clock"],
-                        help="root trees using this method in case no \
-                              outgroups were provided or if outgroup rooting \
-                              fails")
-    parser.add_argument("--mask",
-                        default="pdist",
-                        type=str,
-                        choices=["longest", "pdist"],
-                        help="specify the method for masking monophylies; \
-                              default is pairwise distance ('pdist')")
-    parser.add_argument("--prune",
-                        default="LS",
-                        type=str,
-                        choices=["LS", "MI", "MO", "RT", "1to1"],
-                        help="set the paralogy pruning method; default is \
-                              largest subtree ('LS')")
-    parser.add_argument("--exclude",
-                        nargs='+',
-                        metavar="<OTU>",
-                        default=None,
-                        type=str,
-                        help="specify a list of OTUs to exclude in this run")
-    parser.add_argument("--include",
-                        nargs='+',
-                        metavar="<OTU>",
-                        default=None,
-                        type=str,
-                        help="include the OTUs in the specified list, even if \
-                              they were deemed problematic by \
-                              '--trim-freq-paralogs' or '--trim-divergent'")
-    parser.add_argument("--jackknife",
-                        default=False,
-                        action="store_true",
-                        help="leave out each OTU one by one and output \
-                        statistics for each OTU left out into the summary \
-                        file; use the '--exclude' flag in a subsequent run \
-                        to remove taxa deemed as problematic")
-    parser.add_argument("--trim-freq-paralogs",
-                        default=None,
-                        metavar="<factor>",
-                        type=float,
-                        help="remove OTUs with a paralogy frequency (PF) \
-                              larger than <factor> times the standard \
-                              deviation of the PF for all OTUs")
-    parser.add_argument("--trim-divergent",
-                        default=None,
-                        metavar="<percentage>",
-                        type=float,
-                        help="remove OTUs from sequences where the ratio of \
-                        in-OTU to out-OTU sequences is higher than the \
-                        provided threshold")
     parser.add_argument("--wrap",
                         metavar="<max column>",
                         default=None,
@@ -378,6 +269,119 @@ def parse_args():
                         help="wrap output sequences at column <max column>; \
                               sequence data is kept at a single line by \
                               default")
+
+    group = parser.add_argument_group("input data (MSA + tree or directory)")
+    group.add_argument("--msa",
+                       metavar="<MSA>",
+                       type=str,
+                       help="path to a multiple sequence alignment (MSA) in \
+                             FASTA format")
+    group.add_argument("--tree",
+                       metavar="<tree>",
+                       type=str,
+                       help="path to a Newick tree file")
+    group.add_argument("--dir",
+                       metavar="<directory>",
+                       type=str,
+                       default=None,
+                       help="path to a directory containing multiple MSAs \
+                             and trees")
+
+    group = parser.add_argument_group("prefiltering")
+    group.add_argument("--min-taxa",
+                       metavar="<threshold>",
+                       type=int,
+                       default=None,
+                       help="minimum number of OTUs allowed in output")
+    group.add_argument("--min-len",
+                       metavar="<threshold>",
+                       default=None,
+                       type=int,
+                       help="remove sequences shorter than <threshold>")
+    group.add_argument("--min-support",
+                       metavar="<threshold>",
+                       default=None,
+                       type=float,
+                       help="collapse nodes with a support value below \
+                             <threshold> into polytomies; in percent \
+                             or in decimal format (0.0-1.0)")
+    group.add_argument("--trim-lb",
+                       default=None,
+                       metavar="<factor>",
+                       type=float,
+                       help="remove sequences with a branch length <factor> \
+                             times larger the standard deviation of all \
+                             branches within its tree")
+
+    group = parser.add_argument_group("tree-based orthology inference")
+    group.add_argument("--outgroup",
+                       nargs='+',
+                       metavar="<OTU>",
+                       default=None,
+                       type=str,
+                       help="root trees using one or more outgroup OTUs if \
+                             at least one outgroup OTU is present and that \
+                             the ones that are present are non-repetetive \
+                             and form a monophyletic group")
+    group.add_argument("--root",
+                       default=None,
+                       type=str,
+                       choices=["midpoint"],
+                       help="root trees using this method in case no \
+                             outgroups were provided or if outgroup rooting \
+                             fails")
+    group.add_argument("--mask",
+                       default="pdist",
+                       type=str,
+                       choices=["longest", "pdist"],
+                       help="specify the method for masking monophylies; \
+                             default is pairwise distance ('pdist')")
+    group.add_argument("--prune",
+                       default="LS",
+                       type=str,
+                       choices=["LS", "MI", "MO", "RT", "1to1"],
+                       help="set the paralogy pruning method; default is \
+                             largest subtree ('LS')")
+
+    group = parser.add_argument_group("decontamination")
+    group.add_argument("--exclude",
+                       nargs='+',
+                       metavar="<OTU>",
+                       default=None,
+                       type=str,
+                       help="exclude these OTUs in this run")
+    group.add_argument("--trim-freq-paralogs",
+                       default=None,
+                       metavar="<factor>",
+                       type=float,
+                       help="remove OTUs with a paralogy frequency (PF) \
+                             larger than <factor> times the standard \
+                             deviation of the PF for all OTUs")
+    group.add_argument("--trim-divergent",
+                       default=None,
+                       metavar="<percentage>",
+                       type=float,
+                       help="exclude OTUs on a per-alignment basis, where \
+                             the ratio between the maximum pairwise distance \
+                             between sequences within the OTU and the \
+                             average pairwise distance between sequences \
+                             outside the OTU exceeds the user-defined \
+                             percentage")
+    group.add_argument("--jackknife",
+                       default=False,
+                       action="store_true",
+                       help="leave out each OTU one by one and output \
+                       statistics for each OTU left out into the summary \
+                       file; use the '--exclude' flag in a subsequent run \
+                       to remove taxa deemed as problematic")
+    group.add_argument("--include",
+                       nargs='+',
+                       metavar="<OTU>",
+                       default=None,
+                       type=str,
+                       help="include the OTUs in the specified list, even if \
+                             they were deemed problematic by \
+                             '--trim-freq-paralogs' or '--trim-divergent'")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
 def main():
