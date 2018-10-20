@@ -469,7 +469,7 @@ pairs)".format(settings.fasta_file, settings.nw_file, index, total),
 
     homolog_report = summary.homolog_report(dir_out)
     ortholog_report = summary.report("orthologs", dir_out)
-    paralog_freq = summary.paralogy_frequency(dir_out)
+    paralog_freq = summary.paralogy_frequency(dir_out, args.trim_freq_paralogs)
     otus_to_exclude = []
 
     if args.trim_freq_paralogs:

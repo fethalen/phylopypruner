@@ -1,12 +1,12 @@
-PhyloPyPruner
--------------
+About PhyloPyPruner
+-------------------
 
 PhyloPyPruner is a Python package for tree-based orthology inference that is
 used to refine the output of a graph-based approach (e.g.,
 [OrthoMCL](https://www.ncbi.nlm.nih.gov/pubmed/12952885),
 [OrthoFinder](https://www.ncbi.nlm.nih.gov/pubmed/26243257) or
 [HaMStR](https://www.ncbi.nlm.nih.gov/pubmed/19586527)) by removing sequences
-related through gene duplication. In addition to filters and algorithms seen in
+related via gene duplication. In addition to filters and algorithms seen in
 pre-existing tools such as
 [PhyloTreePruner](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3825643/),
 [UPhO](https://academic.oup.com/mbe/article/33/8/2117/2578877),
