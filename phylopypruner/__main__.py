@@ -270,7 +270,7 @@ def parse_args():
                               sequence data is kept at a single line by \
                               default")
 
-    group = parser.add_argument_group("input data (MSA + tree or directory)")
+    group = parser.add_argument_group("input files (MSA and tree or directory)")
     group.add_argument("--msa",
                        metavar="<MSA>",
                        type=str,
@@ -440,6 +440,7 @@ directory, overwrite?")
         corr_files = dict()
         for file in os.listdir(args.dir):
             filename, extension = os.path.splitext(file)
+            filename = filename.split(".")[0]
             extension = extension.lower()
             if extension in FASTA_EXTENSIONS or extension in NW_EXTENSIONS:
                 if filename in corr_files.keys():
