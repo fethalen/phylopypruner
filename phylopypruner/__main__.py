@@ -48,8 +48,7 @@ def _warning(message):
     Returns the provided message with the text 'warning: ' in bold red
     prepended.
     """
-    return "\n".join(wrap("{}warning{}: {}".format("\033[91m\033[1m",
-                                                   "\033[0m", message), 80))
+    return "{}warning{}: {}".format("\033[91m\033[1m", "\033[0m", message)
 
 NO_FILES = _warning("""Please provide either a multiple sequence alignment
 (MSA) and a Newick tree, or a path to a directory containing multiple MSAs
@@ -64,7 +63,7 @@ def _yes_or_no(question):
     # make input work the same way in both Python 2 and 3
     answer = input(question + " (y/n): ".lower().rstrip())
     while not (answer == "y" or answer == "n"):
-        sys.stderr.write("type 'y' for yes and 'n' for no")
+        print("type 'y' for yes and 'n' for no")
         answer = input(question + " (y/n): ".lower().rstrip())
     if answer[0] == "y":
         return True
@@ -433,7 +432,7 @@ directory, overwrite?")
         else:
             dir_in = args.dir
         if not os.path.isdir(dir_in):
-            sys.stderr.write(_warning("input directory {} does not exist".format(dir_in)))
+            print(_warning("input directory {} does not exist".format(dir_in)))
             exit()
         # corresponding files; filename is key, values are tuple pairs where
         # MSA comes first and tree second
@@ -454,7 +453,7 @@ directory, overwrite?")
         total = len(corr_files)
         if total < 1:
             # no file pairs found in the provided directory
-            sys.stderr.write(_warning("no file pairs were found in the provided\
+            print(_warning("no file pairs were found in the provided\
  directory"))
             exit()
 
@@ -464,13 +463,15 @@ directory, overwrite?")
             except:
                 # corresponding file not found
                 continue
-            print("processing MSA: {}; processing tree: {} ({}/{} file \
-pairs)".format(settings.fasta_file, settings.nw_file, index, total),
-                  end="\r")
+            sys.stdout.write("\rprocessing MSA: {}; processing tree: {} ({}/{} file \
+pairs)".format(settings.fasta_file, settings.nw_file, index, total))
             sys.stdout.flush()
             summary.logs.append(_get_orthologs(settings, dir_in, dir_out))
-        print("")
         mk_sum_out_title(dir_out)
+
+    if len(summary) == 0:
+        print(_warning("couldn't find any matching pairs, check filetype extensions"))
+        exit()
 
     homolog_report = summary.homolog_report(dir_out)
     ortholog_report = summary.report("orthologs", dir_out)
@@ -492,8 +493,7 @@ pairs)".format(settings.fasta_file, settings.nw_file, index, total),
 
     if args.jackknife:
         decontamination.jackknife(summary, dir_out)
-
-    print("{}\n{}".format(homolog_report, ortholog_report))
+    print("\n{}\n{}".format(homolog_report, ortholog_report))
 
     summary.write_msas(args.wrap)
 
