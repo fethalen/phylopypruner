@@ -45,9 +45,9 @@ details.
       where the ratio between the maximum pairwise distance within the OTU and
       the average pairwise distances with the other sequences exceeds a
       user-defined _divergence threshold_.
-  * _Taxon jackknifing_ excludes OTUs one-by-one during orthology inference. This
-      enables the user to identify OTUs whose exclusion improves metrics of
-      supermatrix quality such as number of alignments retained or percent
+  * _Taxon jackknifing_ – exclude OTUs, one-by-one, during orthology inference.
+      This enables the user to identify OTUs whose exclusion improves metrics
+      of supermatrix quality such as number of alignments retained or percent
       missing data.
 
 By providing earlier tree-based approaches as a single executable,
