@@ -31,7 +31,7 @@ details.
   * Remove sequences with a long branch length relative to others
   * Collapse weakly supported nodes into polytomies
 * Tree-based orthology inference:
-  * Mask monophylies by keepipng the longest sequence or the sequence with the shortest pairwise distance
+  * Mask monophylies by keeping the longest sequence or the sequence with the shortest pairwise distance
   * Root the tree using midpoint or outgroup rooting
   * Prune paralogs using one out of five methods
 * Decontamination:
