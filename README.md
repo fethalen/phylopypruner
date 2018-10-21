@@ -35,17 +35,17 @@ details.
   * Root the tree using midpoint or outgroup rooting
   * Prune paralogs using one out of five methods
 * Decontamination:
-  * _Paralogy frequency (PF)_ – calculate the number of paralogs for an OTU divided
+  * _Paralogy frequency (PF)_: Calculate the number of paralogs for an OTU divided
       by the number of alignments that said OTU is present in. Visualizing PF
       can help identify 'problem taxa' with contamination (or partial genome
       duplications, etc). PhyloPyPruner can be configured to automatically
       remove OTUs with high PF and critical OTUs can be 'protected' from
       removal using the `--include` flag.
-  * _Trim divergent_ – identify and exclude OTUs on an per-alignment basis,
+  * _Trim divergent_: Identify and exclude OTUs on an per-alignment basis,
       where the ratio between the maximum pairwise distance within the OTU and
       the average pairwise distances with the other sequences exceeds a
       user-defined _divergence threshold_.
-  * _Taxon jackknifing_ – exclude OTUs, one-by-one, during orthology inference.
+  * _Taxon jackknifing_: Exclude OTUs, one-by-one, during orthology inference.
       This enables the user to identify OTUs whose exclusion improves metrics
       of supermatrix quality such as number of alignments retained or percent
       missing data.
