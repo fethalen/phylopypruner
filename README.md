@@ -73,10 +73,10 @@ pip install --user phylopypruner
 
 ## Usage
 
-To get a list of options, run the software without any arguments or use the
-`-h` or `--help` flag. PhyloPyPruner requires either a corresponding multiple
-sequence alignment (MSA) in FASTA format and a Newick tree or, the path to a
-directory containing multiple trees and alignments.
+To get a list of options, run the software without any arguments or with the
+`-h` option. PhyloPyPruner requires either a corresponding multiple sequence
+alignment (MSA), in FASTA format, and a Newick tree or, the path to a directory
+containing multiple trees and alignments, as an input.
 
 **Example 1.** Providing a single corresponding tree and alignment. In this
 case monophyletic masking will be performed by choosing the sequence with the
