@@ -137,17 +137,18 @@ The following files are generated after running this program.
 
 ```
 <output directory>/
-├── <timestamp>_ppp_summary.csv
-├── <timestamp>_ppp_ortho_stats.csv
-├── <timestamp>_ppp_run.log
-├── <timestamp>_ppp_paralog_freq.csv
-├── <timestamp>_ppp_paralog_freq.png*
-└── <timestamp>_orthologs/
-│   ├── 1_pruned.fas
-│   ├── 2_pruned.fas
-│   ├── 3_pruned.fas
-│   └── 4_pruned.fas
-...
+├── phylopypruner_output
+    ├── supermatrix_stats.csv
+    ├── input_alignments_stats.csv
+    ├── output_alignments_stats.csv
+    ├── otu_stats.csv
+    ├── phylopypruner.log
+    ├── paralogy_freq_plot.png*
+    └── output_alignments/
+        ├── 1_pruned.fas
+        ├── 2_pruned.fas
+        ├── 3_pruned.fas
+        ...
 ```
 
 If `<output directory>` has not been specified by the `--output` flag, then
