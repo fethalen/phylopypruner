@@ -137,7 +137,7 @@ The following files are generated after running this program.
 
 ```
 <output directory>/
-├── phylopypruner_output
+└── phylopypruner_output/
     ├── supermatrix_stats.csv
     ├── input_alignments_stats.csv
     ├── output_alignments_stats.csv
