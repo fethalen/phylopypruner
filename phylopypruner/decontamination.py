@@ -146,13 +146,13 @@ def prune_by_exclusion(summary, otus, dir_out):
     summary_copy = copy.deepcopy(summary)
     summary_out = Summary()
     alignments_count = len(summary_copy.logs)
-    excluded_str = "+".join(otu for otu in otus)
+    excluded_str = "output_{}".format("+".join(otu for otu in otus))
     excluded_str += "_excluded"
 
     for index, log in enumerate(summary_copy.logs, 1):
-        sys.stdout.flush()
         print("paralogy pruning with OTUs removed ({}/{} trees)".format(
             index, alignments_count), end="\r")
+        sys.stdout.flush()
 
         log_copy = copy.deepcopy(log)
         pruning_method = log_copy.settings.prune
@@ -202,14 +202,14 @@ def trim_freq_paralogs(factor, paralog_freq):
 
     if not otus_above_threshold:
         print("OTUs with frequent paralogs: none")
-        return
+        return otus_above_threshold
 
     print("OTUs with frequent paralogs: " +
           ", ".join(otu for otu in otus_above_threshold))
 
     return otus_above_threshold
 
-def trim_divergent(node, divergence_threshold=0.25):
+def trim_divergent(node, divergence_threshold=0.25, include=[]):
     """For each OTU with more than one sequence present in the provided node:
     calculate the ratio of the maximum pairwise distance of the sequences
     within the OTU compared to the average pairwise distance for that OTU
@@ -269,6 +269,11 @@ def trim_divergent(node, divergence_threshold=0.25):
             nodes_to_remove.add(leaf)
             otus_removed += 1
 
+    if include:
+        for otu in include:
+            if otu in nodes_to_remove:
+                nodes_to_remove.remove(otu)
+
     node.remove_nodes(nodes_to_remove)
 
-    return otus_removed
+    return otus_above_threshold

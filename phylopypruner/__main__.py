@@ -14,9 +14,9 @@ from __future__ import absolute_import
 import argparse
 import os
 import sys
+import time
 import datetime
 import shutil
-from textwrap import wrap
 import pkg_resources
 from phylopypruner import fasta
 from phylopypruner import newick
@@ -29,31 +29,60 @@ from phylopypruner.summary import Summary
 from phylopypruner.summary import mk_sum_out_title
 from phylopypruner.log import Log
 from phylopypruner.settings import Settings
-# ensures that input is working across both Python 2 and 3
+# ensures that input is working across Python 2.7 and 3+
 if hasattr(__builtins__, "raw_input"): input = raw_input
 
 VERSION = pkg_resources.require("phylopypruner")[0].version
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
                     ".frn"}
-NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree"}
-HEADER = "id;sequences;meanSeqLen;shortestSeq;longestSeq;pctMissingData;\
-alignmentLen\n"
-TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
-ORTHO_STATS_PATH = "/{}_ppp_ortho_stats.csv".format(TIMESTAMP)
-LOG_PATH = "/{}_ppp_run.log".format(TIMESTAMP)
-ORTHOLOGS_PATH = "/{}_orthologs".format(TIMESTAMP)
+NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree", ".out", ".treefile"}
+ORTHO_STATS_PATH = "/output_alignment_stats.csv"
+HOMOLOG_STATS_PATH = "/input_alignment_stats.csv"
+ORTHOLOG_STATS_HEADER = "filename;otus;sequences;meanSeqLen;shortestSeq;longestSeq;\
+pctMissingData;alignmentLen\n"
+HOMOLOG_STATS_HEADER = "filename;otus;sequences;meanSeqLen;shortestSeq;longestSeq;\
+pctMissingData;alignmentLen;shortSequencesRemoved;longBranchesRemoved;\
+monophyliesMasked;nodesCollapsed;divergentOtusRemoved\n"
+ORTHO_STATS_PATH = "/output_alignment_stats.csv"
+LOG_PATH = "/phylopypruner.log"
+ORTHOLOGS_PATH = "/output_alignments"
+TIMESTAMP = datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p")
+ABOUT = "PhyloPyPruner version {}\n{}\n{}".format(
+    VERSION, TIMESTAMP, "-" * len(TIMESTAMP))
+NO_FILES = """Please provide either a multiple sequence alignment (MSA) and a
+Newick tree, or a path to a directory containing multiple MSAs and Newick
+trees."""
 
 def _warning(message):
-    """
-    Returns the provided message with the text 'warning: ' in bold red
-    prepended.
-    """
-    return "{}warning{}: {}".format("\033[91m\033[1m", "\033[0m", message)
+    """Print the provided message with the text 'warning: ' in front of it.
 
-NO_FILES = _warning("""Please provide either a multiple sequence alignment
-(MSA) and a Newick tree, or a path to a directory containing multiple MSAs
-and Newick trees. Run PhyloPyPruner using the '-h' or '--help' flag for
-additional instructions.""")
+    Parameters
+    ----------
+    message : str
+        Print this string
+
+    Returns
+    -------
+    None
+    """
+    return "{}warning:{} {}{}".format(
+        "\033[35m", "\033[37m", message, "\033[0m")
+
+def _error(message):
+    """Print the provided message with the text 'error: ' in front of it and
+    exit.
+
+    Parameters
+    ----------
+    message : str
+        Print this message before exiting.
+
+    Returns
+    -------
+    None
+    """
+    print("{}error:{} {}{}".format("\033[31m", "\033[37m", message, "\033[0m"))
+    exit()
 
 def _yes_or_no(question):
     """
@@ -90,53 +119,42 @@ def _no_files(args):
 
 def _validate_arguments(args):
     "Performs a series of checks to validate the input before execution."
-    valid_arguments = True
 
     if _no_files(args):
-        print(NO_FILES)
-        valid_arguments = False
+        _error(NO_FILES)
 
     if not args.outgroup and args.prune == "MO" or \
         not args.outgroup and args.prune == "RT":
-        print(_warning("trying to run {}, but no outgroup has been\
- specified".format(args.prune)))
-        valid_arguments = False
+        _error("pruning method is set to {}, but no outgroup has been \
+specified".format(args.prune))
 
     if args.min_support:
         if args.min_support < 0 or args.min_support > 100:
-            print(_warning("minimum support value ('--min-support') has to be\
- either in percentage (1-100) or in decimal format between 0.0 - 1.0"))
-            valid_arguments = False
+            _error("minimum support value ('--min-support') has to be \
+either in percentage (1-100) or in decimal format between 0.0 - 1.0")
         elif args.min_support > 1:
             # convert from percentage to floating point
             args.min_support = args.min_support / 100
 
     if args.trim_divergent:
         if args.trim_divergent < 0 or args.trim_divergent > 100:
-            print(_warning("the divergence threshold ('--trim-divergent') has to be\
- either in percentage (1-100) or in decimal format between 0.0 - 1.0"))
-            valid_arguments = False
+            _error("the divergence threshold ('--trim-divergent') has to be \
+either in percentage (1-100) or in decimal format between 0.0 - 1.0")
         elif args.trim_divergent > 1:
             # convert from percentage to floating point
             args.trim_divergent = args.trim_divergent / 100
 
     if args.min_len and args.min_len < 1:
-        print(_warning("minimum sequence length ('--min-len') has to be a\
- positive integer (1, 2, 3, 4, ...)"))
-        valid_arguments = False
+        _error("minimum sequence length ('--min-len') has to be a positive \
+integer (1, 2, 3, 4, ...)")
 
     if args.min_taxa and args.min_taxa < 1:
-        print(_warning("minimum number of taxa ('--min-taxa') has to be a\
- positive integer (1, 2, 3, 4, ...)"))
-        valid_arguments = False
+        _error("minimum number of taxa ('--min-taxa') has to be a positive \
+integer (1, 2, 3, 4, ...)")
 
     if args.trim_lb and args.trim_lb <= 0:
-        print(_warning("the factor for removing long branches ('--trim-lb')\
-has to be a positive number"))
-        valid_arguments = False
-
-    if not valid_arguments:
-        exit()
+        _error("the factor for removing long branches ('--trim-lb') \
+has to be a positive number")
 
 def _run(settings, msa, tree):
     """
@@ -171,7 +189,7 @@ def _run(settings, msa, tree):
 
     # collapse weakly supported nodes into polytomies
     if settings.min_support:
-        log.pruned_sequences = filtering.collapse_nodes(tree, settings.min_support)
+        log.collapsed_nodes = filtering.collapse_nodes(tree, settings.min_support)
 
     # mask monophyletic groups
     if settings.mask:
@@ -183,7 +201,8 @@ def _run(settings, msa, tree):
 
     # trim divergent sequences
     if settings.trim_divergent:
-        seqs_removed = decontamination.trim_divergent(tree, settings.trim_divergent)
+        log.divergent = decontamination.trim_divergent(
+            tree, settings.trim_divergent, settings.include)
 
     # exit if number of OTUs < threshold
     if settings.min_taxa:
@@ -311,6 +330,20 @@ def parse_args():
                        help="remove sequences with a branch length <factor> \
                              times larger the standard deviation of all \
                              branches within its tree")
+    group.add_argument("--include",
+                       nargs='+',
+                       metavar="<OTU>",
+                       default=None,
+                       type=str,
+                       help="include the OTUs in the specified list, even if \
+                             they were deemed problematic by \
+                             '--trim-freq-paralogs' or '--trim-divergent'")
+    group.add_argument("--exclude",
+                       nargs='+',
+                       metavar="<OTU>",
+                       default=None,
+                       type=str,
+                       help="exclude these OTUs in this run")
 
     group = parser.add_argument_group("tree-based orthology inference")
     group.add_argument("--outgroup",
@@ -343,12 +376,6 @@ def parse_args():
                              largest subtree ('LS')")
 
     group = parser.add_argument_group("decontamination")
-    group.add_argument("--exclude",
-                       nargs='+',
-                       metavar="<OTU>",
-                       default=None,
-                       type=str,
-                       help="exclude these OTUs in this run")
     group.add_argument("--trim-freq-paralogs",
                        default=None,
                        metavar="<factor>",
@@ -373,18 +400,11 @@ def parse_args():
                        statistics for each OTU left out into the summary \
                        file; use the '--exclude' flag in a subsequent run \
                        to remove taxa deemed as problematic")
-    group.add_argument("--include",
-                       nargs='+',
-                       metavar="<OTU>",
-                       default=None,
-                       type=str,
-                       help="include the OTUs in the specified list, even if \
-                             they were deemed problematic by \
-                             '--trim-freq-paralogs' or '--trim-divergent'")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
 def main():
     "Parse args, run filter and infer orthologs."
+    print(ABOUT)
     args = parse_args()
     _validate_arguments(args)
     settings = Settings(args)
@@ -398,8 +418,15 @@ def main():
         dir_out = str(args.dir).rstrip("/")
     else:
         dir_out = os.path.dirname(str(args.msa).rstrip("/"))
+    dir_out = dir_out + "/phylopypruner_output"
     if not os.path.isdir(dir_out):
         os.makedirs(dir_out)
+
+    if os.path.isfile(dir_out + LOG_PATH):
+        os.remove(dir_out + LOG_PATH)
+
+    with open(dir_out + LOG_PATH, "w") as log_file:
+        log_file.write(ABOUT + "\n")
 
     if os.path.isfile(dir_out + ORTHO_STATS_PATH):
         question = _warning("files from a previous run exists in the output \
@@ -409,17 +436,20 @@ directory, overwrite?")
 
     if os.path.isfile(dir_out + ORTHO_STATS_PATH):
         os.remove(dir_out + ORTHO_STATS_PATH)
-    with open(dir_out + ORTHO_STATS_PATH, "w") as stats_file:
-        stats_file.write(HEADER)
 
-    if os.path.isfile(dir_out + LOG_PATH):
-        os.remove(dir_out + LOG_PATH)
+    if os.path.isfile(dir_out + HOMOLOG_STATS_PATH):
+        os.remove(dir_out + HOMOLOG_STATS_PATH)
+
+    with open(dir_out + ORTHO_STATS_PATH, "w") as ortho_stats_file:
+        ortho_stats_file.write(ORTHOLOG_STATS_HEADER)
+
+    with open(dir_out + HOMOLOG_STATS_PATH, "w") as homo_stats_file:
+        homo_stats_file.write(HOMOLOG_STATS_HEADER)
 
     if os.path.isdir(dir_out + ORTHOLOGS_PATH):
         shutil.rmtree(dir_out + ORTHOLOGS_PATH)
 
-    print("PhyloPyPruner version {}".format(VERSION))
-    print(datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p"))
+    settings.report(args.dir, dir_out + LOG_PATH)
 
     if args.msa and args.tree:
         # run for a single pair of files
@@ -432,8 +462,7 @@ directory, overwrite?")
         else:
             dir_in = args.dir
         if not os.path.isdir(dir_in):
-            print(_warning("input directory {} does not exist".format(dir_in)))
-            exit()
+            _error("input directory {} does not exist".format(dir_in))
         # corresponding files; filename is key, values are tuple pairs where
         # MSA comes first and tree second
         corr_files = dict()
@@ -450,33 +479,45 @@ directory, overwrite?")
                 else:
                     corr_files[filename] = (file,)
 
+        # remove file "pairs" were only 1 file was recovered
+        pairs_to_remove = list()
+        for filename in corr_files:
+            if len(corr_files[filename]) < 2:
+                pairs_to_remove.append(filename)
+
+        for filename in pairs_to_remove:
+            corr_files.pop(filename)
+
         total = len(corr_files)
         if total < 1:
             # no file pairs found in the provided directory
-            print(_warning("no file pairs were found in the provided\
- directory"))
-            exit()
+            _error("no file pairs were found in the provided directory")
 
+        progress = None
         for index, pair in enumerate(corr_files, 1):
             try:
                 settings.fasta_file, settings.nw_file = corr_files[pair]
             except:
-                # corresponding file not found
-                continue
-            sys.stdout.write("\rprocessing MSA: {}; processing tree: {} ({}/{} file \
-pairs)".format(settings.fasta_file, settings.nw_file, index, total))
+                continue # corresponding file not found
+
+            # overwrite last line to get rid of trailing characters
+            if progress:
+                print(" " * len(progress), end="\r")
+            sys.stdout.flush()
+            progress = "processing MSA: {} and tree: {} ({}/{} file \
+pairs)".format(settings.fasta_file, settings.nw_file, index, total)
+            print(progress, end="\r")
             sys.stdout.flush()
             summary.logs.append(_get_orthologs(settings, dir_in, dir_out))
         mk_sum_out_title(dir_out)
+        print("")
 
     if len(summary) == 0:
-        print(_warning("couldn't find any matching pairs, check filetype extensions"))
-        exit()
+        _error("couldn't find any matching pairs, check filetype extensions")
 
-    homolog_report = summary.homolog_report(dir_out)
-    ortholog_report = summary.report("orthologs", dir_out)
     paralog_freq = summary.paralogy_frequency(dir_out, args.trim_freq_paralogs)
     otus_to_exclude = []
+    homolog_report = summary.homolog_report(dir_out)
 
     if args.trim_freq_paralogs:
         freq_paralogs = decontamination.trim_freq_paralogs(
@@ -490,13 +531,26 @@ pairs)".format(settings.fasta_file, settings.nw_file, index, total))
                                args.include]
         summary, ortholog_report = decontamination.prune_by_exclusion(
             summary, otus_to_exclude, dir_out)
+    else:
+        ortholog_report = summary.report("output", dir_out)
 
     if args.jackknife:
         decontamination.jackknife(summary, dir_out)
-    print("\n{}\n{}".format(homolog_report, ortholog_report))
+
+    print("{}\n{}".format(homolog_report, ortholog_report))
+
+    with open(dir_out + LOG_PATH, "a") as log_file:
+        log_file.write("\n" + homolog_report)
+        log_file.write("\n" + ortholog_report)
 
     summary.write_msas(args.wrap)
+    run_time = "Run time: {} seconds".format(round(time.time() - START_TIME, 2))
+    run_time_report = "\n{}\n{}".format("-" * len(run_time), run_time)
+    print(run_time_report)
+    with open(dir_out + LOG_PATH, "a") as log_file:
+        log_file.write("\n" + run_time_report)
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath('..'))
+    START_TIME = time.time()
     main()
