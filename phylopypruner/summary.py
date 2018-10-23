@@ -11,18 +11,20 @@ try:
     from matplotlib.pyplot import figure as fig
     MATPLOTLIB = True
 except ImportError:
-    print("{}suggestion{}: install Matplotlib (https://matplotlib.org/) to \
-get a barplot of the paralog frequency".format("\033[92m\033[1m", "\033[0m"))
+    print("{}tip:{} install Matplotlib (https://matplotlib.org/) to \
+get a barplot of the paralog frequency".format("\033[92m", "\033[0m"))
     MATPLOTLIB = False
 HAVE_DISPLAY = "DISPLAY" in os.environ
 if not HAVE_DISPLAY:
+    print("{}warning:{} no display found; can't generate plot{}".format(
+        "\033[35m", "\033[37m", "\033[0m"))
     MATPLOTLIB = False
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUM_HEADER = "id;alignments;sequences;otus;meanSequences;meanOtus;meanSeqLen;\
 shortestSeq;longestSeq;pctMissingData;catAlignmentLen\n"
-SUM_PATH = "/{}_ppp_summary.csv".format(TIMESTAMP)
-FREQ_PLOT_FILE = "/{}_ppp_paralog_freq.png".format(TIMESTAMP)
-FREQ_CSV_FILE = "/{}_ppp_paralog_freq.csv".format(TIMESTAMP)
+SUM_PATH = "/supermatrix_stats.csv"
+FREQ_PLOT_FILE = "/paralogy_freq_plot.png"
+FREQ_CSV_FILE = "/otu_stats.csv"
 
 class Summary(object):
     """
@@ -79,18 +81,23 @@ class Summary(object):
         seen = set()
         paralog_freq = defaultdict(int) # key is OTU, value is no. of paralogs
         presence = defaultdict(int) # key is OTU, value is
+        divergent = defaultdict(int) # key is OTU, divergent sequences is value
         first_iteration = True
         for log in self.logs:
             otus_in_alignment = log.msa.otus()
             for otu in otus_in_alignment:
-                presence[otu] += 1
+                if otu:
+                    presence[otu] += 1
 
             for paralog in log.paralogs:
                 otu = paralog.otu()
                 # start counting at the first multiple of an OTU
-                if otu in seen:
+                if otu and otu in seen:
                     paralog_freq[otu] += 1
                 seen.add(otu)
+
+            for otu in log.divergent:
+                divergent[otu] += 1
 
         # normalize paralogy frequency by how often the OTU is present
         for otu in presence:
@@ -104,9 +111,10 @@ class Summary(object):
             threshold = _std(list(paralog_freq.values())) * factor
 
         with open(dir_out + FREQ_CSV_FILE, "w") as csv_out:
-            csv_out.write("otu;paralogs\n")
+            csv_out.write("otu;paralogyFrequency;timesAboveDivergenceThreshold\n")
             for otu, freq in paralog_freq.items():
-                csv_out.write("{};{}\n".format(otu, freq))
+                csv_out.write("{};{};{}\n".format(
+                    otu, freq, divergent[otu]))
 
         otus = list(paralog_freq.keys())
         indexes = range(len(otus))
@@ -117,7 +125,7 @@ class Summary(object):
             plt.yticks(list(indexes), otus)
             plt.ylabel("OTU")
             plt.xlabel("number of paralogs / number of alignments OTU is in")
-            plt.title("Paralog Frequency")
+            plt.title("Paralogy Frequency")
             if threshold:
                 plt.axvline(x=threshold,
                             color="red",
@@ -281,8 +289,9 @@ class Summary(object):
         for log in self.logs:
             no_of_alignments += 1
             otus_missing = no_of_otus - len(log.msa.otus())
-            pct_missing += float(otus_missing) / float(no_of_otus)
-            pct_missing += log.msa.missing_data()
+            if not no_of_otus == 0:
+                pct_missing += float(otus_missing) / float(no_of_otus)
+                pct_missing += log.msa.missing_data()
 
         if no_of_alignments > 0:
             return round((pct_missing / no_of_alignments) * 100, 1)
@@ -368,7 +377,7 @@ concatenated alignment length:\t\t{}""".format(
     self.homolog_cat_alignment())
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
-            "homologs",
+            "input",
             self.homolog_seq_files(),
             self.homolog_seqs(),
             len(self.homolog_otus()),
@@ -528,5 +537,3 @@ def _std(data):
     if len(data) < 2:
         raise ValueError('variance requires at least two data points')
     return (_sdm(data) / len(data)) ** 0.5
-
-

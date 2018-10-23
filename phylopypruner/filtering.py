@@ -2,7 +2,9 @@
 Tools for filtering tree nodes and sequences.
 """
 
+from __future__ import absolute_import
 import copy
+from phylopypruner.tree_node import TreeNode
 
 def _is_short_sequence(sequence, treshold):
     """
@@ -22,8 +24,29 @@ def _leaves_to_exclude(node, otus):
     if not node:
         return False
     for leaf in node.iter_leaves():
-        if leaf.otu() in otus:
+        if leaf.otu() in otus and not leaf.is_root():
             return True
+
+def rm_empty_root(node):
+    if not node:
+        return node
+
+    "Remove an empty node at the root of the provided node."
+    new_root = node
+    for branch in node.iter_branches():
+        if branch.is_root:
+            if not len(branch) is 1:
+                new_root = branch
+                new_root = TreeNode(branch.name, branch.dist)
+                new_root.children = branch.children
+                break
+
+    leaves_to_remove = set()
+    for leaf in new_root.iter_leaves():
+        if not leaf.name:
+            leaves_to_remove.add(leaf)
+
+    return new_root.remove_nodes(leaves_to_remove)
 
 def exclude(node, otus):
     """
@@ -33,7 +56,7 @@ def exclude(node, otus):
     node_excluded = copy.copy(node)
     while _leaves_to_exclude(node_excluded, otus):
         for leaf in node_excluded.iter_leaves():
-            if leaf.otu() in otus:
+            if leaf.otu() in otus and not leaf.is_root():
                 leaf.delete()
                 break
 
@@ -43,7 +66,8 @@ def exclude(node, otus):
                 if not leaf.name:
                     leaf.delete()
                     break
-    return node_excluded
+
+    return rm_empty_root(node_excluded)
 
 def _short_seqs(msa, tree, treshold):
     """

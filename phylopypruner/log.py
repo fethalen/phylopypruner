@@ -14,14 +14,18 @@ from phylopypruner.tree_node import TreeNode
 from phylopypruner.settings import Settings
 
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d")
-ORTHO_STATS_PATH = "/{}_ppp_ortho_stats.csv".format(TIMESTAMP)
-LOG_PATH = "/{}_ppp_run.log".format(TIMESTAMP)
+ORTHO_STATS_PATH = "/output_alignment_stats.csv"
+HOMOLOG_STATS_PATH = "/input_alignment_stats.csv"
+ORTHOLOG_STATS_HEADER = "id;otus;sequences;meanSeqLen;shortestSeq;longestSeq;\
+pctMissingData;alignmentLen\n"
+HOMOLOG_STATS_HEADER = "id;otus;sequences;meanSeqLen;shortestSeq;longestSeq;\
+pctMissingData;alignmentLen;shortSequencesRemoved;longBranchesRemoved;\
+monophyliesMasked;nodesCollapsed;divergentOtusRemoved\n"
 
 class Log(object):
     """
     A record of a single run.
     """
-
     def __init__(self, version, msa=MultipleSequenceAlignment, tree=TreeNode,
                  settings=Settings):
         self._version = version
@@ -34,6 +38,7 @@ class Log(object):
         self._sequences = len(list(self._tree.iter_leaves()))
         self._taxa = len(set(list(self._tree.iter_otus())))
         self._collapsed_nodes = 0
+        self._divergent = []
         self._trimmed_seqs = []
         self._lbs_removed = []
         self._monophylies_masked = []
@@ -259,6 +264,15 @@ class Log(object):
     def settings(self, value):
         self._settings = value
 
+    @property
+    def divergent(self):
+        "A list of divergent sequences within this log."
+        return self._divergent
+
+    @divergent.setter
+    def divergent(self, value):
+        self._divergent = value
+
     def outgroups_to_str(self):
         """
         Returns a string that contains the outgroups that were used in this
@@ -329,56 +343,49 @@ class Log(object):
 
     def report(self, dir_out):
         "Print a report of the records in this log."
-        report = """
-MSA:\t\t\t\t\t{}
-tree:\t\t\t\t\t{}
-{}
-# of sequences:\t\t\t\t{}
-# of OTUs:\t\t\t\t{}
-# of short sequences removed:\t\t{}
-# of long branched sequences removed:\t{}
-# of monophylies masked:\t\t{}
-# of nodes collapsed into polytomies:\t{}
-{}
-\ninput tree:\n{}
-\ntree before paralogy pruning:\n{}
-{}
-{}""".format(self.msa_file, self.tree_file, self.outgroups_to_str(),
-             self.sequences, self.taxa, len(self._trimmed_seqs),
-             len(self.lbs_removed), len(self.monophylies_masked),
-             self.collapsed_nodes, self.paralogs_to_str(),
-             self.homology_tree, self.masked_tree_str,
-             self.orthologs_to_str(), self.msas_out_to_str())
+        self.to_csv(dir_out)
 
-        with open(dir_out + LOG_PATH, "a") as log_file:
-            log_file.write(report)
-
-        for ortholog in self.orthologs:
-            self.to_csv(dir_out, ortholog)
-
-    def to_csv(self, dir_out, ortholog):
+    def to_csv(self, dir_out):
         """
         Takes a filename as an input and writes the records in this log to a
         CSV file to the provided path.
         """
         with open(dir_out + ORTHO_STATS_PATH, "a") as stats_file:
             for ortholog in self.msas_out:
-                row = "{};{};{};{};{};{};{}\n".format(
+                row = "{};{};{};{};{};{};{};{}\n".format(
                     os.path.basename(str(ortholog)),
                     len(ortholog),
+                    len(ortholog.otus()),
                     avg_seq_len(ortholog),
                     shortest_sequence(ortholog),
                     longest_sequence(ortholog),
-                    missing_data(ortholog),
-                    cat_alignment(ortholog))
+                    ortholog.missing_data(),
+                    ortholog.alignment_len())
                 stats_file.write(row)
+
+        with open(dir_out + HOMOLOG_STATS_PATH, "a") as stats_file:
+            row = "{};{};{};{};{};{};{};{};{};{};{};{};{}\n".format(
+                os.path.basename(str(self.msa_file)),
+                len(self.msa.otus()),
+                len(self.msa),
+                avg_seq_len(self.msa),
+                shortest_sequence(self.msa),
+                longest_sequence(self.msa),
+                self.msa.missing_data(),
+                self.msa.alignment_len(),
+                len(self.trimmed_seqs),
+                len(self.lbs_removed),
+                len(self.monophylies_masked),
+                self.collapsed_nodes,
+                len(self.divergent))
+            stats_file.write(row)
 
     def msa_out_path(self, dir_out, index=""):
         msa_in_path = str(self.msa)
         msa_in_filename = os.path.basename(msa_in_path)
         basename, extension = os.path.splitext(msa_in_filename)
 
-        orthologs_dir = "{}/{}_orthologs".format(dir_out, TIMESTAMP)
+        orthologs_dir = "{}/output_alignments".format(dir_out)
         if not os.path.isdir(orthologs_dir):
             os.makedirs(orthologs_dir)
 
@@ -395,7 +402,7 @@ tree:\t\t\t\t\t{}
         this Log object's list of orthologs. The MSAs are stored in this logs
         list of MSAs called 'msas_out'.
         """
-        for index, ortholog in enumerate(self.orthologs):
+        for index, ortholog in enumerate(self.orthologs, 1):
             if len(self.orthologs) is 1:
                 msa_out_path, extension = self.msa_out_path(dir_out)
             else:
@@ -423,33 +430,9 @@ def avg_seq_len(msa):
         sequences += 1
         seq_lens += len(sequence.ungapped())
     if sequences > 0:
-        return round(seq_lens / sequences, 1)
+        return int(seq_lens / sequences)
     else:
         return 0
-
-def missing_data(msa):
-    "Returns the percent missing data within the ortholog."
-    sequences = 0
-    pct_missing = 0.0
-    for sequence in msa.sequences:
-        sequences += 1
-        ungapped = len(sequence.ungapped())
-        missing = len(sequence) - ungapped
-        if len(sequence) > 0:
-            pct_missing += float(missing) / float(len(sequence))
-    if sequences > 0:
-        return round(pct_missing / sequences, 3) * 100
-    else:
-        return 0
-
-def cat_alignment(msa):
-    "Returns the length of the alignment."
-    seq_lens = 0
-    # It doesn't matter which sequence we picked since they're
-    # aligned and missing positions are denoted by gaps.
-    sequence = msa.sequences[0]
-    seq_lens += len(sequence)
-    return seq_lens
 
 def shortest_sequence(msa):
     """
@@ -473,7 +456,7 @@ def longest_sequence(msa):
             longest = len(sequence.ungapped())
     return longest
 
-def _file_out(path, dir_out=None, index=""):
+def _file_out(path, directory=None, index=""):
     """
     Takes the path to an MSA and an optional path to a directory as an input.
     Extracts the base name and extension from the provided path. If no directory
@@ -490,7 +473,7 @@ def _file_out(path, dir_out=None, index=""):
     filename = os.path.basename(path)
     basename, extension = os.path.splitext(filename)
 
-    dir_out = directory + "/{}_orthologs".format(TIMESTAMP)
+    dir_out = directory + "/output_alignments"
     if not os.path.isdir(dir_out):
         os.makedirs(dir_out)
 

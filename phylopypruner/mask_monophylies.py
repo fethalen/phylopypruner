@@ -7,27 +7,7 @@ in-paralogs, isoforms, or other moonophyletic groups within the same OTU.
 
 from __future__ import absolute_import
 from collections import defaultdict
-from phylopypruner.tree_node import TreeNode
-
-def _get_new_root(node):
-    # workaround to get rid of empty nodes at root
-    new_root = node
-    for branch in node.iter_branches():
-        if branch.is_root:
-            if not len(branch) is 1:
-                new_root = branch
-                new_root = TreeNode(branch.name, branch.dist)
-                new_root.children = branch.children
-                break
-
-    leaves_to_remove = set()
-    for leaf in new_root.iter_leaves():
-        if not leaf.name:
-            leaves_to_remove.add(leaf)
-
-    new_root = new_root.remove_nodes(leaves_to_remove)
-
-    return new_root
+from phylopypruner.filtering import rm_empty_root
 
 def _monophyletic_sister(node):
     """
@@ -207,7 +187,7 @@ def longest_isoform(msa, node):
                 break
         monophylies = bool(leaves_to_remove)
 
-    node = _get_new_root(node)
+    node = rm_empty_root(node)
     return node, masked
 
 def pairwise_distance(node):
@@ -239,5 +219,5 @@ def pairwise_distance(node):
                 break
         monophylies = bool(leaves_to_remove)
 
-    node = _get_new_root(node)
+    node = rm_empty_root(node)
     return node, masked
