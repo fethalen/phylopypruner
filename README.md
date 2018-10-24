@@ -13,7 +13,7 @@ pre-existing tools such as
 [Agalma](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3840672/) and
 [Phylogenomic Dataset
 Reconstruction](https://www.ncbi.nlm.nih.gov/pubmed/25158799), this package
-provide new methods for differentiating [contamination-like
+provides new methods for differentiating [contamination-like
 sequences](https://gitlab.com/fethalen/phylopypruner/wikis/About-PhyloPyPruner#contamination-like-issues-)
 from paralogs.
 
