@@ -121,7 +121,8 @@ class Summary(object):
         freq = list(paralog_freq.values())
 
         if MATPLOTLIB:
-            plt.barh(y=indexes, width=freq, color="black", edgecolor="black", alpha=0.5)
+            plt.barh(y=indexes, width=freq, color="black",
+                     edgecolor=['black']*len(freq), alpha=0.5)
             plt.yticks(list(indexes), otus)
             plt.ylabel("OTU")
             plt.xlabel("number of paralogs / number of alignments OTU is in")
