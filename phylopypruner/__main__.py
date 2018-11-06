@@ -88,6 +88,16 @@ def _yes_or_no(question):
     """
     Takes a question as an input and prompts the user for a yes or no. Returns
     True if the answer is yes and False if the answer is no.
+
+    Parameters
+    ----------
+    question : str
+        Print this message before (y/n).
+
+    Returns
+    -------
+    True or False
+        True if answer is 'y', False if answer is 'n'.
     """
     # make input work the same way in both Python 2 and 3
     answer = input(question + " (y/n): ".lower().rstrip())
@@ -173,19 +183,22 @@ def _run(settings, msa, tree):
     if settings.min_len:
         log.trimmed_seqs = filtering.trim_short_seqs(msa, tree, settings.min_len)
 
-    # exit if number of OTUs < threshold
-    if settings.min_taxa:
-        if filtering.too_few_otus(tree, settings.min_taxa):
-            return log
+    if filtering.too_few_otus(tree, settings.min_taxa):
+        return log
 
     # trim long branches
     if settings.trim_lb:
         log.lbs_removed = list(filtering.prune_long_branches(tree, settings.trim_lb))
 
-    # exit if number of OTUs < threshold
-    if settings.min_taxa:
-        if filtering.too_few_otus(tree, settings.min_taxa):
-            return log
+    if filtering.too_few_otus(tree, settings.min_taxa):
+        return log
+
+    # trim zero length branches
+    if settings.trim_zero_len:
+        filtering.trim_zero_len_branches(tree, settings.trim_zero_len)
+
+    if filtering.too_few_otus(tree, settings.min_taxa):
+        return log
 
     # collapse weakly supported nodes into polytomies
     if settings.min_support:
@@ -204,10 +217,8 @@ def _run(settings, msa, tree):
         log.divergent = decontamination.trim_divergent(
             tree, settings.trim_divergent, settings.include)
 
-    # exit if number of OTUs < threshold
-    if settings.min_taxa:
-        if filtering.too_few_otus(tree, settings.min_taxa):
-            return log
+    if filtering.too_few_otus(tree, settings.min_taxa):
+        return log
 
     # root by outgroup
     rooted = False # True if outgroup rooting is successful
@@ -224,10 +235,8 @@ def _run(settings, msa, tree):
     if settings.exclude:
         tree = filtering.exclude(tree, settings.exclude)
 
-    # exit if number of OTUs < threshold
-    if settings.min_taxa:
-        if filtering.too_few_otus(tree, settings.min_taxa):
-            return log
+    if filtering.too_few_otus(tree, settings.min_taxa):
+        return log
 
     # mask monophyletic groups
     if settings.mask:
@@ -236,14 +245,6 @@ def _run(settings, msa, tree):
         elif settings.mask == "longest":
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         log.monophylies_masked.update(masked_seqs)
-
-    log.masked_tree = tree
-    log.masked_tree_str = tree.view()
-
-    # exit if number of OTUs < threshold
-    if settings.min_taxa:
-        if filtering.too_few_otus(tree, settings.min_taxa):
-            return log
 
     # get a list of paralogs
     log.paralogs = tree.paralogs()
@@ -278,8 +279,8 @@ def parse_args():
                         metavar="<directory>",
                         type=str,
                         default=None,
-                        help="set output directory; same as the input \
-                              directory by default")
+                        help="set output directory; DEFAULT: same directory \
+                              as the input alignments")
     parser.add_argument("--wrap",
                         metavar="<max column>",
                         default=None,
@@ -309,8 +310,9 @@ def parse_args():
     group.add_argument("--min-taxa",
                        metavar="<threshold>",
                        type=int,
-                       default=None,
-                       help="minimum number of OTUs allowed in output")
+                       default=4,
+                       help="minimum number of OTUs allowed in output; \
+                             DEFAULT: 4")
     group.add_argument("--min-len",
                        metavar="<threshold>",
                        default=None,
@@ -330,6 +332,12 @@ def parse_args():
                        help="remove sequences with a branch length <factor> \
                              times larger the standard deviation of all \
                              branches within its tree")
+    group.add_argument("--min-pdist",
+                       default=None,
+                       metavar="<distance>",
+                       type=float,
+                       help="remove pairs of sequences with a tip-to-tip \
+                             distance that is less than <distance>")
     group.add_argument("--include",
                        nargs='+',
                        metavar="<OTU>",
@@ -367,7 +375,7 @@ def parse_args():
                        type=str,
                        choices=["longest", "pdist"],
                        help="specify the method for masking monophylies; \
-                             default is pairwise distance ('pdist')")
+                             DEFAULT: pairwise distance ('pdist')")
     group.add_argument("--prune",
                        default="LS",
                        type=str,
@@ -404,8 +412,8 @@ def parse_args():
 
 def main():
     "Parse args, run filter and infer orthologs."
-    print(ABOUT)
     args = parse_args()
+    print(ABOUT)
     _validate_arguments(args)
     settings = Settings(args)
     summary = Summary()

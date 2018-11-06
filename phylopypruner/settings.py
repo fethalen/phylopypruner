@@ -11,6 +11,7 @@ class Settings(object):
         self._min_len = arguments.min_len
         self._min_support = arguments.min_support
         self._trim_lb = arguments.trim_lb
+        self._trim_zero_len = arguments.min_pdist
         self._outgroup = arguments.outgroup
         self._include = arguments.include
         self._exclude = arguments.exclude
@@ -155,6 +156,15 @@ class Settings(object):
     @jackknife.setter
     def jackknife(self, value):
         self._jackknife = value
+
+    @property
+    def trim_zero_len(self):
+        "True if jackknifing is set."
+        return self._trim_zero_len
+
+    @trim_zero_len.setter
+    def trim_zero_len(self, value):
+        self._trim_zero_len = value
 
     def report(self, directory, log_path):
         "Generate a report of what settings were used."

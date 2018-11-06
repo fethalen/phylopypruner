@@ -6,19 +6,42 @@ from __future__ import absolute_import
 import copy
 from phylopypruner.tree_node import TreeNode
 
-def _is_short_sequence(sequence, treshold):
+def _is_short_sequence(sequence, threshold):
     """
     Return true if the provided sequence is shorter than the provided treshold.
-    """
-    return len(sequence.ungapped()) < treshold
 
-def too_few_otus(tree, treshold):
+    Parameters
+    ----------
+    sequence : Sequence object
+        The sequence you wish to consider.
+    threshold : int
+        Minimum number of positions allowed in sequence.
+
+    Returns
+    -------
+    True of False
+        True if the sequence length is shorter than the provided threshold.
+    """
+    return len(sequence.ungapped()) < threshold
+
+def too_few_otus(tree, threshold):
     """
     Return true if the provided tree node object have fewer OTUs than the
-    provided treshold.
+    provided threshold.
+
+    Parameters
+    ----------
+    tree : TreeNode object
+        The tree you wish to consider.
+    threshold : int
+        Minimum number of OTUs allowed in the provided tree.
+
+    Returns
+    -------
+    True or False
+        True if the tree contains to few OTUs.
     """
-    if len(list(tree.iter_otus())) < treshold:
-        return True
+    return len(set(tree.iter_otus())) < threshold
 
 def _leaves_to_exclude(node, otus):
     if not node:
@@ -28,10 +51,10 @@ def _leaves_to_exclude(node, otus):
             return True
 
 def rm_empty_root(node):
+    "Remove an empty node at the root of the provided node."
     if not node:
         return node
 
-    "Remove an empty node at the root of the provided node."
     new_root = node
     for branch in node.iter_branches():
         if branch.is_root:
@@ -134,16 +157,26 @@ def prune_long_branches(node, factor):
     leaves_to_remove = set()
 
     for leaf in node.iter_leaves():
-        dists.append(leaf.dist)
+        dists.append(node.distance_to(leaf))
     if len(dists) < 2:
         return leaves_to_remove
-    treshold = _std(dists) * factor
+    threshold = _std(dists) * factor
 
     for leaf in node.iter_leaves():
-        if leaf.dist > treshold:
+        if node.distance_to(leaf) > threshold:
             leaves_to_remove.add(leaf)
 
     node.remove_nodes(leaves_to_remove)
+    return leaves_to_remove
+
+def trim_zero_len_branches(node, min_len=1e-7):
+    leaves_to_remove = set()
+
+    dists = node.distances()
+    for pair in dists:
+        if dists[pair] < min_len:
+            leaves_to_remove.add(pair[0], pair[1])
+
     return leaves_to_remove
 
 def collapse_nodes(node, treshold):
