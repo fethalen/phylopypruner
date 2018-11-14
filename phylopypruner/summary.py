@@ -27,9 +27,7 @@ FREQ_PLOT_FILE = "/paralogy_freq_plot.png"
 FREQ_CSV_FILE = "/otu_stats.csv"
 
 class Summary(object):
-    """
-    Represents a collection of Log objects from previous runs.
-    """
+    "Represents a collection of Log objects from previous runs."
     def __init__(self, dir_out=None):
         self._logs = []
 
@@ -285,35 +283,38 @@ class Summary(object):
         "Returns the percent missing data within the homologs."
         pct_missing = 0.0
         no_of_alignments = 0
-        no_of_otus = len(self.homolog_otus())
+        no_of_otus = len(self.otus())
 
         for log in self.logs:
+            msa = log.msa
             no_of_alignments += 1
-            otus_missing = no_of_otus - len(log.msa.otus())
-            if not no_of_otus == 0:
-                pct_missing += float(otus_missing) / float(no_of_otus)
-                pct_missing += log.msa.missing_data()
+            otus_missing = no_of_otus - len(msa.otus())
+            pct_missing += msa.missing_data()
 
         if no_of_alignments > 0:
-            return round((pct_missing / no_of_alignments) * 100, 1)
+            return round(pct_missing / no_of_alignments, 1)
         else:
             return 0
 
     def missing_data(self):
-        "Returns the percent missing data within the orthologs."
+        """Returns the percent missing data within the output orthologous
+        MultipleSequenceAlignment object within this Summary object. Missing
+        data is calculated as if these alignments were to be concatenated into
+        a supermatrix, meaning that OTUs missing from an alignment are also
+        considered.
+        """
         pct_missing = 0.0
         no_of_alignments = 0
         no_of_otus = len(self.otus())
 
         for log in self.logs:
-            for msa_out in log.msas_out:
+            for msa in log.msas_out:
                 no_of_alignments += 1
-                otus_missing = no_of_otus - len(msa_out.otus())
-                pct_missing += float(otus_missing) / float(no_of_otus)
-                pct_missing += msa_out.missing_data()
+                otus_missing = no_of_otus - len(msa.otus())
+                pct_missing += msa.missing_data()
 
         if no_of_alignments > 0:
-            return round((pct_missing / no_of_alignments) * 100, 1)
+            return round(pct_missing / no_of_alignments, 1)
         else:
             return 0
 
@@ -465,13 +466,11 @@ concatenated alignment length:\t\t{}""".format(
     def homolog_otus(self):
         "Returns a set of all OTUs within the homologs."
         otus = set()
-
         for log in self.logs:
-            tree = log.masked_tree
-            if tree:
-                for leaf in tree.iter_leaves():
-                    if leaf.name:
-                        otus.add(leaf.otu())
+            msa = log.msa
+            for otu in msa.otus():
+                if not otu in otus:
+                    otus.add(otu)
 
         return otus
 
