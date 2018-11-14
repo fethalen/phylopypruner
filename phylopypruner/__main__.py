@@ -246,6 +246,8 @@ def _run(settings, msa, tree):
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         log.monophylies_masked.update(masked_seqs)
 
+    log.masked_tree = tree
+
     # get a list of paralogs
     log.paralogs = tree.paralogs()
 
@@ -267,9 +269,7 @@ def _get_orthologs(settings, directory="", dir_out=None):
     return log
 
 def parse_args():
-    """
-    Parse the arguments provided by the user.
-    """
+    "Parse the arguments provided by the user."
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-v", "-V", "--version",
                         action="version",

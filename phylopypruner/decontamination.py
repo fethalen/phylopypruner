@@ -170,9 +170,9 @@ def prune_by_exclusion(summary, otus, dir_out):
                                             outgroup)
         log_copy.get_msas_out(dir_out)
         summary_out.logs.append(log_copy)
-    print("")
 
     report = summary_out.report(excluded_str, dir_out)
+
     return summary_out, report
 
 def trim_freq_paralogs(factor, paralog_freq):

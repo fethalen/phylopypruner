@@ -96,16 +96,49 @@ class MultipleSequenceAlignment(object):
         for sequence in self.sequences:
             yield sequence.identifier
 
-    def missing_data(self):
+    def gaps(self):
+        """Returns the number of gap characters ('-', '?', or 'x') within this
+        MultipleSequenceAlignment object.
+
+        Returns
+        -------
+        gaps : int
+            The number of gap characters within this MultipleSequenceAlignment
+            object.
         """
-        Returns the percentage of missing data of all sequences within this
-        alignment.
-        """
-        no_of_sequences = len(self)
-        missing_data = 0
+        gaps = 0
 
         for sequence in self.sequences:
-            missing_data += sequence.missing_data()
+            gaps += self.alignment_len() - len(sequence.ungapped())
+
+        return gaps
+
+    def missing_data(self, otus_missing=0):
+        """Returns the percent missing data within this
+        MultipleSequenceAlignment object. The amount of missing data is
+        calculated as follows: Sum the number of gap characters ('-', '?', or
+        'x') within each alignment and then divide this number by the total
+        number of positions within all alignments. Treat each OTU that is missing
+        from the alignment (set by the user; DEFAULT: 0), as having gaps
+        equivalent to the entire length of this MultipleSequenceAlignment
+        object.
+
+        Parameters
+        ----------
+        otus_missing : int
+            The number of OTUs missing from this alignment (used to calculate
+            missing data within a supermatrix; 0 by default).
+
+        Returns
+        -------
+        missing_data : float
+            The percent missing data within this alignment.
+        """
+        missing_data = 0.0
+        no_of_sequences = len(self)
+        alignment_len = self.alignment_len()
+        missing_data += float(self.gaps() + \
+                (otus_missing * alignment_len))
 
         if no_of_sequences > 0:
             return missing_data / no_of_sequences
