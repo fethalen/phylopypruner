@@ -134,14 +134,15 @@ class MultipleSequenceAlignment(object):
         missing_data : float
             The percent missing data within this alignment.
         """
-        missing_data = 0.0
-        no_of_sequences = len(self)
+        gaps = 0
+        no_of_sequences = float(len(self))
         alignment_len = self.alignment_len()
-        missing_data += float(self.gaps() + \
-                (otus_missing * alignment_len))
+        gaps += self.gaps()
+        gaps += otus_missing * alignment_len
 
         if no_of_sequences > 0:
-            return missing_data / no_of_sequences
+            return float(gaps) / (float(alignment_len) *
+                                  float(no_of_sequences + otus_missing))
         else:
             return 0
 

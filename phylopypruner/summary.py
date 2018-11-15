@@ -283,16 +283,16 @@ class Summary(object):
         "Returns the percent missing data within the homologs."
         pct_missing = 0.0
         no_of_alignments = 0
-        no_of_otus = len(self.otus())
+        no_of_otus = len(list(self.otus()))
 
         for log in self.logs:
             msa = log.msa
             no_of_alignments += 1
-            otus_missing = no_of_otus - len(msa.otus())
-            pct_missing += msa.missing_data()
+            otus_missing = no_of_otus - len(list(msa.otus()))
+            pct_missing += msa.missing_data(otus_missing)
 
         if no_of_alignments > 0:
-            return round(pct_missing / no_of_alignments, 1)
+            return round((pct_missing / no_of_alignments) * 100, 1)
         else:
             return 0
 
@@ -305,16 +305,16 @@ class Summary(object):
         """
         pct_missing = 0.0
         no_of_alignments = 0
-        no_of_otus = len(self.otus())
+        no_of_otus = len(list(self.otus()))
 
         for log in self.logs:
             for msa in log.msas_out:
                 no_of_alignments += 1
-                otus_missing = no_of_otus - len(msa.otus())
-                pct_missing += msa.missing_data()
+                otus_missing = no_of_otus - len(list(msa.otus()))
+                pct_missing += msa.missing_data(otus_missing)
 
         if no_of_alignments > 0:
-            return round(pct_missing / no_of_alignments, 1)
+            return round((pct_missing / no_of_alignments) * 100, 1)
         else:
             return 0
 

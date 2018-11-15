@@ -512,7 +512,7 @@ directory, overwrite?")
             if progress:
                 print(" " * len(progress), end="\r")
             sys.stdout.flush()
-            progress = "processing MSA: {} and tree: {} ({}/{} file \
+            progress = "processing MSA {} and tree {} ({}/{} file \
 pairs)".format(settings.fasta_file, settings.nw_file, index, total)
             print(progress, end="\r")
             sys.stdout.flush()

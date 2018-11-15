@@ -204,7 +204,7 @@ def pairwise_distance(node):
         masked.update(leaves_to_remove)
         for leaf in leaves_to_remove:
             leaf.delete()
-        # node.remove_nodes(leaves_to_remove)
+        node.remove_nodes(leaves_to_remove)
         leaves_to_remove = set()
         for branch in node.iter_branches():
             child = _monophyletic_sister(branch)
