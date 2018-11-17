@@ -24,6 +24,9 @@ def largest_subtree(node, min_taxa):
     max_subtree = None
     largest = 0
 
+    if not node:
+        return max_subtree
+
     for branch in node.iter_branches():
         if bool(branch.paralogs()):
             continue
@@ -127,10 +130,11 @@ def monophyletic_outgroups(tree, min_taxa, outgroups):
                 continue
 
             if branch.is_monophyletic_outgroup(outgroups):
-                monophyletic_outgroup = root.outgroup(branch, outgroups)
-                max_subtree = largest_subtree(monophyletic_outgroup, min_taxa)
-                if max_subtree:
-                    yield max_subtree
+                monophyletic_outgroup, success = root.outgroup(branch, outgroups)
+                if success:
+                    max_subtree = largest_subtree(monophyletic_outgroup, min_taxa)
+                    if max_subtree:
+                        yield max_subtree
 
 def one_to_one_orthologs(tree):
     """
