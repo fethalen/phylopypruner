@@ -70,6 +70,52 @@ def maximum_inclusion(tree, min_taxa):
 
         max_subtree = largest_subtree(tree, min_taxa)
 
+def largest_root(node, outgroups, min_taxa):
+    """Takes a TreeNode, a list of outgroups and the minimum number of taxa
+    allowed as an input. Returns the largest subtree where all of the provided
+    outgroups are present.
+
+    Parameters
+    ----------
+
+    node : TreeNode object
+        Root of the node that you want to search.
+
+    outgroups : list
+        A list of outgroups used as the root.
+
+    min_taxa : int
+        Minimum number of OTUs allowed in the output.
+
+    Returns
+    -------
+    outgroup_clade : TreeNode object
+        The largest subtree where all of the provided outgroups are present.
+    """
+    outgroup_clade = None
+    most_tips = 0
+
+    for branch in node.iter_branches():
+        if not _has_enough_taxa(node, min_taxa):
+            # too few taxa in branch
+            continue
+
+        if not branch.outgroups_present(outgroups):
+            # outgroups absent
+            continue
+
+        if branch.repetetive_outgroups(outgroups):
+            # repetetive outgroups present
+            continue
+
+        no_of_tips = len(list(branch.iter_leaves()))
+
+        if no_of_tips > most_tips:
+            outgroup_clade = branch
+            most_tips = no_of_tips
+
+    return outgroup_clade
+
 def rooted_tree(tree, min_taxa, outgroups):
     """
     Takes a TreeNode object, the minimum number of OTUs allowed in the output
@@ -77,29 +123,46 @@ def rooted_tree(tree, min_taxa, outgroups):
     highest number of ingroup taxa and returns the largest subtree with
     non-repetitive OTUs.
     """
+    if not _has_enough_taxa(tree, min_taxa):
+        return
+
+    if one_to_one_orthologs(tree):
+        yield tree
+        return
+
     if not tree.outgroups_present(outgroups):
         # outgroups absent
         return
 
     keep = None
 
-    # find the branch with the highest number of ingroups
-    for subtree in tree.iter_branches():
-        if not _has_enough_taxa(subtree, min_taxa):
-            continue
+    outgroup_clade = largest_root(tree, outgroups, min_taxa)
+    while outgroup_clade:
+        # find the branch with the highest number of ingroups
+        for subtree in outgroup_clade.iter_branches():
+            if not _has_enough_taxa(subtree, min_taxa):
+                continue
 
-        if subtree.outgroups_present(outgroups):
-            continue
+            if subtree.outgroups_present(outgroups):
+                continue
 
-        size = len([_ for _ in subtree.iter_leaves()])
+            size = len([_ for _ in subtree.iter_leaves()])
 
-        if not keep:
-            keep = subtree
-        elif size > len([_ for _ in keep.iter_leaves()]):
-            keep = subtree
+            if not keep:
+                keep = subtree
+            elif size > len([_ for _ in keep.iter_leaves()]):
+                keep = subtree
 
-    max_subtree = largest_subtree(keep, min_taxa)
-    return max_subtree
+        most_inclusive_subtree = largest_subtree(keep, min_taxa)
+
+        if most_inclusive_subtree:
+            yield most_inclusive_subtree
+
+        if outgroup_clade.is_root():
+            break
+
+        outgroup_clade.delete()
+        outgroup_clade = largest_root(tree, outgroups, min_taxa)
 
 def monophyletic_outgroups(tree, min_taxa, outgroups):
     """
@@ -110,31 +173,25 @@ def monophyletic_outgroups(tree, min_taxa, outgroups):
     iterator object is returned, where each object is the most inclusive
     subtree found within each monophyletic group.
     """
+    if not _has_enough_taxa(tree, min_taxa):
+        return
+
+    if one_to_one_orthologs(tree):
+        yield tree
+        return
+
     if not tree.outgroups_present(outgroups):
         return
 
-    for node in tree.traverse_preorder():
-        # find branches where all outgroups are represented and non-repetetive
-        if not node.outgroups_present(outgroups):
-            continue
+    if tree.repetetive_outgroups(outgroups):
+        return
 
-        if node.repetetive_outgroups(outgroups):
-            continue
-
-        if not _has_enough_taxa(node, min_taxa):
-            continue
-
-        # find the branch where all outgroups are present
-        for branch in node.iter_branches():
-            if not branch.outgroups_present(outgroups):
-                continue
-
-            if branch.is_monophyletic_outgroup(outgroups):
-                monophyletic_outgroup, success = root.outgroup(branch, outgroups)
-                if success:
-                    max_subtree = largest_subtree(monophyletic_outgroup, min_taxa)
-                    if max_subtree:
-                        yield max_subtree
+    monophyletic_outgroup, success = root.outgroup(tree, outgroups)
+    if success:
+        max_subtree = largest_subtree(monophyletic_outgroup, min_taxa)
+        if max_subtree:
+            yield max_subtree
+            return
 
 def one_to_one_orthologs(tree):
     """
@@ -169,9 +226,9 @@ def prune_paralogs(method, tree, min_taxa, outgroup):
         if trees:
             subtrees = trees
     elif method == "RT":
-        trees = rooted_tree(tree, min_taxa, outgroup)
+        trees = list(rooted_tree(tree, min_taxa, outgroup))
         if trees:
-            subtrees.append(trees)
+            subtrees = trees
     elif method == "1to1":
         if one_to_one_orthologs(tree):
             subtrees.append(tree)

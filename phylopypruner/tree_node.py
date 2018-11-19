@@ -323,12 +323,19 @@ class TreeNode(object):
         if not isinstance(outgroups, list):
             raise TypeError("{} is not a list".format(outgroups))
 
-        seen = set()
+        otus = set(self.iter_otus())
 
-        for outgroup in self.iter_otus():
-            if not outgroup in outgroups or outgroup in seen:
+        # None of the outgroups is present within this TreeNode object.
+        if not otus.intersection(outgroups):
+            return False
+
+        # Repetetive OTUs found within this TreeNode object.
+        if len(set(outgroups)) < len(outgroups):
+            return False
+
+        for leaf in self.iter_leaves():
+            if not leaf.otu() in outgroups:
                 return False
-            seen.add(outgroup)
 
         return True
 
