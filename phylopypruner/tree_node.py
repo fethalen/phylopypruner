@@ -209,10 +209,22 @@ class TreeNode(object):
         return self
 
     def remove_nodes(self, nodes_to_remove):
-        """
-        Takes a set of strings, where each string is the name of a node to
-        remove, as an input. Iterate over the nodes within this TreeNode object
-        and remove a node if it matches a node within the set of nodes.
+        """Takes a set of strings, where each string is the name of a node to
+        remove. Iterate over the nodes within this TreeNode object and remove
+        the node, if and only if its name matches one of the names within the
+        provided set.
+
+        Parameters
+        ----------
+        nodes_to_remove : set
+            A set of strings where each string the name of a node that should
+            be removed.
+
+        Returns
+        -------
+        self : TreeNode
+            This TreeNode object with nodes with names that matches the
+            provided names removed
         """
         while nodes_to_remove:
             match = False
@@ -262,36 +274,27 @@ class TreeNode(object):
         return self
 
     def outgroups_present(self, outgroups):
+        """Takes a list of OTUs as an input and returns the subset of those
+        OTUs that are present within this tree.
+
+        Parameters
+        ----------
+        outgroups : list
+            A list of outgroups to look for.
+
+        Returns
+        -------
+        outgroups_in_node : list
+            A list of the outgroups that are present within this TreeNode
+            object.
         """
-        Takes a list of OTUs as an input. Returns true if all OTUs within
-        outgroups are present within this TreeNode object.
-        """
-        for outgroup_otu in outgroups:
-            found = False
+        outgroups_in_node = []
 
-            for otu in self.iter_otus():
-                if otu == outgroup_otu:
-                    found = True
+        for otu in self.iter_otus():
+            if otu in outgroups:
+                outgroups_in_node.append(otu)
 
-            if not found:
-                return False
-
-        return True
-
-    def repetetive_outgroups(self, outgroups):
-        """
-        Takes a list of OTUs as an input. Returns true if this TreeNode object
-        contains multiple instances of the same OTU.
-        """
-        seen = set()
-
-        for outgroup in self.iter_otus():
-            if outgroup in seen:
-                return True
-            if outgroup in outgroups:
-                seen.add(outgroup)
-
-        return False
+        return outgroups_in_node
 
     def distances(self):
         """
@@ -316,8 +319,7 @@ class TreeNode(object):
         return distances
 
     def is_monophyletic_outgroup(self, outgroups):
-        """
-        Takes a list of OTUs as an input. Returns true if this node only
+        """Takes a list of OTUs as an input. Returns true if this node only
         contains non-repetetive OTUs from the provided list.
         """
         if not isinstance(outgroups, list):

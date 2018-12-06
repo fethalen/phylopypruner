@@ -22,14 +22,19 @@ def outgroup(tree, outgroups):
         True if conditions are met, False if not.
     """
     rooted = False
-    if not tree.outgroups_present(outgroups):
+
+    outgroups_in_tree = tree.outgroups_present(outgroups)
+
+    if not outgroups_in_tree:
+        # no outgroups found
         return tree, rooted
 
-    if tree.repetetive_outgroups(outgroups):
+    if len(set(outgroups_in_tree)) < len(outgroups_in_tree):
+        # repetetive outgroups found
         return tree, rooted
 
-    if len(outgroups) == 1:
-        outgroup_otu = outgroups[0]
+    if len(outgroups_in_tree) == 1:
+        outgroup_otu = outgroups_in_tree[0]
         for leaf in tree.iter_leaves():
             otu = leaf.otu()
             if otu == outgroup_otu:
@@ -37,14 +42,14 @@ def outgroup(tree, outgroups):
                 return tree.reroot(leaf), rooted
 
     for branch in tree.iter_branches():
-        if branch.is_monophyletic_outgroup(outgroups):
+        if branch.is_monophyletic_outgroup(outgroups_in_tree):
             rooted = True
             return tree.reroot(branch), rooted
     return tree, rooted
 
 def midpoint(tree):
-    """Calculate the tip to tip distances of the provided tree root the tree
-    halfway between the two longest tips.
+    """Calculate tip to tip distances of the provided tree and root it halfway
+    between the two longest tips.
 
     Parameters
     ----------

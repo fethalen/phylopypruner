@@ -25,8 +25,7 @@ class MultipleSequenceAlignment(object):
 
     @property
     def filename(self):
-        """
-        The name of the file to which this multiple sequence alignment belongs.
+        """The name of the file to which this multiple sequence alignment belongs.
         """
         return self._filename
 
@@ -69,8 +68,7 @@ class MultipleSequenceAlignment(object):
         return sequence
 
     def get_sequence(self, description):
-        """
-        Takes a FASTA description as an input and returns the matching sequence
+        """Takes a FASTA description as an input and returns the matching sequence
         object, if a sequence with that description is found within this
         alignment.
         """
@@ -79,9 +77,8 @@ class MultipleSequenceAlignment(object):
                 return sequence
 
     def iter_descriptions(self):
-        """
-        Returns an iterator object that includes all sequence descriptions in
-        this alignment.
+        """Returns an iterator object that includes all sequence descriptions
+        in this alignment.
         """
         for sequence in self.sequences:
             yield sequence.description
@@ -154,7 +151,11 @@ class MultipleSequenceAlignment(object):
         return otus_in_alignment
 
     def alignment_len(self):
-        """
-        Returns the length of this alignment.
+        """Returns the length of this alignment.
+
+        Returns
+        -------
+        length : int
+            This alignment's length.
         """
         return len(self.sequences[0])
