@@ -100,11 +100,13 @@ def largest_root(node, outgroups, min_taxa):
             # too few taxa in branch
             continue
 
-        if not branch.outgroups_present(outgroups):
+        outgroups_in_branch = branch.outgroups_present(outgroups)
+
+        if not outgroups_in_branch:
             # outgroups absent
             continue
 
-        if branch.repetetive_outgroups(outgroups):
+        if len(set(outgroups_in_branch)) < len(outgroups_in_branch):
             # repetetive outgroups present
             continue
 
