@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 "Module for running PhyloPyPruner by just invoking this script."
 
@@ -12,4 +12,4 @@ for argument in sys.argv[1:]:
     arguments.append(argument)
 
 os.chdir("..")
-os.system("python -m phylopypruner {}".format(" ".join(arguments)))
+os.system("{} -m phylopypruner {}".format(sys.executable, " ".join(arguments)))
