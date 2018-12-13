@@ -137,209 +137,6 @@ class Summary(object):
 
         return paralog_freq
 
-    def homolog_seq_files(self):
-        "Returns the number of sequence files within the homolog phylogeny."
-        no_of_files = 0
-        no_of_files = sum(1 for log in self.logs)
-        return no_of_files
-
-    def homolog_seqs(self):
-        "Returns the number of sequences within the homolog phylogeny."
-        no_of_seqs = 0
-        for log in self.logs:
-            no_of_seqs += len(log.msa)
-        return no_of_seqs
-
-    def homolog_avg_seqs(self):
-        "Returns the average number of sequences within the homolog phylogeny."
-        seq_files = self.homolog_seq_files()
-        if seq_files > 0:
-            return int(self.homolog_seqs() / seq_files)
-        else:
-            return 0
-
-    def homolog_avg_seq_len(self):
-        "Returns the average sequence length within the homolog phylogeny."
-        seq_lens = 0
-        sequences = 0
-        for log in self.logs:
-            for sequence in log.msa.sequences:
-                sequences += 1
-                seq_lens += len(sequence.ungapped())
-        if sequences > 0:
-            return int(seq_lens / sequences)
-        else:
-            return 0
-
-    def sequence_files(self):
-        "Returns the number of sequence files contained within the Log objects."
-        no_of_files = 0
-        for log in self.logs:
-            for ortholog in log.orthologs:
-                if ortholog:
-                    no_of_files += 1
-        return no_of_files
-
-    def sequences(self):
-        "Returns the number of sequences within the Log objects."
-        no_of_seqs = 0
-        for log in self.logs:
-            for msa_out in log.msas_out:
-                no_of_seqs += len(msa_out)
-        return no_of_seqs
-
-    def shortest_sequence(self):
-        "Returns the shortest sequence within all of the Log objects."
-        shortest = None
-        for log in self.logs:
-            for msa_out in log.msas_out:
-                for sequence in msa_out.sequences:
-                    if not shortest or shortest > len(sequence.ungapped()):
-                        shortest = len(sequence.ungapped())
-        return shortest
-
-    def longest_sequence(self):
-        "Returns the longest sequence within all of the Log objects."
-        longest = None
-        for log in self.logs:
-            for msa_out in log.msas_out:
-                for sequence in msa_out.sequences:
-                    if not longest or longest < len(sequence.ungapped()):
-                        longest = len(sequence.ungapped())
-        return longest
-
-    def homolog_shortest_sequence(self):
-        "Returns the shortest sequence within the homologs."
-        shortest = None
-        for log in self.logs:
-            for sequence in log.msa.sequences:
-                if not shortest or shortest > len(sequence.ungapped()):
-                    shortest = len(sequence.ungapped())
-        return shortest
-
-    def homolog_longest_sequence(self):
-        "Returns the longest sequence within all of the homologs."
-        longest = None
-        for log in self.logs:
-            for sequence in log.msa.sequences:
-                if not longest or longest < len(sequence):
-                    longest = len(sequence.ungapped())
-        return longest
-
-    def avg_sequences(self):
-        "Returns the average number of sequences per sequence file."
-        no_of_files = self.sequence_files()
-        if no_of_files > 0:
-            return int(self.sequences() / self.sequence_files())
-        else:
-            return 0
-
-    def avg_otus(self):
-        "Returns the average number of OTUs in this summary."
-        otus_total = 0
-        ortholog_count = 0
-
-        for log in self.logs:
-            otus = None
-            for ortholog in log.orthologs:
-                if ortholog:
-                    otus = set(ortholog.iter_otus())
-                    otus_total += len(otus)
-                    ortholog_count += 1
-
-        if ortholog_count > 0:
-            return int(otus_total / ortholog_count)
-        else:
-            return 0
-
-    def avg_seq_len(self):
-        "Returns the average sequence length of all MSAs combined."
-        seq_lens = 0
-        sequences = 0
-        for log in self.logs:
-            for msa_out in log.msas_out:
-                for sequence in msa_out.sequences:
-                    sequences += 1
-                    seq_lens += len(sequence.ungapped())
-        if sequences > 0:
-            return int(seq_lens / sequences)
-        else:
-            return 0
-
-    def homolog_avg_otus(self):
-        "Returns the average number of OTUs within the homologs."
-        otus_total = 0
-        ortholog_count = 0
-        for log in self.logs:
-            otus = set(log.tree.iter_otus())
-            otus_total += len(otus)
-            ortholog_count += 1
-        if ortholog_count > 0:
-            return int(otus_total / ortholog_count)
-        else:
-            return 0
-
-    def homolog_missing_data(self):
-        "Returns the percent missing data within the homologs."
-        pct_missing = 0.0
-        no_of_alignments = 0
-        no_of_otus = len(list(self.otus()))
-
-        for log in self.logs:
-            msa = log.msa
-            no_of_alignments += 1
-            otus_missing = no_of_otus - len(list(msa.otus()))
-            pct_missing += msa.missing_data(otus_missing)
-
-        if no_of_alignments > 0:
-            return round((pct_missing / no_of_alignments) * 100, 1)
-        else:
-            return 0
-
-    def missing_data(self):
-        """Returns the percent missing data within the output orthologous
-        MultipleSequenceAlignment object within this Summary object. Missing
-        data is calculated as if these alignments were to be concatenated into
-        a supermatrix, meaning that OTUs missing from an alignment are also
-        considered.
-        """
-        pct_missing = 0.0
-        no_of_alignments = 0
-        no_of_otus = len(list(self.otus()))
-
-        for log in self.logs:
-            for msa in log.msas_out:
-                no_of_alignments += 1
-                otus_missing = no_of_otus - len(list(msa.otus()))
-                pct_missing += msa.missing_data(otus_missing)
-
-        if no_of_alignments > 0:
-            return round((pct_missing / no_of_alignments) * 100, 1)
-        else:
-            return 0
-
-    def cat_alignment(self):
-        """
-        Returns the length of the concatenated alignment, if we were to
-        concatenate all orthologs together.
-        """
-        cat_alignment_len = 0
-        for log in self.logs:
-            for msa_out in log.msas_out:
-                cat_alignment_len += msa_out.alignment_len()
-        return cat_alignment_len
-
-    def homolog_cat_alignment(self):
-        """
-        Returns the length of the concatenated alignment, if we were to
-        concatenate all homologous sequences together.
-        """
-        seq_lens = 0
-        for log in self.logs:
-            sequence = log.msa.sequences[0]
-            seq_lens += len(sequence)
-        return seq_lens
-
     def homolog_report(self, dir_out):
         """Output a summary of the input alignments. Title is always
         'homologs'.
@@ -354,9 +151,78 @@ class Summary(object):
         report : str
             Overview statistics of the summary.
         """
-        homolog_report = """
-Input Alignments
-----------------
+        homolog_report, row = self.homolog_alignment_stats("Input Alignments", "input")
+
+        with open(dir_out + SUM_PATH, "a") as sum_out_file:
+            sum_out_file.write(row)
+
+        return homolog_report
+
+    def homolog_alignment_stats(self, name, title):
+        """Returns a report, in text, and a CSV-row of a set of statistics
+        based on this summary.
+
+        Parameters
+        ----------
+        name : str
+            The title to display in the text report.
+        title : str
+            The identifier for the CSV-row.
+
+        Returns
+        -------
+        report : str
+            A report of the statistics within this file.
+        row : str
+            A CSV-row where each column is separated by a semicolon, ';'.
+        """
+        no_of_alignments = 0
+        no_of_seqs = 0
+        seq_lens = 0
+        cat_alignment_len = 0
+        pct_missing = 0.0
+        shortest = None
+        longest = None
+        otus = set()
+
+        for log in self.logs:
+            msa = log.msa
+            no_of_alignments += 1
+            otus.update(msa.otus())
+            cat_alignment_len += msa.alignment_len()
+
+            for sequence in msa.sequences:
+                no_of_seqs += 1
+                seq_len = len(sequence.ungapped())
+                seq_lens += seq_len
+
+                if not shortest or shortest > seq_len:
+                    shortest = seq_len
+
+                if not longest or longest < seq_len:
+                    longest = seq_len
+
+        no_of_otus = len(otus)
+        for log in self.logs:
+            msa = log.msa
+            otus_missing = no_of_otus - len(list(msa.otus()))
+            pct_missing += msa.missing_data(otus_missing)
+
+        if no_of_alignments > 0:
+            avg_no_of_seqs = int(no_of_seqs / no_of_alignments)
+            missing_data = round((pct_missing / no_of_alignments) * 100, 1)
+        else:
+            avg_no_of_seqs = 0
+            missing_data = 0
+
+        if no_of_seqs > 0:
+            avg_seq_len = int(seq_lens / no_of_seqs)
+        else:
+            avg_seq_len = 0
+
+        report = """
+{}
+{}
 # of alignments:\t\t\t{}
 # of sequences:\t\t\t\t{}
 # of OTUs:\t\t\t\t{}
@@ -367,34 +233,136 @@ shortest sequence (ungapped):\t\t{}
 longest sequence (ungapped):\t\t{}
 % missing data:\t\t\t\t{}
 concatenated alignment length:\t\t{}""".format(
-    self.homolog_seq_files(),
-    self.homolog_seqs(),
-    len(self.homolog_otus()),
-    self.homolog_avg_seqs(),
-    self.homolog_avg_otus(),
-    self.homolog_avg_seq_len(),
-    self.homolog_shortest_sequence(),
-    self.homolog_longest_sequence(),
-    self.homolog_missing_data(),
-    self.homolog_cat_alignment())
+    name,
+    "-" * len(name),
+    no_of_alignments,
+    no_of_seqs,
+    no_of_otus,
+    avg_no_of_seqs,
+    avg_no_of_seqs,
+    avg_seq_len,
+    shortest,
+    longest,
+    missing_data,
+    cat_alignment_len)
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
-            "input",
-            self.homolog_seq_files(),
-            self.homolog_seqs(),
-            len(self.homolog_otus()),
-            self.homolog_avg_seqs(),
-            self.homolog_avg_otus(),
-            self.homolog_avg_seq_len(),
-            self.homolog_shortest_sequence(),
-            self.homolog_longest_sequence(),
-            self.homolog_missing_data(),
-            self.homolog_cat_alignment())
+            title,
+            no_of_alignments,
+            no_of_seqs,
+            no_of_otus,
+            avg_no_of_seqs,
+            avg_no_of_seqs,
+            avg_seq_len,
+            shortest,
+            longest,
+            missing_data,
+            cat_alignment_len)
 
-        with open(dir_out + SUM_PATH, "a") as sum_out_file:
-            sum_out_file.write(row)
+        return report, row
 
-        return homolog_report
+    def alignment_stats(self, name, title):
+        """Returns a report, in text, and a CSV-row of a set of statistics
+        based on this summary.
+
+        Parameters
+        ----------
+        name : str
+            The title to display in the text report.
+        title : str
+            The identifier for the CSV-row.
+
+        Returns
+        -------
+        report : str
+            A report of the statistics within this file.
+        row : str
+            A CSV-row where each column is separated by a semicolon, ';'.
+        """
+        no_of_alignments = 0
+        no_of_seqs = 0
+        seq_lens = 0
+        cat_alignment_len = 0
+        pct_missing = 0.0
+        shortest = None
+        longest = None
+        otus = set()
+
+        for log in self.logs:
+            for msa in log.msas_out:
+                no_of_alignments += 1
+                otus.update(msa.otus())
+                cat_alignment_len += msa.alignment_len()
+
+                for sequence in msa.sequences:
+                    no_of_seqs += 1
+                    seq_len = len(sequence.ungapped())
+                    seq_lens += seq_len
+
+                    if not shortest or shortest > seq_len:
+                        shortest = seq_len
+
+                    if not longest or longest < seq_len:
+                        longest = seq_len
+
+        no_of_otus = len(otus)
+        for log in self.logs:
+            for msa in log.msas_out:
+                otus_missing = no_of_otus - len(list(msa.otus()))
+                pct_missing += msa.missing_data(otus_missing)
+
+        if no_of_alignments > 0:
+            avg_no_of_seqs = int(no_of_seqs / no_of_alignments)
+            missing_data = round((pct_missing / no_of_alignments) * 100, 1)
+        else:
+            avg_no_of_seqs = 0
+            missing_data = 0
+
+        if no_of_seqs > 0:
+            avg_seq_len = int(seq_lens / no_of_seqs)
+        else:
+            avg_seq_len = 0
+
+        report = """
+{}
+{}
+# of alignments:\t\t\t{}
+# of sequences:\t\t\t\t{}
+# of OTUs:\t\t\t\t{}
+avg # of sequences per alignment:\t{}
+avg # of OTUs:\t\t\t\t{}
+avg sequence length (ungapped):\t\t{}
+shortest sequence (ungapped):\t\t{}
+longest sequence (ungapped):\t\t{}
+% missing data:\t\t\t\t{}
+concatenated alignment length:\t\t{}""".format(
+    name,
+    "-" * len(name),
+    no_of_alignments,
+    no_of_seqs,
+    no_of_otus,
+    avg_no_of_seqs,
+    avg_no_of_seqs,
+    avg_seq_len,
+    shortest,
+    longest,
+    missing_data,
+    cat_alignment_len)
+
+        row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
+            title,
+            no_of_alignments,
+            no_of_seqs,
+            no_of_otus,
+            avg_no_of_seqs,
+            avg_no_of_seqs,
+            avg_seq_len,
+            shortest,
+            longest,
+            missing_data,
+            cat_alignment_len)
+
+        return report, row
 
     def report(self, title, dir_out):
         """Output a summary of the files for this run.
@@ -411,47 +379,21 @@ concatenated alignment length:\t\t{}""".format(
         report : str
             Overview statistics of the summary.
         """
-        report = """
-Output Alignments
------------------
-# of alignments:\t\t\t{}
-# of sequences:\t\t\t\t{}
-# of OTUs:\t\t\t\t{}
-avg # of sequences per alignment:\t{}
-avg # of OTUs:\t\t\t\t{}
-avg sequence length (ungapped):\t\t{}
-shortest sequence (ungapped):\t\t{}
-longest sequence (ungapped):\t\t{}
-% missing data:\t\t\t\t{}
-concatenated alignment length:\t\t{}""".format(
-    self.sequence_files(),
-    self.sequences(),
-    len(self.otus()),
-    self.avg_sequences(),
-    self.avg_otus(),
-    self.avg_seq_len(),
-    self.shortest_sequence(),
-    self.longest_sequence(),
-    self.missing_data(),
-    self.cat_alignment())
-
-        row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
-            title,
-            self.sequence_files(),
-            self.sequences(),
-            len(self.otus()),
-            self.avg_sequences(),
-            self.avg_otus(),
-            self.avg_seq_len(),
-            self.shortest_sequence(),
-            self.longest_sequence(),
-            self.missing_data(),
-            self.cat_alignment())
+        report, row = self.alignment_stats("Output Alignments", title)
 
         with open(dir_out + SUM_PATH, "a") as sum_out_file:
             sum_out_file.write(row)
 
         return report
+
+    def otus(self):
+        "Returns a set of all OTUs within this Summary object."
+        otus_in_summary = set()
+        for log in self.logs:
+            for msa_out in log.msas_out:
+                otus_in_summary.update(msa_out.otus())
+
+        return otus_in_summary
 
     def write_msas(self, wrap=None):
         """
@@ -462,26 +404,6 @@ concatenated alignment length:\t\t{}""".format(
         for log in self.logs:
             for msa in log.msas_out:
                 fasta.write(msa, wrap)
-
-    def homolog_otus(self):
-        "Returns a set of all OTUs within the homologs."
-        otus = set()
-        for log in self.logs:
-            msa = log.msa
-            for otu in msa.otus():
-                if not otu in otus:
-                    otus.add(otu)
-
-        return otus
-
-    def otus(self):
-        "Returns a set of all OTUs within this Summary object."
-        otus_in_summary = set()
-        for log in self.logs:
-            for msa_out in log.msas_out:
-                otus_in_summary.update(msa_out.otus())
-
-        return otus_in_summary
 
 def mk_sum_out_title(dir_out):
     """

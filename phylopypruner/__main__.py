@@ -68,8 +68,8 @@ def _warning(message):
     -------
     None
     """
-    return "{}warning:{} {}{}".format(
-        "\033[35m", "\033[37m", message, "\033[0m")
+    return "{}warning: {}{}".format(
+        "\033[35m", "\033[0m", message)
 
 def _error(message):
     """Print the provided message with the text 'error: ' in front of it and
@@ -84,7 +84,7 @@ def _error(message):
     -------
     None
     """
-    print("{}error:{} {}{}".format("\033[31m", "\033[37m", message, "\033[0m"))
+    print("{}error: {}{}".format("\033[31m", "\033[0m", message))
     exit()
 
 def _yes_or_no(question):
@@ -160,6 +160,10 @@ either in percentage (1-100) or in decimal format between 0.0 - 1.0")
     if args.min_len and args.min_len < 1:
         _error("minimum sequence length ('--min-len') has to be a positive \
 integer (1, 2, 3, 4, ...)")
+
+    if args.threads and args.threads < 1:
+        _error("threads ('--threads') has to be a positive integer \
+(1, 2, 3, 4, ...)")
 
     if args.min_taxa and args.min_taxa < 1:
         _error("minimum number of taxa ('--min-taxa') has to be a positive \
@@ -350,6 +354,12 @@ def parse_args():
                         help="wrap output sequences at column <max column>; \
                               sequence data is kept at a single line by \
                               default")
+    parser.add_argument("--threads",
+                        metavar="<count>",
+                        default=None,
+                        type=int,
+                        help="limit the number of logical cores used for \
+                              processing files in parallel")
 
     group = parser.add_argument_group("input files (MSA and tree or directory)")
     group.add_argument("--msa",
@@ -480,6 +490,11 @@ def main():
     settings = Settings(args)
     summary = Summary()
 
+    if args.threads:
+        threads = args.threads
+    else:
+        threads = cpu_count()
+
     dir_out = None
     if args.output:
         # create output directory if it does not currently exist
@@ -541,20 +556,19 @@ directory, overwrite?")
             # no file pairs found in the provided directory
             _error("no file pairs were found in the provided directory")
 
-        pool = Pool(processes=cpu_count())
+        if args.threads:
+            threads = args.threads
+        else:
+            threads = cpu_count()
+        pool = Pool(processes=threads)
         part_run = partial(_run_for_file_pairs, settings=settings,
                            dir_in=dir_in, dir_out=dir_out)
         progress = None
+        file_pairs = list(corr_files.values())
 
-        for index, log in enumerate(
-                pool.imap(part_run, corr_files.values()),
-                1):
-            fasta_file, nw_file = corr_files.values()[index - 1]
-            # overwrite last line with blanks to get rid of trailing characters
-            if progress:
-                print(" " * len(progress), end="\r")
-            progress = "processing MSA {} and tree {} ({}/{} file \
-pairs)".format(fasta_file, nw_file, index, no_of_file_pairs)
+        for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
+            progress = "{}==>{} processing MSAs and trees{} ({}/{} file \
+pairs)".format("\033[34m", "\033[0m", "\033[0m", index, no_of_file_pairs)
             print(progress, end="\r")
             sys.stdout.flush()
             summary.logs.append(log)
@@ -582,12 +596,12 @@ more relaxed settings")
             otus_to_exclude = [otu for otu in otus_to_exclude if not otu in
                                args.include]
         summary, ortholog_report = decontamination.prune_by_exclusion(
-            summary, otus_to_exclude, dir_out)
+            summary, otus_to_exclude, dir_out, threads)
     else:
         ortholog_report = summary.report("output", dir_out)
 
     if args.jackknife:
-        decontamination.jackknife(summary, dir_out)
+        decontamination.jackknife(summary, dir_out, threads)
 
     print("{}\n{}".format(homolog_report, ortholog_report))
 

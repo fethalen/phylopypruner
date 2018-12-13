@@ -7,13 +7,42 @@ import copy
 import datetime
 from collections import defaultdict
 from itertools import combinations
+from functools import partial
+from multiprocessing import Pool
+from multiprocessing import cpu_count
 from phylopypruner import filtering
 from phylopypruner.summary import Summary
 from phylopypruner.prune_paralogs import prune_paralogs
 
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 
-def jackknife(summary, dir_out):
+def _exclude_and_rerun(taxon, summary, pruning_method, min_taxa, outgroup, dir_out):
+    summary_copy = copy.deepcopy(summary)
+
+    resample_summary = Summary()
+    for log in summary_copy.logs:
+        log_resampled = _resample(log, taxon, pruning_method, min_taxa,
+                                    outgroup, dir_out)
+        if log_resampled:
+            resample_summary.logs.append(log_resampled)
+
+    return resample_summary
+
+def _resample(log, excluded, pruning_method, min_taxa, outgroup, dir_out):
+    resample_log = copy.deepcopy(log)
+    tree_excluded = filtering.exclude(resample_log.masked_tree, excluded)
+    resample_log.msas_out = []
+    if not tree_excluded:
+        return None
+    resample_log.settings.exclude = excluded
+    resample_log.orthologs = prune_paralogs(pruning_method,
+                                            tree_excluded,
+                                            min_taxa,
+                                            outgroup)
+    resample_log.get_msas_out(dir_out)
+    return resample_log
+
+def jackknife(summary, dir_out, threads):
     """Exclude each OTUs within the summary, one by one, perform paralogy
     pruning and output summary statistics of the output alignments for each
     subsample.
@@ -31,38 +60,28 @@ def jackknife(summary, dir_out):
     -------
     None
     """
-    resampling = set(combinations(summary.otus(), len(summary.otus()) - 1))
-    total = len(resampling)
+    taxa = summary.otus()
+    total = len(taxa)
     resamples = set()
+    # reuse the settings from the first log in the summary
+    log = summary.logs[0]
+    pruning_method = log.settings.prune
+    min_taxa = log.settings.min_taxa
+    outgroup = log.settings.outgroup
+    pool = Pool(threads)
 
-    for index, combination in enumerate(resampling, 1):
-        summary_copy = copy.deepcopy(summary)
-        resample_summary = Summary()
-        excluded = list(summary.otus().difference(combination))
+    part_jackknife = partial(
+        _exclude_and_rerun, summary=copy.deepcopy(summary),
+        pruning_method=pruning_method, min_taxa=min_taxa, outgroup=outgroup,
+        dir_out=dir_out)
 
-        print("jackknife resampling ({}/{} subsamples)".format(
-            index, total), end="\r")
+    for index, resample_summary in enumerate(
+            pool.imap_unordered(part_jackknife, taxa), 1):
+        print("{}==>{} jackknife resampling ({}/{} subsamples)".format(
+            "\033[34m", "\033[0m", index, total), end="\r")
         sys.stdout.flush()
-
-        for log in summary_copy.logs:
-            resample_log = copy.deepcopy(log)
-            pruning_method = log.settings.prune
-            min_taxa = log.settings.min_taxa
-            outgroup = log.settings.outgroup
-            resample_tree = copy.copy(log.masked_tree)
-            tree_excluded = filtering.exclude(resample_tree, excluded)
-            resample_log.msas_out = []
-            if not tree_excluded:
-                continue
-            resample_log.settings.exclude = excluded
-            resample_log.orthologs = prune_paralogs(pruning_method,
-                                                    tree_excluded,
-                                                    min_taxa,
-                                                    outgroup)
-            resample_log.get_msas_out(dir_out)
-            resample_summary.logs.append(resample_log)
-
         resamples.add(resample_summary)
+    pool.terminate()
     print("")
 
     for summary in resamples:
@@ -114,7 +133,25 @@ def _std(data):
         raise ValueError('variance requires at least two data points')
     return (_sdm(data) / len(data)) ** 0.5
 
-def prune_by_exclusion(summary, otus, dir_out):
+def _rerun_wo_otu(log, otus, dir_out):
+    log_copy = copy.deepcopy(log)
+    pruning_method = log_copy.settings.prune
+    min_taxa = log_copy.settings.min_taxa
+    outgroup = log_copy.settings.outgroup
+    tree = log_copy.masked_tree
+    tree_excluded = filtering.exclude(tree, list(otus))
+    log_copy.msas_out = []
+    log_copy.settings.exclude = list(otus)
+    if not tree_excluded:
+        return None
+    log_copy.orthologs = prune_paralogs(pruning_method,
+                                        tree_excluded,
+                                        min_taxa,
+                                        outgroup)
+    log_copy.get_msas_out(dir_out)
+    return log_copy
+
+def prune_by_exclusion(summary, otus, dir_out, threads):
     """Exclude the OTUs within the provided list of OTUs from the masked trees
     within summary, perform paralogy pruning and output statistics and
     alignments for each ortholog recovered.
@@ -149,28 +186,21 @@ def prune_by_exclusion(summary, otus, dir_out):
     excluded_str = "output_{}".format("+".join(otu for otu in otus))
     excluded_str += "_excluded"
 
-    for index, log in enumerate(summary_copy.logs, 1):
-        print("paralogy pruning with OTUs removed ({}/{} trees)".format(
-            index, alignments_count), end="\r")
+    part_rerun = partial(_rerun_wo_otu, otus=otus, dir_out=dir_out)
+    pool = Pool(threads)
+
+    for index, log_copy in enumerate(
+            pool.imap_unordered(part_rerun, summary_copy.logs), 1):
+    # for index, log in enumerate(summary_copy.logs, 1):
+        print("{}==>{} paralogy pruning with OTUs removed ({}/{} trees)".format(
+            "\033[34m", "\033[0m", index, alignments_count), end="\r")
         sys.stdout.flush()
 
-        log_copy = copy.deepcopy(log)
-        pruning_method = log_copy.settings.prune
-        min_taxa = log_copy.settings.min_taxa
-        outgroup = log_copy.settings.outgroup
-        tree = log_copy.masked_tree
-        tree_excluded = filtering.exclude(tree, list(otus))
-        log_copy.msas_out = []
-        log_copy.settings.exclude = list(otus)
-        if not tree_excluded:
-            continue
-        log_copy.orthologs = prune_paralogs(pruning_method,
-                                            tree_excluded,
-                                            min_taxa,
-                                            outgroup)
-        log_copy.get_msas_out(dir_out)
-        summary_out.logs.append(log_copy)
+        if log_copy:
+            summary_out.logs.append(log_copy)
 
+    pool.terminate()
+    print("")
     report = summary_out.report(excluded_str, dir_out)
 
     return summary_out, report
@@ -201,10 +231,10 @@ def trim_freq_paralogs(factor, paralog_freq):
             otus_above_threshold.append(otu)
 
     if not otus_above_threshold:
-        print("OTUs with frequent paralogs: none")
+        print("OTUs with high paralogy frequency: none")
         return otus_above_threshold
 
-    print("OTUs with frequent paralogs: " +
+    print("OTUs with high paralogy frequency: " +
           ", ".join(otu for otu in otus_above_threshold))
 
     return otus_above_threshold
