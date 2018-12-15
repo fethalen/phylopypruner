@@ -7,6 +7,8 @@ from phylopypruner import fasta
 from textwrap import wrap
 from collections import defaultdict
 try:
+    import matplotlib
+    matplotlib.use("agg")
     import matplotlib.pyplot as plt
     from matplotlib.pyplot import figure as fig
     MATPLOTLIB = True
@@ -16,8 +18,8 @@ get a barplot of the paralog frequency".format("\033[92m", "\033[0m"))
     MATPLOTLIB = False
 HAVE_DISPLAY = "DISPLAY" in os.environ
 if not HAVE_DISPLAY:
-    print("{}warning:{} no display found; can't generate plot{}".format(
-        "\033[35m", "\033[37m", "\033[0m"))
+    print("{}warning:{} no display found; can't generate plot".format(
+        "\033[35m", "\033[0m"))
     MATPLOTLIB = False
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUM_HEADER = "id;alignments;sequences;otus;meanSequences;meanOtus;meanSeqLen;\

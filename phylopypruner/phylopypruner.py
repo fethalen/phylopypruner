@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 
 "Module for running PhyloPyPruner by just invoking this script."
 

@@ -13,10 +13,10 @@ from __future__ import print_function
 from __future__ import absolute_import
 import argparse
 import os
+import shutil
 import sys
 import time
 import datetime
-import shutil
 from functools import partial
 from multiprocessing import Pool
 from multiprocessing import cpu_count
@@ -360,6 +360,11 @@ def parse_args():
                         type=int,
                         help="limit the number of logical cores used for \
                               processing files in parallel")
+    parser.add_argument("--overwrite",
+                        default=False,
+                        action="store_true",
+                        help="overwrite an older run, if it exist within \
+                              the output directory")
 
     group = parser.add_argument_group("input files (MSA and tree or directory)")
     group.add_argument("--msa",
@@ -504,20 +509,20 @@ def main():
     else:
         dir_out = os.path.dirname(str(args.msa).rstrip("/"))
     dir_out = dir_out + "/phylopypruner_output"
-    if not os.path.isdir(dir_out):
-        os.makedirs(dir_out)
 
-    if os.path.isfile(dir_out + LOG_PATH):
-        os.remove(dir_out + LOG_PATH)
-
-    with open(dir_out + LOG_PATH, "w") as log_file:
-        log_file.write(ABOUT + "\n")
-
-    if os.path.isfile(dir_out + ORTHO_STATS_PATH):
+    if not args.overwrite and os.path.isfile(dir_out + ORTHO_STATS_PATH):
         question = _warning("files from a previous run exists in the output \
 directory, overwrite?")
         if not _yes_or_no(question):
             exit()
+
+    if os.path.isdir(dir_out):
+        # this removes the old 'phylopypruner_output' directory
+        shutil.rmtree(dir_out)
+    os.makedirs(dir_out)
+
+    with open(dir_out + LOG_PATH, "w") as log_file:
+        log_file.write(ABOUT + "\n")
 
     if os.path.isfile(dir_out + ORTHO_STATS_PATH):
         os.remove(dir_out + ORTHO_STATS_PATH)
@@ -530,9 +535,6 @@ directory, overwrite?")
 
     with open(dir_out + HOMOLOG_STATS_PATH, "w") as homo_stats_file:
         homo_stats_file.write(HOMOLOG_STATS_HEADER)
-
-    if os.path.isdir(dir_out + ORTHOLOGS_PATH):
-        shutil.rmtree(dir_out + ORTHOLOGS_PATH)
 
     settings.report(args.dir, dir_out + LOG_PATH)
 
