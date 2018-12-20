@@ -10,7 +10,7 @@ from phylopypruner import root
 
 def _has_enough_taxa(node, min_taxa):
     """
-    Takes a TreeNode object and a treshold as an input. Returns False if there
+    Takes a TreeNode object and a threshold as an input. Returns False if there
     are fewer than [min_taxa] OTUs within the node, else True.
     """
     otus = set([_ for _ in node.iter_otus()])
