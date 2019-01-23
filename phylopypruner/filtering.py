@@ -8,7 +8,7 @@ from phylopypruner.tree_node import TreeNode
 
 def _is_short_sequence(sequence, threshold):
     """
-    Return true if the provided sequence is shorter than the provided treshold.
+    Return true if the provided sequence is shorter than the provided threshold.
 
     Parameters
     ----------
@@ -92,10 +92,10 @@ def exclude(node, otus):
 
     return rm_empty_root(node_excluded)
 
-def _short_seqs(msa, tree, treshold):
+def _short_seqs(msa, tree, threshold):
     """
-    Takes an MSA object, a TreeNode object and a treshold as an input. Returns
-    True if there are sequences that are shorter than the provided treshold
+    Takes an MSA object, a TreeNode object and a threshold as an input. Returns
+    True if there are sequences that are shorter than the provided threshold
     within the MSA.
     """
     for leaf in tree.iter_leaves():
@@ -103,26 +103,26 @@ def _short_seqs(msa, tree, treshold):
 
         if match:
             sequence = match
-            if _is_short_sequence(sequence, treshold):
+            if _is_short_sequence(sequence, threshold):
                 return True
     return False
 
-def trim_short_seqs(msa, tree, treshold):
+def trim_short_seqs(msa, tree, threshold):
     """
-    Takes a TreeNode object, an MSA object and a treshold as an input. Remove
-    sequences that are shorter than the provided treshold from both the MSA and
+    Takes a TreeNode object, an MSA object and a threshold as an input. Remove
+    sequences that are shorter than the provided threshold from both the MSA and
     the tree.
     """
     nodes_to_remove = set()
 
-    while _short_seqs(msa, tree, treshold):
+    while _short_seqs(msa, tree, threshold):
         for leaf in tree.iter_leaves():
             match = msa.get_sequence(leaf.name)
 
             if match:
                 sequence = match
 
-                if _is_short_sequence(sequence, treshold):
+                if _is_short_sequence(sequence, threshold):
                     nodes_to_remove.add(leaf)
 
         tree.remove_nodes(nodes_to_remove)
@@ -179,10 +179,10 @@ def trim_zero_len_branches(node, min_len=1e-7):
 
     return leaves_to_remove
 
-def collapse_nodes(node, treshold):
+def collapse_nodes(node, threshold):
     """
     Takes a TreeNode object and an integer or float support value as an input.
-    Collapse all branches with a support value below the provided treshold into
+    Collapse all branches with a support value below the provided threshold into
     polytomies.
     """
     count = 0
@@ -191,7 +191,7 @@ def collapse_nodes(node, treshold):
         if not branch.support:
             continue
 
-        if branch.support < treshold:
+        if branch.support < threshold:
             branch.collapse()
             count += 1
 

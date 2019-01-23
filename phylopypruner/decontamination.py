@@ -223,11 +223,11 @@ def trim_freq_paralogs(factor, paralog_freq):
     otus_above_threshold : list
         A set of OTUs with a paralogy frequency above the threshold.
     """
-    treshold = _std(list(paralog_freq.values())) * factor
+    threshold = _std(list(paralog_freq.values())) * factor
     otus_above_threshold = list()
 
     for otu in paralog_freq:
-        if paralog_freq[otu] > treshold:
+        if paralog_freq[otu] > threshold:
             otus_above_threshold.append(otu)
 
     if not otus_above_threshold:
