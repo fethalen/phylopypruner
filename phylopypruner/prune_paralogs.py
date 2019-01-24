@@ -182,10 +182,14 @@ def monophyletic_outgroups(tree, min_taxa, outgroups):
         yield tree
         return
 
-    if not tree.outgroups_present(outgroups):
+    outgroups_in_branch = tree.outgroups_present(outgroups)
+
+    if not outgroups_in_branch:
+        # outgroups absent
         return
 
-    if tree.repetetive_outgroups(outgroups):
+    if len(set(outgroups_in_branch)) < len(outgroups_in_branch):
+        # repetetive outgroups present
         return
 
     monophyletic_outgroup, success = root.outgroup(tree, outgroups)
