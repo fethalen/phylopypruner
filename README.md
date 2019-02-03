@@ -19,14 +19,6 @@ provides new methods for differentiating [contamination-like
 sequences](https://gitlab.com/fethalen/phylopypruner/wikis/About-PhyloPyPruner#contamination-like-issues-)
 from paralogs.
 
-<img src="doc/images/output_example.png" alt="Output Example"
-width="650"/>\
-**Figure 1.** Example of what the printed output looks like after running
-PhyloPyPruner with the `--trim-freq-paralogs` flag.
-
-<img src="doc/images/paralog_freq.png" alt="Paralogy Frequency Plot" width="800"/>\
-**Figure 2.** Example of the paralogy frequency (PF) plot.
-
 PhyloPyPruner is under active development and I would appreciate it if you try
 this software on your own data and [leave
 feedback](mailto:felix.thalen@uni-goettingen.de).
