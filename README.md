@@ -11,7 +11,7 @@ tree-based orthology inference methods (e.g.,
 [UPhO](https://academic.oup.com/mbe/article/33/8/2117/2578877),
 [Agalma](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3840672/) and
 [Phylogenomic Dataset
-Reconstruction](https://www.ncbi.nlm.nih.gov/pubmed/25158799)), PhyloPyPruner
+Reconstruction](https://www.ncbi.nlm.nih.gov/pubmed/25158799)), it
 uses phylogenetic trees in order to obtain genes that are 1:1 orthologous. In
 addition to filters and algorithms seen in pre-existing tools, this package
 provides new methods for differentiating [contamination-like
