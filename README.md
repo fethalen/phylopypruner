@@ -1,5 +1,5 @@
-PhyloPyPruner
--------------
+What is PhyloPyPruner?
+----------------------
 
 PhyloPyPruner is a Python package for refining the output of a graph-based
 orthology inference approach such as
