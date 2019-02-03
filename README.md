@@ -34,6 +34,7 @@ feedback](mailto:felix.thalen@uni-goettingen.de).
 
 ## Cite
 
-Manuscript is currently in preparation.
+Our manuscript is still in preparation, it will be posted here once a preprint
+of the article is available.
 
 © [Kocot Lab](https://www.kocotlab.com/) 2018
