@@ -92,6 +92,25 @@ def exclude(node, otus):
 
     return rm_empty_root(node_excluded)
 
+def force_inclusion(trees, otus):
+    """Takes a list of TreeNode objects and a list of OTUs as an input. Returns
+    the subset of these TreeNode objects where all OTUs within the list are
+    present.
+    """
+    otus = set(otus)
+    trees_w_otus = set()
+
+    for tree in trees:
+        otus_present = set()
+
+        for leaf in tree.iter_leaves():
+            otus_present.add(leaf.otu())
+
+        if otus.issubset(otus_present):
+            trees_w_otus.add(tree)
+
+    return trees_w_otus
+
 def _short_seqs(msa, tree, threshold):
     """
     Takes an MSA object, a TreeNode object and a threshold as an input. Returns

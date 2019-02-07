@@ -15,12 +15,14 @@ class Settings(object):
         self._outgroup = arguments.outgroup
         self._include = arguments.include
         self._exclude = arguments.exclude
+        self._force_inclusion = arguments.force_inclusion
         self._root = arguments.root
         self._mask = arguments.mask
         self._prune = arguments.prune
         self._trim_freq_paralogs = arguments.trim_freq_paralogs
         self._trim_divergent = arguments.trim_divergent
         self._jackknife = arguments.jackknife
+        self._taxonomic_groups = arguments.groups
 
     @property
     def fasta_file(self):
@@ -165,6 +167,26 @@ class Settings(object):
     @trim_zero_len.setter
     def trim_zero_len(self, value):
         self._trim_zero_len = value
+
+    @property
+    def taxonomic_groups(self):
+        "The path to a 'taxonomic groups' file."
+        return self._taxonomic_groups
+
+    @taxonomic_groups.setter
+    def taxonomic_groups(self, value):
+        self._taxonomic_groups = value
+
+    @property
+    def force_inclusion(self):
+        """A list of OTUs, don't output orthologs where these OTUs are not
+        present.
+        """
+        return self._force_inclusion
+
+    @force_inclusion.setter
+    def force_inclusion(self, value):
+        self._force_inclusion = value
 
     def report(self, directory, log_path):
         "Generate a report of what settings were used."

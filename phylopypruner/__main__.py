@@ -27,6 +27,7 @@ from phylopypruner import filtering
 from phylopypruner import decontamination
 from phylopypruner import mask_monophylies
 from phylopypruner import root
+from phylopypruner import taxonomic_groups
 from phylopypruner.prune_paralogs import prune_paralogs
 from phylopypruner.summary import Summary
 from phylopypruner.summary import mk_sum_out_title
@@ -149,6 +150,22 @@ either in percentage (1-100) or in decimal format between 0.0 - 1.0")
             # convert from percentage to floating point
             args.min_support = args.min_support / 100
 
+    if args.min_otu_occupancy:
+        if args.min_otu_occupancy < 0 or args.min_otu_occupancy > 100:
+            _error("minimum OTU occupancy ('--min-otu-occupancy') has to be \
+either in percentage (1-100) or in decimal format between 0.0 - 1.0")
+        elif args.min_otu_occupancy > 1:
+            # convert from percentage to floating point
+            args.min_otu_occupancy = args.min_otu_occupancy / 100
+
+    if args.min_gene_occupancy:
+        if args.min_gene_occupancy < 0 or args.min_gene_occupancy > 100:
+            _error("minimum gene occupancy ('--min-gene-occupancy') has to be \
+either in percentage (1-100) or in decimal format between 0.0 - 1.0")
+        elif args.min_gene_occupancy > 1:
+            # convert from percentage to floating point
+            args.min_gene_occupancy = args.min_gene_occupancy / 100
+
     if args.trim_divergent:
         if args.trim_divergent < 0 or args.trim_divergent > 100:
             _error("the divergence threshold ('--trim-divergent') has to be \
@@ -262,6 +279,14 @@ def _run(settings, msa, tree):
     log.orthologs = prune_paralogs(settings.prune, tree,
                                    settings.min_taxa, settings.outgroup)
 
+    if settings.force_inclusion:
+        log.orthologs = filtering.force_inclusion(
+            log.orthologs, settings.force_inclusion)
+
+    if settings.taxonomic_groups:
+        decontamination.discard_non_monophyly(
+            log.orthologs, settings.taxonomic_groups)
+
     return log
 
 def _get_orthologs(settings, directory="", dir_out=None):
@@ -365,6 +390,10 @@ def parse_args():
                         action="store_true",
                         help="overwrite an older run, if it exist within \
                               the output directory")
+    parser.add_argument("--no-plot",
+                        default=False,
+                        action="store_true",
+                        help="shorten the run time by not generating any plot")
 
     group = parser.add_argument_group("input files (MSA and tree or directory)")
     group.add_argument("--msa",
@@ -406,9 +435,9 @@ def parse_args():
                        default=None,
                        metavar="<factor>",
                        type=float,
-                       help="remove sequences with a branch length <factor> \
-                             times larger the standard deviation of all \
-                             branches within its tree")
+                       help="remove sequences with a branch length that is \
+                             <factor> times larger than the standard \
+                             deviation of all branches within its tree")
     group.add_argument("--min-pdist",
                        default=None,
                        metavar="<distance>",
@@ -416,7 +445,7 @@ def parse_args():
                        help="remove pairs of sequences with a tip-to-tip \
                              distance that is less than <distance>")
     group.add_argument("--include",
-                       nargs='+',
+                       nargs="+",
                        metavar="<OTU>",
                        default=None,
                        type=str,
@@ -429,10 +458,31 @@ def parse_args():
                        default=None,
                        type=str,
                        help="exclude these OTUs in this run")
+    group.add_argument("--force-inclusion",
+                       nargs="+",
+                       metavar="<OTU>",
+                       default=None,
+                       type=str,
+                       help="do not output any orthologs where these OTUs \
+                             are not present")
+    group.add_argument("--min-otu-occupancy",
+                       metavar="<percentage>",
+                       default=None,
+                       type=float,
+                       help="remove OTUs with less occupancy than \
+                       <percentage> from the supermatrix; \
+                       in percent or in decimal format (0.0-1.0)")
+    group.add_argument("--min-gene-occupancy",
+                       metavar="<percentage>",
+                       default=None,
+                       type=float,
+                       help="remove genes with less occupancy than \
+                       <percentage> from the supermatrix; \
+                       in percent or in decimal format (0.0-1.0)")
 
     group = parser.add_argument_group("tree-based orthology inference")
     group.add_argument("--outgroup",
-                       nargs='+',
+                       nargs="+",
                        metavar="<OTU>",
                        default=None,
                        type=str,
@@ -485,6 +535,12 @@ def parse_args():
                        statistics for each OTU left out into the summary \
                        file; use the '--exclude' flag in a subsequent run \
                        to remove taxa deemed as problematic")
+    # group.add_argument("--groups",
+    #                    default=None,
+    #                    metavar="<taxonomic groups file>",
+    #                    type=str,
+    #                    help="specify a set of taxonomic groups and prune \
+    #                    non-monophyletic groups")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
 def main():
@@ -492,8 +548,14 @@ def main():
     args = parse_args()
     print(ABOUT)
     _validate_arguments(args)
-    settings = Settings(args)
     summary = Summary()
+
+    if args.groups:
+        # replace the file path with a set of taxonomic groups
+        groups = taxonomic_groups.read(args.groups)
+        args.groups = groups
+
+    settings = Settings(args)
 
     if args.threads:
         threads = args.threads
@@ -579,13 +641,14 @@ pairs)".format("\033[34m", "\033[0m", "\033[0m", index, no_of_file_pairs)
         mk_sum_out_title(dir_out)
         print("")
 
-    if len(summary) == 0:
+    if not summary:
         _error("no orthologs recovered, check filetype extensions or try \
 more relaxed settings")
 
-    paralog_freq = summary.paralogy_frequency(dir_out, args.trim_freq_paralogs)
-    otus_to_exclude = []
+    paralog_freq = summary.paralogy_frequency(dir_out, args.trim_freq_paralogs,
+                                              args.no_plot)
     homolog_report = summary.homolog_report(dir_out)
+    otus_to_exclude = []
 
     if args.trim_freq_paralogs:
         freq_paralogs = decontamination.trim_freq_paralogs(
@@ -604,6 +667,19 @@ more relaxed settings")
 
     if args.jackknife:
         decontamination.jackknife(summary, dir_out, threads)
+
+    # get OTUs and genes to exclude based on their occupancy
+    otus_to_exclude, genes_to_exclude = summary.matrix_occupancy(
+        dir_out, args.min_otu_occupancy, args.min_gene_occupancy, args.no_plot)
+
+    if genes_to_exclude:
+        summary = decontamination.exclude_genes(summary, genes_to_exclude)
+
+    if otus_to_exclude:
+        summary = decontamination.exclude_otus(summary, otus_to_exclude)
+
+    if genes_to_exclude or otus_to_exclude:
+        ortholog_report = summary.report("output", dir_out)
 
     print("{}\n{}".format(homolog_report, ortholog_report))
 
