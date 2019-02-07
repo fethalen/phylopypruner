@@ -17,10 +17,9 @@ class Sequence(object):
     def __init__(self, description="", sequence_data=""):
         self._description = str(description)
         self._sequence_data = str(sequence_data)
-        self._is_alignment = True if self.is_alignment else False
+        self._is_alignment = bool(self.is_alignment)
         if description:
-            self._otu = re.split(r"\||@", description)[0]
-            self._identifier = re.split(r"\||@", description)[1]
+            self._otu, self._identifier = re.split(r"\||@", description)
         else:
             self._otu = ""
             self._identifier = ""

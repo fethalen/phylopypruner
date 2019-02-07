@@ -151,6 +151,53 @@ def _rerun_wo_otu(log, otus, dir_out):
     log_copy.get_msas_out(dir_out)
     return log_copy
 
+def exclude_otus(summary, otus):
+    """Exclude the provided OTUs from the provided Summary object.
+
+    Parameters
+    ----------
+    summary : Summary object
+        Prune MSAs from this summary.
+    otus : list
+        Remove the OTUs within this list from the Summary object.
+
+    Returns
+    -------
+    summary : Summary object
+        Input summary with the provided OTUs excluded.
+    """
+    for log in summary.logs:
+        for msa in log.msas_out:
+            for sequence in msa.sequences:
+                if sequence.otu in otus:
+                    msa.sequences.remove(sequence)
+
+    return summary
+
+def exclude_genes(summary, msas):
+    """Exclude the multiple sequence alignments (MSAs) within the provided list
+    from the provided Summary object.
+
+    Parameters
+    ----------
+    summary : Summary object
+        Prune MSAs from this summary.
+    msas : list
+        Remove the MultipleSequenceAlignment objects within this list from the
+        Summary object.
+
+    Returns
+    -------
+    summary : Summary object
+        Input summary with the provided MSAs excluded.
+    """
+    for log in summary.logs:
+        for msa in log.msas_out:
+            if msa in msas:
+                log.msas_out.remove(msa)
+
+    return summary
+
 def prune_by_exclusion(summary, otus, dir_out, threads):
     """Exclude the OTUs within the provided list of OTUs from the masked trees
     within summary, perform paralogy pruning and output statistics and
@@ -307,3 +354,54 @@ def trim_divergent(node, divergence_threshold=0.25, include=[]):
     node.remove_nodes(nodes_to_remove)
 
     return otus_above_threshold
+
+def discard_non_monophyly(nodes, taxonomic_groups):
+    """Takes a list of TreeNode objects and a list of TaxonomicGroup objects as
+    an input. Returns the subset of TreeNode objects where each taxonomic
+    group, defined within the TaxonomicGroup objects, are recovered as
+    monophyletic. Being monophyletic here means that no other OTU, than the
+    defined OTUs within the group are present within each group.
+
+    Parameters
+    ----------
+    nodes : list
+      Check these TreeNode objects for monophyly.
+    taxonomic groups : list
+      A list of TaxonomicGroup objects.
+
+    Returns
+    -------
+    monophyletic_nodes : list
+      The subset of the input TreeNode objects which pass the test for
+      monophyly.
+    """
+    for node in nodes:
+        print(node.view() + "\n")
+
+        for group in taxonomic_groups:
+            present_members = node.outgroups_present(group.otus)
+
+            if not present_members:
+                continue
+
+            if len(present_members) > 1:
+                # find the outermost node which contains all members of this group
+                most_inclusive_branch = None
+
+                for branch in node.iter_branches():
+                    if branch.is_monophyletic_outgroup(present_members):
+                        if not most_inclusive_branch or len(branch) > len(most_inclusive_branch):
+                            most_inclusive_branch = branch
+
+                print(group.name + ": ", end="")
+                for member in present_members:
+                    print(member, end=" ")
+                print("")
+
+                if most_inclusive_branch:
+                    print("Most inclusive branch:")
+                    print(most_inclusive_branch.view())
+                    print("")
+
+
+        print("")
