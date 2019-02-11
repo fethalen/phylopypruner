@@ -29,6 +29,7 @@ SUM_PATH = "/supermatrix_stats.csv"
 OCCUPANCY_PLOT_FILE ="/occupancy_matrix.png"
 FREQ_PLOT_FILE = "/paralogy_freq_plot.png"
 FREQ_CSV_FILE = "/otu_stats.csv"
+GAP_CHARACTERS = {"-", "?", "x"}
 
 class Summary(object):
     "Represents a collection of Log objects from previous runs."
@@ -52,6 +53,40 @@ class Summary(object):
     @logs.setter
     def logs(self, value):
         self._logs = value
+
+    def remove_gap_only_columns(self):
+        """Iterate over the output alignments within this summary and remove
+        positions where no residues are present.
+
+        Parameters
+        ----------
+        None
+
+        Returns
+        -------
+        self : Summary object
+            This summary with the gap-only columns removed from the output
+            MSAs.
+        """
+        for log in self.logs:
+            for msa in log.msas_out:
+                # Generate a list of booleans for each alignment: True = one
+                # or more residues present at column, False = residues absent.
+                presence = [False] * len(msa.sequences[0])
+
+                # Identify columns where no residues are present.
+                for sequence in msa.sequences:
+                    for index, position in enumerate(sequence.sequence_data):
+                        if not position in GAP_CHARACTERS:
+                            presence[index] = True
+
+                # Remove columns where no residues are present.
+                for sequence in msa.sequences:
+                    for index, position in enumerate(presence):
+                        if not position:
+                            sequence.sequence_data = remove_position_from_str(
+                                sequence.sequence_data, index)
+        return self
 
     def matrix_occupancy(self, dir_out, min_otu_occupancy=None,
                          min_gene_occupancy=None, no_plot=False):
@@ -543,6 +578,24 @@ def mk_sum_out_title(dir_out):
 
     with open(dir_out + SUM_PATH, "w") as sum_out_file:
         sum_out_file.write(SUM_HEADER)
+
+def remove_position_from_str(string, position):
+    """Takes a string and a position as an input and removes the characters at
+    the provided position from the string.
+
+    Parameters
+    ----------
+    string : str
+        The string which you want to perform this action on.
+    position : int
+        The single position you which to remove.
+
+    Returns
+    -------
+    string : str
+        The input string with the provided position removed.
+    """
+    return string[:position] + string[position + 1:]
 
 def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
     """...

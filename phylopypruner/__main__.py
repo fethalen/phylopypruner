@@ -535,12 +535,12 @@ def parse_args():
                        statistics for each OTU left out into the summary \
                        file; use the '--exclude' flag in a subsequent run \
                        to remove taxa deemed as problematic")
-    # group.add_argument("--groups",
-    #                    default=None,
-    #                    metavar="<taxonomic groups file>",
-    #                    type=str,
-    #                    help="specify a set of taxonomic groups and prune \
-    #                    non-monophyletic groups")
+    group.add_argument("--groups",
+                       default=None,
+                       metavar="<taxonomic groups file>",
+                       type=str,
+                       help="specify a set of taxonomic groups and prune \
+                       non-monophyletic groups")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
 def main():
@@ -656,6 +656,7 @@ more relaxed settings")
         if freq_paralogs:
             otus_to_exclude += freq_paralogs
 
+    # Generate a list of OTUs to exclude and exclude them from the summary.
     if otus_to_exclude:
         if args.include:
             otus_to_exclude = [otu for otu in otus_to_exclude if not otu in
@@ -665,21 +666,24 @@ more relaxed settings")
     else:
         ortholog_report = summary.report("output", dir_out)
 
-    if args.jackknife:
-        decontamination.jackknife(summary, dir_out, threads)
-
-    # get OTUs and genes to exclude based on their occupancy
+    # Get OTUs and genes to exclude based on their occupancy.
     otus_to_exclude, genes_to_exclude = summary.matrix_occupancy(
         dir_out, args.min_otu_occupancy, args.min_gene_occupancy, args.no_plot)
-
-    if genes_to_exclude:
-        summary = decontamination.exclude_genes(summary, genes_to_exclude)
 
     if otus_to_exclude:
         summary = decontamination.exclude_otus(summary, otus_to_exclude)
 
-    if genes_to_exclude or otus_to_exclude:
-        ortholog_report = summary.report("output", dir_out)
+    if genes_to_exclude:
+        summary = decontamination.exclude_genes(summary, genes_to_exclude)
+
+    # Remove gap-only columns from the output alignments.
+    summary = summary.remove_gap_only_columns()
+
+    # Perform taxon jackknifing.
+    if args.jackknife:
+        decontamination.jackknife(summary, dir_out, threads)
+
+    ortholog_report = summary.report("output", dir_out)
 
     print("{}\n{}".format(homolog_report, ortholog_report))
 
@@ -691,6 +695,7 @@ more relaxed settings")
     run_time = "Run time: {} seconds".format(round(time.time() - START_TIME, 2))
     run_time_report = "\n{}\n{}".format("-" * len(run_time), run_time)
     print(run_time_report)
+
     with open(dir_out + LOG_PATH, "a") as log_file:
         log_file.write("\n" + run_time_report)
 
