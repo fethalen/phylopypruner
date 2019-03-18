@@ -33,6 +33,7 @@ from phylopypruner.summary import Summary
 from phylopypruner.summary import mk_sum_out_title
 from phylopypruner.log import Log
 from phylopypruner.settings import Settings
+from phylopypruner.supermatrix import Supermatrix
 # ensures that input is working across Python 2.7 and 3+
 if hasattr(__builtins__, "raw_input"): input = raw_input
 
@@ -535,12 +536,12 @@ def parse_args():
                        statistics for each OTU left out into the summary \
                        file; use the '--exclude' flag in a subsequent run \
                        to remove taxa deemed as problematic")
-    group.add_argument("--groups",
+    group.add_argument("--subclades",
                        default=None,
-                       metavar="<taxonomic groups file>",
+                       metavar="<subclade definition file>",
                        type=str,
-                       help="specify a set of taxonomic groups and prune \
-                       non-monophyletic groups")
+                       help="specify a set of subclades and analyse\
+                       their overall stability")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
 def main():
@@ -550,10 +551,10 @@ def main():
     _validate_arguments(args)
     summary = Summary()
 
-    if args.groups:
+    if args.subclades:
         # replace the file path with a set of taxonomic groups
-        groups = taxonomic_groups.read(args.groups)
-        args.groups = groups
+        groups = taxonomic_groups.read(args.subclades)
+        args.subclades = groups
 
     settings = Settings(args)
 
@@ -678,6 +679,9 @@ more relaxed settings")
 
     # Remove gap-only columns from the output alignments.
     summary = summary.remove_gap_only_columns()
+
+    supermatrix = Supermatrix(dir_out)
+    supermatrix.partitions_from_summary(summary, dir_out)
 
     # Perform taxon jackknifing.
     if args.jackknife:

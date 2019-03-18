@@ -159,3 +159,35 @@ class MultipleSequenceAlignment(object):
             This alignment's length.
         """
         return len(self.sequences[0])
+
+    def is_dna(self):
+        """Returns True if MSA consists of nucleotides (as opposed to amino
+        acids). If either the character B or U is found, then the sequence must
+        be DNA data, since these are not found in protein data. If these
+        characters aren't encountered, however, then DNA/protein will be
+        inferred by considering the amount of A, C, G, and T characters. If any
+        sequence within this MSA contains at least 50% of these characters,
+        then nucleotides are assumed. Please not that this method is not 100%
+        accurate, especially for very short sequences.
+
+        Returns
+        -------
+        nucleotides : bool
+            True if this MSA consists of nucleotides, else False.
+        """
+        all_seqs = ""
+
+        for sequence in self.sequences:
+            all_seqs += sequence.sequence_data.lower()
+
+        if "b" in all_seqs or "u" in all_seqs:
+            return True
+
+        all_seqs = all_seqs.replace("-", "")
+        no_of_acgt = 0
+        no_of_acgt += all_seqs.count("a")
+        no_of_acgt += all_seqs.count("c")
+        no_of_acgt += all_seqs.count("g")
+        no_of_acgt += all_seqs.count("t")
+
+        return no_of_acgt / len(all_seqs) >= 50

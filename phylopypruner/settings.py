@@ -22,7 +22,7 @@ class Settings(object):
         self._trim_freq_paralogs = arguments.trim_freq_paralogs
         self._trim_divergent = arguments.trim_divergent
         self._jackknife = arguments.jackknife
-        self._taxonomic_groups = arguments.groups
+        self._taxonomic_groups = arguments.subclades
 
     @property
     def fasta_file(self):
