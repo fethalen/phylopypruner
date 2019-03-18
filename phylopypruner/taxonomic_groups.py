@@ -50,13 +50,14 @@ def read(path):
     """Takes the path to a file that contains one, or more, 'taxonomic groups'
     as an input. Each group is contained within a single line and consists of
     two parts: a group name and one, or more, taxa. Each line starts with the
-    groups name, followed by a semi colon (';') and a space (' '). Each taxa
-    that follows the group name is separated by another space. For example:
+    group name, followed by a colon (':'). Each taxa that follows is separated
+    by a semi colon (';'). For example:
 
-    group_A:
-    taxon_A1 taxon_A2 taxon_A3
-    group_B:
-    taxon_B1 taxon_B2 taxon_B3
+    Mollusca:Crepidula;Nucella;Aplysia;Phenacolepa
+    Annelida:Helobdella;Capitella;Pectinaria;Clymenella
+    Entoprocta:Loxosomella;Loxosoma;Barentsia;Pedicellina
+
+    This format ensures that spaces (' ') are also supported in taxon names.
 
     Returns a list of TaxonomicGroup objects.
     """
@@ -69,7 +70,9 @@ def read(path):
             line = line.rstrip()
 
             try:
-                group_name, otus = line.split(': ')
+                entries = line.split(',')
+                group_name = entries[0]
+                otus = entries[1:]
             except:
                 raise ValueError("couldn't parse taxonomic group file")
 

@@ -375,33 +375,42 @@ def discard_non_monophyly(nodes, taxonomic_groups):
       The subset of the input TreeNode objects which pass the test for
       monophyly.
     """
+    otu_scores = defaultdict(int)
+
     for node in nodes:
-        print(node.view() + "\n")
+        print("-" * 80 + node.view() + "\n")
 
         for group in taxonomic_groups:
             present_members = node.outgroups_present(group.otus)
 
+            # only consider cases where 2, or more, members are present
             if not present_members:
                 continue
+            elif len(present_members) == 1:
+                continue
 
-            if len(present_members) > 1:
-                # find the outermost node which contains all members of this group
-                most_inclusive_branch = None
+            # find the outermost node which contains all members of this group
+            most_inclusive_branch = None
 
-                for branch in node.iter_branches():
-                    if branch.is_monophyletic_outgroup(present_members):
-                        if not most_inclusive_branch or len(branch) > len(most_inclusive_branch):
-                            most_inclusive_branch = branch
+            for branch in node.iter_branches():
+                if not branch.is_monophyletic_outgroup(present_members):
+                    continue
 
-                print(group.name + ": ", end="")
-                for member in present_members:
-                    print(member, end=" ")
-                print("")
+                if not most_inclusive_branch or len(branch) > len(most_inclusive_branch):
+                    most_inclusive_branch = branch
 
-                if most_inclusive_branch:
-                    print("Most inclusive branch:")
-                    print(most_inclusive_branch.view())
-                    print("")
+            print(group.name + ": ", end="")
+            for member in present_members:
+                print(member, end=" ")
+            print("")
 
+            if most_inclusive_branch:
+                for otu in most_inclusive_branch.iter_otus():
+                    otu_scores[otu] += 2
+                print(present_members)
+
+                print("Most inclusive branch:" + most_inclusive_branch.view() +
+                      "\n")
 
         print("")
+    print(dict(otu_scores))
