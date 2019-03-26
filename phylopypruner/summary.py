@@ -146,7 +146,7 @@ class Summary(object):
                 for sequence in msa.sequences:
                     otu = sequence.otu
                     otus_in_alignment.append(otu)
-                    occupancy = len(sequence.ungapped()) / len(sequence)
+                    occupancy = len(sequence.ungapped()) / float(len(sequence))
                     gene_occupancies[gene_partition] += occupancy
 
                     if not otu in occupancy_matrix:
