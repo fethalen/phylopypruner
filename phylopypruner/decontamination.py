@@ -378,39 +378,52 @@ def discard_non_monophyly(nodes, taxonomic_groups):
     otu_scores = defaultdict(int)
 
     for node in nodes:
-        print("-" * 80 + node.view() + "\n")
-
         for group in taxonomic_groups:
             present_members = node.outgroups_present(group.otus)
 
-            # only consider cases where 2, or more, members are present
+            # Only consider cases where 2, or more, members are present.
             if not present_members:
                 continue
             elif len(present_members) == 1:
                 continue
 
-            # find the outermost node which contains all members of this group
-            most_inclusive_branch = None
+            # Find the outermost node which contains all members of this group.
+            largest_monophyly = None
+            largest_polyphyly = None
 
             for branch in node.iter_branches():
-                if not branch.is_monophyletic_outgroup(present_members):
+                otus = set(branch.iter_otus())
+                ingroups = branch.outgroups_present(present_members)
+                outgroups = otus.difference(ingroups)
+                outermost_otus = set()
+
+                if len(ingroups) < 2:
                     continue
+                elif len(outgroups) >= 2:
+                    # Check whether all outgroups are part of a polytomy within
+                    # the outermost node in this TreeNode object.
+                    for child in branch.children:
+                        if child.is_leaf():
+                            outermost_otus.add(child.otu())
 
-                if not most_inclusive_branch or len(branch) > len(most_inclusive_branch):
-                    most_inclusive_branch = branch
+                    if not outgroups.issubset(outermost_otus):
+                        continue
 
-            print(group.name + ": ", end="")
-            for member in present_members:
-                print(member, end=" ")
-            print("")
+                    if len(ingroups) > len(largest_monophyly)
+                        # Score +1 for monophyletic group but w. polytomies
+                        pass
 
-            if most_inclusive_branch:
-                for otu in most_inclusive_branch.iter_otus():
-                    otu_scores[otu] += 2
-                print(present_members)
+                if len(ingroups) == len(branch):
+                    # The present members forms a monophyletic group.
+                    if not largest_monophyly or len(branch) > len(largest_monophyly):
+                        largest_monophyly= branch
+                else:
+                    # The present members do not form a monophyletic group.
+                    if not largest_polyphyly or len(branch) > len(largest_polyphyly):
+                        largest_polyphyly = branch
 
-                print("Most inclusive branch:" + most_inclusive_branch.view() +
-                      "\n")
+            # if not largest_monophyly or largest_polyphyly:
+            #     continue
 
-        print("")
-    print(dict(otu_scores))
+            # if not largest_monophyly or largest_polyphyly and (len(largest_polyphyly) - 1) > len(largest_monophyly):
+            #     print(largest_polyphyly.view())

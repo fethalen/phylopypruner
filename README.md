@@ -22,6 +22,24 @@ PhyloPyPruner is under active development and I would appreciate it if you try
 this software on your own data and [leave
 feedback](mailto:felix.thalen@uni-goettingen.de).
 
+## Quick installation
+
+The easiest way to install PhyloPyPruner is by using the package manager
+[pip](https://pypi.org/project/pip/):
+
+```bash
+pip install phylopypruner # install for all users
+pip install --user phylopypruner # install for the current user only
+```
+
+Once installed, the program is located within `$HOME/.local/bin`. Depending on
+your OS, you might have to add the directory to your `$PATH` to avoid typing
+the entire path. Once in your path, you run the program like this:
+
+```bash
+phylopypruner
+```
+
 ## [Documentation](https://gitlab.com/fethalen/phylopypruner/wikis)
 
 * [About PhyloPyPruner](https://gitlab.com/fethalen/phylopypruner/wikis/about-phylopypruner)
