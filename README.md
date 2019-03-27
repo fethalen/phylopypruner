@@ -22,10 +22,15 @@ PhyloPyPruner is under active development and I would appreciate it if you try
 this software on your own data and [leave
 feedback](mailto:felix.thalen@uni-goettingen.de).
 
-![proteomes2orthologs](https://gitlab.com/fethalen/phylopypruner/docs/images/proteomes2orthologs.png)
+![proteomes2orthologs](https://gitlab.com/fethalen/phylopypruner/doc/images/proteomes2orthologs.png)
 
-**Figure 1.** An overview of tree-based orthology inference. The different
-colors signify different species.
+**Figure 1.** An overview of a tree-based orthology inference approach. First,
+sequences from different species are clustered together based on an
+all-versus-all BLAST, followed by Markov clustering. Each node in the cluster
+corresponds to a sequence and each edge corresponds to a similarity score.
+Homologous groups are then aligned and a phylogenetic tree is inferred from the
+alignment. From this tree, orthologous groups can be identified and paralogs
+are pruned away.
 
 ## Quick installation
 
