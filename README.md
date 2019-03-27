@@ -22,7 +22,7 @@ PhyloPyPruner is under active development and I would appreciate it if you try
 this software on your own data and [leave
 feedback](mailto:felix.thalen@uni-goettingen.de).
 
-![proteomes2orthologs](https://gitlab.com/fethalen/phylopypruner/tree/master/doc/images/proteomes2orthologs.png)
+![proteomes2orthologs](https://gitlab.com/fethalen/phylopypruner/raw/master/doc/images/proteomes2orthologs.png)
 
 **Figure 1.** An overview of a tree-based orthology inference approach. First,
 sequences from different species are clustered together based on an
