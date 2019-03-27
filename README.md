@@ -22,10 +22,15 @@ PhyloPyPruner is under active development and I would appreciate it if you try
 this software on your own data and [leave
 feedback](mailto:felix.thalen@uni-goettingen.de).
 
+![proteomes2orthologs](https://gitlab.com/fethalen/phylopypruner/docs/images/proteomes2orthologs.png)
+
+**Figure 1.** An overview of tree-based orthology inference. The different
+colors signify different species.
+
 ## Quick installation
 
-The easiest way to install PhyloPyPruner is by using the package manager
-[pip](https://pypi.org/project/pip/):
+The easiest way to install PhyloPyPruner is by using the package manager for
+Python, [pip](https://pypi.org/project/pip/):
 
 ```bash
 pip install phylopypruner # install for all users
