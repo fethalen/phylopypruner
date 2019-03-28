@@ -409,7 +409,7 @@ def discard_non_monophyly(nodes, taxonomic_groups):
                     if not outgroups.issubset(outermost_otus):
                         continue
 
-                    if len(ingroups) > len(largest_monophyly)
+                    if len(ingroups) > len(largest_monophyly):
                         # Score +1 for monophyletic group but w. polytomies
                         pass
 

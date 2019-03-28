@@ -349,6 +349,17 @@ def file_pairs_from_directory(directory):
             else:
                 corr_files[filename] = (file,)
 
+    # Look for redundant filetype extensions (i.e., more than one MSA and/or
+    # more than one tree file).
+    extensions = ""
+    for filename in corr_files:
+        if len(corr_files[filename]) > 2:
+            for file in corr_files[filename]:
+                filename, extension = os.path.splitext(file)
+                extensions += " " + extension
+            _error("encountered redundant filetype extensions:\
+{}".format(extensions))
+
     # remove file "pairs" were only 1 file was recovered
     pairs_to_remove = list()
     for filename in corr_files:
