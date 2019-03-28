@@ -120,8 +120,9 @@ def _validate_input(msa, tree, tree_path):
     names = list(tree.iter_names())
 
     if set(descriptions).intersection(names) < set(descriptions):
-        raise AssertionError("MSA {} does not match tree \
-                {}".format(msa.filename, tree_path))
+        print("# Example TreeNames:",names[:2], file=sys.stderr)
+        print("# Example Sequences:",descriptions[:2], file=sys.stderr)
+        sys.exit("# ERROR: MSA names don't match tree \n   {}\n   {}".format(msa.filename, tree_path))
 
 def _no_files(args):
     "Returns true if the required files are not provided."
@@ -213,7 +214,7 @@ def _run(settings, msa, tree):
 
     # trim long branches
     if settings.trim_lb:
-        log.lbs_removed = list(filtering.prune_long_branches(tree, settings.trim_lb))
+        log.lbs_removed = list(filtering.prune_long_branches(tree, settings.trim_lb)) 
 
     if filtering.too_few_otus(tree, settings.min_taxa):
         return log
@@ -336,40 +337,48 @@ def file_pairs_from_directory(directory):
     # corresponding files; filename is key, values are tuple pairs where
     # MSA comes first and tree second
     corr_files = dict()
+    msa_list=[]
+    tree_list=[]
+    
     for file in os.listdir(directory):
         filename, extension = os.path.splitext(file)
-        filename = filename.split(".")[0]
+        # filename = ".".join(filename.split(".")[:-1])
         extension = extension.lower()
-        if extension in FASTA_EXTENSIONS or extension in NW_EXTENSIONS:
-            if filename in corr_files.keys():
-                if extension in NW_EXTENSIONS:
-                    corr_files[filename] = corr_files[filename] + (file,)
-                else:
-                    corr_files[filename] = (file,) + corr_files[filename]
-            else:
-                corr_files[filename] = (file,)
-
-    # Look for redundant filetype extensions (i.e., more than one MSA and/or
-    # more than one tree file).
-    extensions = ""
-    for filename in corr_files:
-        if len(corr_files[filename]) > 2:
-            for file in corr_files[filename]:
-                filename, extension = os.path.splitext(file)
-                extensions += " " + extension
-            _error("encountered redundant filetype extensions:\
-{}".format(extensions))
-
-    # remove file "pairs" were only 1 file was recovered
-    pairs_to_remove = list()
-    for filename in corr_files:
-        if len(corr_files[filename]) < 2:
-            pairs_to_remove.append(filename)
-
-    for filename in pairs_to_remove:
-        corr_files.pop(filename)
-
-    return corr_files
+        
+        if extension in FASTA_EXTENSIONS:
+            msa_list.append(file)
+        if extension in NW_EXTENSIONS:
+            tree_list.append(file)
+        # SORT and CHECK SIZES
+    if len(msa_list) == len(tree_list):
+        msa_list.sort()
+        tree_list.sort()
+        return zip(msa_list,tree_list) 
+    else:
+        _error("mismatch in file pairs between trees ({}) and msa({}) in directory".format(len(tree_list),len(msa_list))
+               )
+        return None
+        
+    #     if extension in FASTA_EXTENSIONS or extension in NW_EXTENSIONS:
+    #         if filename in corr_files.keys():
+    #             if extension in NW_EXTENSIONS:
+    #                 corr_files[filename] = corr_files[filename] + (file,)
+    #             else:
+    #                 corr_files[filename] = (file,) + corr_files[filename]
+    #         else:
+    #             corr_files[filename] = (file,)
+    #
+    # # remove file "pairs" where only 1 file was recovered
+    # pairs_to_remove = list()
+    # for filename in corr_files:
+    #     if len(corr_files[filename]) < 2:
+    #         pairs_to_remove.append(filename)
+    #
+    # for filename in pairs_to_remove:
+    #     corr_files.pop(filename)
+    #
+    # return corr_files
+    
 
 def parse_args():
     "Parse the arguments provided by the user."
@@ -585,7 +594,7 @@ def main():
     dir_out = dir_out + "/phylopypruner_output"
 
     if not args.overwrite and os.path.isfile(dir_out + ORTHO_STATS_PATH):
-        question = _warning("files from a previous run exists in the output \
+        question = _warning("files from a previous run exist in the output \
 directory, overwrite?")
         if not _yes_or_no(question):
             exit()
@@ -640,8 +649,15 @@ directory, overwrite?")
         part_run = partial(_run_for_file_pairs, settings=settings,
                            dir_in=dir_in, dir_out=dir_out)
         progress = None
-        file_pairs = list(corr_files.values())
-
+        # file_pairs = list(corr_files.values())
+        file_pairs=corr_files
+        # SH: added
+        # if not (len(file_pairs)==2 and len(file_pairs[0]) == len(file_pairs[1])):
+        #     print("FILE PAIRS",file_pairs,file=sys.stderr)
+        #     print("CORR FILES",corr_files,file=sys.stderr)
+        #     print("ERROR File pairs not same size. Make sure names are the same", file=sys.stderr)
+        #     sys.exit()
+            
         for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
             progress = "{}==>{} processing MSAs and trees{} ({}/{} file \
 pairs)".format("\033[34m", "\033[0m", "\033[0m", index, no_of_file_pairs)
