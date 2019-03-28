@@ -1,7 +1,7 @@
 "Module for working with collections of Log objects."
 
 from __future__ import absolute_import
-import os
+import os, sys
 import datetime
 from phylopypruner import fasta
 from textwrap import wrap
@@ -284,7 +284,11 @@ class Summary(object):
         if not MATPLOTLIB or no_plot:
             return paralog_freq
 
-        plt.barh(y=indexes, width=freq, color="black", edgecolor="black", alpha=0.5)
+        try:
+            plt.barh(y=indexes, color="black", edgecolor="black", width=freq, alpha=0.5)
+        except TypeError:
+            print >> sys.stderr, "# Plotting function lacking indices. Try --no-plot\n", indexes[:2]
+            return paralog_freq
         plt.yticks(list(indexes), otus)
         plt.ylabel("OTU")
         plt.xlabel("number of paralogs / number of alignments OTU is in")
@@ -387,16 +391,16 @@ class Summary(object):
         report = """
 {}
 {}
-# of alignments:\t\t\t{}
-# of sequences:\t\t\t\t{}
-# of OTUs:\t\t\t\t{}
-avg # of sequences per alignment:\t{}
-avg # of OTUs:\t\t\t\t{}
-avg sequence length (ungapped):\t\t{}
-shortest sequence (ungapped):\t\t{}
-longest sequence (ungapped):\t\t{}
-% missing data:\t\t\t\t{}
-concatenated alignment length:\t\t{}""".format(
+# of alignments                  :{:10d}
+# of sequences                   :{:10d}
+# of OTUs                        :{:10d}
+avg # of sequences per alignment :{:10d}
+avg # of OTUs                    :{:10d}
+avg sequence length (ungapped)   :{:10d}
+shortest sequence (ungapped)     :{:10d}
+longest sequence (ungapped)      :{:10d}
+% missing data                   :{:10.2f}
+concatenated alignment length    :{:10d}""".format(
     name,
     "-" * len(name),
     no_of_alignments,
@@ -490,16 +494,16 @@ concatenated alignment length:\t\t{}""".format(
         report = """
 {}
 {}
-# of alignments:\t\t\t{}
-# of sequences:\t\t\t\t{}
-# of OTUs:\t\t\t\t{}
-avg # of sequences per alignment:\t{}
-avg # of OTUs:\t\t\t\t{}
-avg sequence length (ungapped):\t\t{}
-shortest sequence (ungapped):\t\t{}
-longest sequence (ungapped):\t\t{}
-% missing data:\t\t\t\t{}
-concatenated alignment length:\t\t{}""".format(
+# of alignments                  :{:10d}
+# of sequences                   :{:10d}
+# of OTUs                        :{:10d}
+avg # of sequences per alignment :{:10d}
+avg # of OTUs                    :{:10d}
+avg sequence length (ungapped)   :{:10d}
+shortest sequence (ungapped)     :{:10d}
+longest sequence (ungapped)      :{:10d}
+% missing data                   :{:10.2f}
+concatenated alignment length    :{:10d}""".format(
     name,
     "-" * len(name),
     no_of_alignments,
@@ -605,10 +609,7 @@ def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
 
     plot_figure = plt.figure()
     axes = plot_figure.add_subplot(111)
-    try:
-        plot = axes.matshow(matrix, cmap="viridis_r", interpolation="nearest")
-    except:
-        plot = axes.matshow(matrix, cmap="ocean_r", interpolation="nearest")
+    plot = axes.matshow(matrix, cmap="viridis_r", interpolation="nearest")
     plot_figure.colorbar(plot)
 
     # set default plot size and font size
