@@ -284,7 +284,7 @@ class Summary(object):
         if not MATPLOTLIB or no_plot:
             return paralog_freq
 
-        plt.barh(y=indexes, color="black", edgecolor="black", width=freq, alpha=0.5)
+        plt.barh(y=indexes, width=freq, color="black", edgecolor="black", alpha=0.5)
         plt.yticks(list(indexes), otus)
         plt.ylabel("OTU")
         plt.xlabel("number of paralogs / number of alignments OTU is in")
@@ -605,7 +605,10 @@ def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
 
     plot_figure = plt.figure()
     axes = plot_figure.add_subplot(111)
-    plot = axes.matshow(matrix, cmap="viridis_r", interpolation="nearest")
+    try:
+        plot = axes.matshow(matrix, cmap="viridis_r", interpolation="nearest")
+    except:
+        plot = axes.matshow(matrix, cmap="ocean_r", interpolation="nearest")
     plot_figure.colorbar(plot)
 
     # set default plot size and font size
