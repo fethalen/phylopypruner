@@ -24,13 +24,7 @@ feedback](mailto:felix.thalen@uni-goettingen.de).
 
 ![proteomes2orthologs](https://gitlab.com/fethalen/phylopypruner/raw/master/doc/images/proteomes2orthologs.png)
 
-**Figure 1.** An overview of a tree-based orthology inference approach. First,
-sequences from different species are clustered together based on an
-all-versus-all BLAST, followed by Markov clustering. Each node in the cluster
-corresponds to a sequence and each edge corresponds to a similarity score.
-Homologous groups are then aligned and a phylogenetic tree is inferred from the
-alignment. From this tree, orthologous groups can be identified and paralogs
-are pruned away.
+**Figure 1.** A rough overview of a tree-based orthology inference approach.
 
 ## Quick installation
 
@@ -52,13 +46,13 @@ phylopypruner
 
 ## [Documentation](https://gitlab.com/fethalen/phylopypruner/wikis)
 
-* [About PhyloPyPruner](https://gitlab.com/fethalen/phylopypruner/wikis/about-phylopypruner)
-* Tutorial
-* [Installation](https://gitlab.com/fethalen/phylopypruner/wikis/installation)
-* [Input data](https://gitlab.com/fethalen/phylopypruner/wikis/input-data)
-* [Output files](https://gitlab.com/fethalen/phylopypruner/wikis/output-files)
-* [Methods](https://gitlab.com/fethalen/phylopypruner/wikis/methods)
-* [Options](https://gitlab.com/fethalen/phylopypruner/wikis/options)
+1. [About PhyloPyPruner](https://gitlab.com/fethalen/phylopypruner/wikis/about-phylopypruner)
+2. [Tutorial](https://gitlab.com/fethalen/phylopypruner/wikis/tutorial#phylopypruner-tutorial)
+3. [Installation](https://gitlab.com/fethalen/phylopypruner/wikis/installation)
+4. [Input data](https://gitlab.com/fethalen/phylopypruner/wikis/input-data)
+5. [Output files](https://gitlab.com/fethalen/phylopypruner/wikis/output-files)
+6. [Methods](https://gitlab.com/fethalen/phylopypruner/wikis/methods)
+7. [Options](https://gitlab.com/fethalen/phylopypruner/wikis/options)
 
 ## Cite
 
