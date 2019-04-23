@@ -1,4 +1,4 @@
-![phylopypruner_logotype](https://gitlab.com/fethalen/phylopypruner/raw/master/doc/images/ppp_logo.png)
+<img src="https://gitlab.com/fethalen/phylopypruner/raw/master/doc/images/ppp_logo.png" alt="ppp_logotype" width="350"/>
 
 ## What is PhyloPyPruner?
 
