@@ -1,5 +1,6 @@
-What is PhyloPyPruner?
-----------------------
+![phylopypruner_logotype](https://gitlab.com/fethalen/phylopypruner/raw/master/doc/images/ppp_logo.png)
+
+## What is PhyloPyPruner?
 
 PhyloPyPruner is a Python package for refining the output of a graph-based
 orthology inference approach such as

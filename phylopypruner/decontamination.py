@@ -15,6 +15,7 @@ from phylopypruner.summary import Summary
 from phylopypruner.prune_paralogs import prune_paralogs
 
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
+SUBCLADE_STATS_FILE = "/subclade_stats.csv"
 
 def _exclude_and_rerun(taxon, summary, pruning_method, min_taxa, outgroup, dir_out):
     summary_copy = copy.deepcopy(summary)
@@ -198,7 +199,7 @@ def exclude_genes(summary, msas):
 
     return summary
 
-def prune_by_exclusion(summary, otus, dir_out, threads):
+def prune_by_exclusion(summary, otus, dir_out, threads, homolog_stats):
     """Exclude the OTUs within the provided list of OTUs from the masked trees
     within summary, perform paralogy pruning and output statistics and
     alignments for each ortholog recovered.
@@ -248,7 +249,7 @@ def prune_by_exclusion(summary, otus, dir_out, threads):
 
     pool.terminate()
     print("")
-    report = summary_out.report(excluded_str, dir_out)
+    report = summary_out.report(excluded_str, dir_out, homolog_stats)
 
     return summary_out, report
 
@@ -355,62 +356,101 @@ def trim_divergent(node, divergence_threshold=0.25, include=[]):
 
     return otus_above_threshold
 
-def discard_non_monophyly(nodes, taxonomic_groups):
-    """Takes a list of TreeNode objects and a list of TaxonomicGroup objects as
-    an input. Returns the subset of TreeNode objects where each taxonomic
-    group, defined within the TaxonomicGroup objects, are recovered as
-    monophyletic. Being monophyletic here means that no other OTU, than the
-    defined OTUs within the group are present within each group.
+def score_monophyly(summary, taxonomic_groups, dir_out):
+    """Takes a Summary object, a list of TaxonomicGroup objects, and the path
+    to the output directory as an input. For each ortholog (output alignment)
+    within the Summary object, analyse the monophyly of each group defined
+    within the list of TaxonomicGroup objects by counting how many times each
+    group forms a monophyletic group, which OTUs are present and which OTUs are
+    "invading" a group. Output a CSV file where one axis is the OTUs and
+    the other is the various groups.
 
     Parameters
     ----------
-    nodes : list
-      Check these TreeNode objects for monophyly.
-    taxonomic groups : list
-      A list of TaxonomicGroup objects.
-
-    Returns
-    -------
-    monophyletic_nodes : list
-      The subset of the input TreeNode objects which pass the test for
-      monophyly.
+    summary : Summary object
+        The orthologs (output alignments) from this Summary object are used in
+        this analysis.
+    taxonomic_groups : list
+        This objects contains the different groups: their name and the OTUs
+        within the group. Each item in the list should be a TaxonomicGroup
+        object.
+    dir_out : str
+        The directory of where the output statistics file is written to.
     """
+    otus = list()
     otu_scores = defaultdict(int)
+    group_scores = defaultdict(int)
+    row = defaultdict(int)
+    group_names = set([group.name for group in taxonomic_groups])
+    trees = set()
 
-    for node in nodes:
-        print("-" * 80 + node.view() + "\n")
+    # compile sets of trees and OTUs
+    for log in summary.logs:
+        for ortholog in log.orthologs:
+            trees.add(ortholog)
+            for otu in ortholog.iter_otus():
+                otus.append(otu)
 
+    for group in taxonomic_groups:
+        group_scores[group.name] = [0 for otu in otus]
+
+    for tree in trees:
         for group in taxonomic_groups:
-            present_members = node.outgroups_present(group.otus)
+            ingroups = tree.outgroups_present(group.otus)
+            most_inclusive_branch = None
+            most_ingroups = 0
+            no_of_outgroups = 0
 
             # only consider cases where 2, or more, members are present
-            if not present_members:
-                continue
-            elif len(present_members) == 1:
+            if len(ingroups) <= 1:
                 continue
 
-            # find the outermost node which contains all members of this group
-            most_inclusive_branch = None
+            for branch in tree.iter_branches():
+                otus_in_branch = set(branch.iter_otus())
+                ingroups_in_branch = otus_in_branch.intersection(ingroups)
+                outgroups_in_branch = otus_in_branch.difference(ingroups_in_branch)
 
-            for branch in node.iter_branches():
-                if not branch.is_monophyletic_outgroup(present_members):
+                if len(ingroups_in_branch) < 2 or len(outgroups_in_branch) > 2:
                     continue
 
-                if not most_inclusive_branch or len(branch) > len(most_inclusive_branch):
+                # Find the branch that maximizes the amount of ingroup OTUs and
+                # minimizes the amount of outgroup OTUs..
+                if len(ingroups_in_branch) > most_ingroups or \
+                    (len(ingroups_in_branch) == most_ingroups and \
+                    len(outgroups_in_branch) < no_of_outgroups):
                     most_inclusive_branch = branch
-
-            print(group.name + ": ", end="")
-            for member in present_members:
-                print(member, end=" ")
-            print("")
+                    most_ingroups = len(ingroups_in_branch)
+                    no_of_outgroups = len(outgroups_in_branch)
 
             if most_inclusive_branch:
                 for otu in most_inclusive_branch.iter_otus():
-                    otu_scores[otu] += 2
-                print(present_members)
+                    # Add +1 for each time OTU forms a monophyletic group with
+                    # group X.
+                    index = otus.index(otu)
+                    group_scores[group.name][index] += 1
 
-                print("Most inclusive branch:" + most_inclusive_branch.view() +
-                      "\n")
+                    if otu in ingroups:
+                        # OTU present and forms a monophyletic group
+                        otu_scores[otu] += 2
+                        ingroups.remove(otu)
+                        # group_scores[otus.index(otu)] += 1
+                    else:
+                        # OTU is present but invades another group
+                        otu_scores[otu] -= 2
+                # Score the OTUs which were present but did not form a
+                # monophyletic group.
+                for otu in ingroups:
+                    otu_scores[otu] -= 1
 
-        print("")
-    print(dict(otu_scores))
+    with open(dir_out + SUBCLADE_STATS_FILE, "w") as subclades_file:
+        subclades_file.write("groupNames;" + ";".join([otu for otu in otus]) +
+                "\n")
+        for group in group_scores:
+            subclades_file.write(group + ";" + ";".join([str(score) for score
+                in group_scores[group]]) + "\n")
+        subclades_file.write("score;")
+        subclades_file.write("monophylyScore;" + ";".join([str(otu_scores[otu]) for otu in otu_scores]))
+
+    for group in group_scores:
+        print(group + ";" + ";".join([str(score) for score in
+            group_scores[group]]))

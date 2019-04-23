@@ -319,12 +319,12 @@ class Summary(object):
         report : str
             Overview statistics of the summary.
         """
-        homolog_report, row = self.homolog_alignment_stats("Input Alignments", "input")
+        homolog_report, row, stats = self.homolog_alignment_stats("Input Alignments", "input")
 
         with open(dir_out + SUM_PATH, "a") as sum_out_file:
             sum_out_file.write(row)
 
-        return homolog_report
+        return stats
 
     def homolog_alignment_stats(self, name, title):
         """Returns a report, in text, and a CSV-row of a set of statistics
@@ -348,6 +348,7 @@ class Summary(object):
         no_of_seqs = 0
         seq_lens = 0
         cat_alignment_len = 0
+        otus_total = 0
         pct_missing = 0.0
         shortest = None
         longest = None
@@ -357,6 +358,8 @@ class Summary(object):
             msa = log.msa
             no_of_alignments += 1
             otus.update(msa.otus())
+            otus_total += len(msa.otus())
+
             cat_alignment_len += msa.alignment_len()
 
             for sequence in msa.sequences:
@@ -378,9 +381,11 @@ class Summary(object):
 
         if no_of_alignments > 0:
             avg_no_of_seqs = int(no_of_seqs / no_of_alignments)
+            avg_no_of_otus = int(otus_total / no_of_alignments)
             missing_data = round((pct_missing / no_of_alignments) * 100, 1)
         else:
             avg_no_of_seqs = 0
+            avg_no_of_otus = 0
             missing_data = 0
 
         if no_of_seqs > 0:
@@ -407,7 +412,7 @@ concatenated alignment length    :{:10d}""".format(
     no_of_seqs,
     no_of_otus,
     avg_no_of_seqs,
-    avg_no_of_seqs,
+    avg_no_of_otus,
     avg_seq_len,
     shortest,
     longest,
@@ -420,16 +425,20 @@ concatenated alignment length    :{:10d}""".format(
             no_of_seqs,
             no_of_otus,
             avg_no_of_seqs,
-            avg_no_of_seqs,
+            avg_no_of_otus,
             avg_seq_len,
             shortest,
             longest,
             missing_data,
             cat_alignment_len)
 
-        return report, row
+        stats = [title, no_of_alignments, no_of_seqs, no_of_otus,
+                avg_no_of_seqs, avg_no_of_otus, avg_seq_len, shortest, longest,
+                missing_data, cat_alignment_len]
 
-    def alignment_stats(self, name, title):
+        return report, row, stats
+
+    def alignment_stats(self, name, title, homolog_stats):
         """Returns a report, in text, and a CSV-row of a set of statistics
         based on this summary.
 
@@ -494,27 +503,37 @@ concatenated alignment length    :{:10d}""".format(
         report = """
 {}
 {}
-# of alignments                  :{:10d}
-# of sequences                   :{:10d}
-# of OTUs                        :{:10d}
-avg # of sequences per alignment :{:10d}
-avg # of OTUs                    :{:10d}
-avg sequence length (ungapped)   :{:10d}
-shortest sequence (ungapped)     :{:10d}
-longest sequence (ungapped)      :{:10d}
-% missing data                   :{:10.2f}
-concatenated alignment length    :{:10d}""".format(
+# of alignments                  :{:10d} | {}
+# of sequences                   :{:10d} | {}
+# of OTUs                        :{:10d} | {}
+avg # of sequences per alignment :{:10d} | {}
+avg # of OTUs                    :{:10d} | {}
+avg sequence length (ungapped)   :{:10d} | {}
+shortest sequence (ungapped)     :{:10d} | {}
+longest sequence (ungapped)      :{:10d} | {}
+% missing data                   :{:10.2f} | {}
+concatenated alignment length    :{:10d} | {}""".format(
     name,
-    "-" * len(name),
+    "-" * len(name) + " " * 29 + "Input | Output",
+    homolog_stats[1],
     no_of_alignments,
+    homolog_stats[2],
     no_of_seqs,
+    homolog_stats[3],
     no_of_otus,
+    homolog_stats[4],
     avg_no_of_seqs,
+    homolog_stats[5],
     avg_no_of_seqs,
+    homolog_stats[6],
     avg_seq_len,
+    homolog_stats[7],
     shortest,
+    homolog_stats[8],
     longest,
+    homolog_stats[9],
     missing_data,
+    homolog_stats[10],
     cat_alignment_len)
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
@@ -532,7 +551,7 @@ concatenated alignment length    :{:10d}""".format(
 
         return report, row
 
-    def report(self, title, dir_out):
+    def report(self, title, dir_out, homolog_stats):
         """Output a summary of the files for this run.
 
         Parameters
@@ -547,7 +566,7 @@ concatenated alignment length    :{:10d}""".format(
         report : str
             Overview statistics of the summary.
         """
-        report, row = self.alignment_stats("Output Alignments", title)
+        report, row = self.alignment_stats("Alignments", title, homolog_stats)
 
         with open(dir_out + SUM_PATH, "a") as sum_out_file:
             sum_out_file.write(row)
