@@ -120,9 +120,9 @@ def _validate_input(msa, tree, tree_path):
     names = list(tree.iter_names())
 
     if set(descriptions).intersection(names) < set(descriptions):
-        print("# Example TreeNames:",names[:2], file=sys.stderr)
-        print("# Example Sequences:",descriptions[:2], file=sys.stderr)
-        sys.exit("# ERROR: MSA names don't match tree \n   {}\n   {}".format(msa.filename, tree_path))
+        print("example tree names:",names[:2], file=sys.stderr)
+        print("example sequences:",descriptions[:2], file=sys.stderr)
+        _error("MSA names don't match tree \n   {}\n   {}".format(msa.filename, tree_path))
 
 def _no_files(args):
     "Returns true if the required files are not provided."
@@ -214,7 +214,7 @@ def _run(settings, msa, tree):
 
     # trim long branches
     if settings.trim_lb:
-        log.lbs_removed = list(filtering.prune_long_branches(tree, settings.trim_lb)) 
+        log.lbs_removed = list(filtering.prune_long_branches(tree, settings.trim_lb))
 
     if filtering.too_few_otus(tree, settings.min_taxa):
         return log
@@ -285,10 +285,6 @@ def _run(settings, msa, tree):
         log.orthologs = filtering.force_inclusion(
             log.orthologs, settings.force_inclusion)
 
-    if settings.taxonomic_groups:
-        decontamination.discard_non_monophyly(
-            log.orthologs, settings.taxonomic_groups)
-
     return log
 
 def _get_orthologs(settings, directory="", dir_out=None):
@@ -339,12 +335,12 @@ def file_pairs_from_directory(directory):
     corr_files = dict()
     msa_list=[]
     tree_list=[]
-    
+
     for file in os.listdir(directory):
         filename, extension = os.path.splitext(file)
         # filename = ".".join(filename.split(".")[:-1])
         extension = extension.lower()
-        
+
         if extension in FASTA_EXTENSIONS:
             msa_list.append(file)
         if extension in NW_EXTENSIONS:
@@ -353,12 +349,12 @@ def file_pairs_from_directory(directory):
     if len(msa_list) == len(tree_list):
         msa_list.sort()
         tree_list.sort()
-        return zip(msa_list,tree_list) 
+        return zip(msa_list,tree_list)
     else:
         _error("mismatch in file pairs between trees ({}) and msa({}) in directory".format(len(tree_list),len(msa_list))
                )
         return None
-        
+
     #     if extension in FASTA_EXTENSIONS or extension in NW_EXTENSIONS:
     #         if filename in corr_files.keys():
     #             if extension in NW_EXTENSIONS:
@@ -378,7 +374,6 @@ def file_pairs_from_directory(directory):
     #     corr_files.pop(filename)
     #
     # return corr_files
-    
 
 def parse_args():
     "Parse the arguments provided by the user."
@@ -657,7 +652,7 @@ directory, overwrite?")
         #     print("CORR FILES",corr_files,file=sys.stderr)
         #     print("ERROR File pairs not same size. Make sure names are the same", file=sys.stderr)
         #     sys.exit()
-            
+
         for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
             progress = "{}==>{} processing MSAs and trees{} ({}/{} file \
 pairs)".format("\033[34m", "\033[0m", "\033[0m", index, no_of_file_pairs)
@@ -675,7 +670,7 @@ more relaxed settings")
 
     paralog_freq = summary.paralogy_frequency(dir_out, args.trim_freq_paralogs,
                                               args.no_plot)
-    homolog_report = summary.homolog_report(dir_out)
+    homolog_stats = summary.homolog_report(dir_out)
     otus_to_exclude = []
 
     if args.trim_freq_paralogs:
@@ -690,9 +685,9 @@ more relaxed settings")
             otus_to_exclude = [otu for otu in otus_to_exclude if not otu in
                                args.include]
         summary, ortholog_report = decontamination.prune_by_exclusion(
-            summary, otus_to_exclude, dir_out, threads)
-    else:
-        ortholog_report = summary.report("output", dir_out)
+            summary, otus_to_exclude, dir_out, threads, homolog_stats)
+    # else:
+    #     ortholog_report = summary.report("output", dir_out, homolog_stats)
 
     # Get OTUs and genes to exclude based on their occupancy.
     otus_to_exclude, genes_to_exclude = summary.matrix_occupancy(
@@ -707,6 +702,12 @@ more relaxed settings")
     # Remove gap-only columns from the output alignments.
     summary = summary.remove_gap_only_columns()
 
+    if settings.taxonomic_groups:
+        decontamination.score_monophyly(
+            summary, settings.taxonomic_groups, dir_out)
+        # decontamination.discard_non_monophyly(
+        #     log.orthologs, settings.taxonomic_groups)
+
     supermatrix = Supermatrix(dir_out)
     supermatrix.partitions_from_summary(summary, dir_out)
 
@@ -714,12 +715,13 @@ more relaxed settings")
     if args.jackknife:
         decontamination.jackknife(summary, dir_out, threads)
 
-    ortholog_report = summary.report("output", dir_out)
+    ortholog_report = summary.report("output", dir_out, homolog_stats)
 
-    print("{}\n{}".format(homolog_report, ortholog_report))
+    # print("{}\n{}".format(homolog_report, ortholog_report))
+    print(ortholog_report)
 
     with open(dir_out + LOG_PATH, "a") as log_file:
-        log_file.write("\n" + homolog_report)
+        # log_file.write("\n" + homolog_report)
         log_file.write("\n" + ortholog_report)
 
     summary.write_msas(args.wrap)
