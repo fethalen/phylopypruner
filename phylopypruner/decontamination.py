@@ -377,22 +377,28 @@ def score_monophyly(summary, taxonomic_groups, dir_out):
     dir_out : str
         The directory of where the output statistics file is written to.
     """
-    otus = list()
-    otu_scores = defaultdict(int)
+    otus = set()
+    otu_scores_ordered = list()
     group_scores = defaultdict(int)
     row = defaultdict(int)
     group_names = set([group.name for group in taxonomic_groups])
     trees = set()
+
+    print("{}==>{} calculating monophyly scores".format("\033[34m", "\033[0m"))
 
     # compile sets of trees and OTUs
     for log in summary.logs:
         for ortholog in log.orthologs:
             trees.add(ortholog)
             for otu in ortholog.iter_otus():
-                otus.append(otu)
+                otus.add(otu)
+
+    otus = list(otus)
 
     for group in taxonomic_groups:
         group_scores[group.name] = [0 for otu in otus]
+
+    otu_scores_ordered = [0 for otu in otus]
 
     for tree in trees:
         for group in taxonomic_groups:
@@ -414,7 +420,7 @@ def score_monophyly(summary, taxonomic_groups, dir_out):
                     continue
 
                 # Find the branch that maximizes the amount of ingroup OTUs and
-                # minimizes the amount of outgroup OTUs..
+                # minimizes the amount of outgroup OTUs.
                 if len(ingroups_in_branch) > most_ingroups or \
                     (len(ingroups_in_branch) == most_ingroups and \
                     len(outgroups_in_branch) < no_of_outgroups):
@@ -431,26 +437,31 @@ def score_monophyly(summary, taxonomic_groups, dir_out):
 
                     if otu in ingroups:
                         # OTU present and forms a monophyletic group
-                        otu_scores[otu] += 2
+                        otu_scores_ordered[index] += 2
                         ingroups.remove(otu)
                         # group_scores[otus.index(otu)] += 1
                     else:
                         # OTU is present but invades another group
-                        otu_scores[otu] -= 2
+                        otu_scores_ordered[index] -= 2
                 # Score the OTUs which were present but did not form a
                 # monophyletic group.
                 for otu in ingroups:
-                    otu_scores[otu] -= 1
+                    otu_scores_ordered[index] -= 2
 
-    with open(dir_out + SUBCLADE_STATS_FILE, "w") as subclades_file:
-        subclades_file.write("groupNames;" + ";".join([otu for otu in otus]) +
-                "\n")
-        for group in group_scores:
-            subclades_file.write(group + ";" + ";".join([str(score) for score
-                in group_scores[group]]) + "\n")
-        subclades_file.write("score;")
-        subclades_file.write("monophylyScore;" + ";".join([str(otu_scores[otu]) for otu in otu_scores]))
+    # Order the score so that there is one OTU for each row, instead of for
+    # each column.
+    scores_otu_row = []
+    for index, score in enumerate(otu_scores_ordered):
+        scores_otu_row.append([otus[index], score])
 
     for group in group_scores:
-        print(group + ";" + ";".join([str(score) for score in
-            group_scores[group]]))
+        for index, score in enumerate(group_scores[group]):
+            scores_otu_row[index].append(group_scores[group][index])
+
+    # write the results to a CSV file.
+    with open(dir_out + SUBCLADE_STATS_FILE, "w") as subclades_file:
+        subclades_file.write("otu;monophylyScore;" + ";".join([group for group in group_names]) +
+                "\n")
+        for row in scores_otu_row:
+            subclades_file.write(";".join([str(item) for item in row]) +
+                    "\n")
