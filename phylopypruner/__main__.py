@@ -349,7 +349,7 @@ def file_pairs_from_directory(directory):
     if len(msa_list) == len(tree_list):
         msa_list.sort()
         tree_list.sort()
-        return zip(msa_list,tree_list)
+        return list(zip(msa_list,tree_list))
     else:
         _error("mismatch in file pairs between trees ({}) and msa({}) in directory".format(len(tree_list),len(msa_list))
                )

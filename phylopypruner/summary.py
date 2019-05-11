@@ -503,18 +503,18 @@ concatenated alignment length....:{:10d}""".format(
         report = """
 {}
 {}
-# of alignments                  :{:10d} | {}
-# of sequences                   :{:10d} | {}
-# of OTUs                        :{:10d} | {}
-avg # of sequences per alignment :{:10d} | {}
-avg # of OTUs                    :{:10d} | {}
-avg sequence length (ungapped)   :{:10d} | {}
-shortest sequence (ungapped)     :{:10d} | {}
-longest sequence (ungapped)      :{:10d} | {}
-% missing data                   :{:10.2f} | {}
-concatenated alignment length    :{:10d} | {}""".format(
+# of alignments...................:{:10d} | {}
+# of sequences....................:{:10d} | {}
+# of OTUs.........................:{:10d} | {}
+avg # of sequences per alignment..:{:10d} | {}
+avg # of OTUs.....................:{:10d} | {}
+avg sequence length (ungapped)....:{:10d} | {}
+shortest sequence (ungapped)......:{:10d} | {}
+longest sequence (ungapped).......:{:10d} | {}
+% missing data....................:{:10.2f} | {}
+concatenated alignment length.....:{:10d} | {}""".format(
     name,
-    "-" * len(name) + " " * 29 + "Input | Output",
+    "-" * len(name) + " " * 29 + "  Input | Output",
     homolog_stats[1],
     no_of_alignments,
     homolog_stats[2],
