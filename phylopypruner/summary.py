@@ -396,16 +396,16 @@ class Summary(object):
         report = """
 {}
 {}
-# of alignments                  :{:10d}
-# of sequences                   :{:10d}
-# of OTUs                        :{:10d}
-avg # of sequences per alignment :{:10d}
-avg # of OTUs                    :{:10d}
-avg sequence length (ungapped)   :{:10d}
-shortest sequence (ungapped)     :{:10d}
-longest sequence (ungapped)      :{:10d}
-% missing data                   :{:10.2f}
-concatenated alignment length    :{:10d}""".format(
+# of alignments..................:{:10d}
+# of sequences...................:{:10d}
+# of OTUs........................:{:10d}
+avg # of sequences per alignment.:{:10d}
+avg # of OTUs....................:{:10d}
+avg sequence length (ungapped)...:{:10d}
+shortest sequence (ungapped).....:{:10d}
+longest sequence (ungapped)......:{:10d}
+% missing data...................:{:10.2f}
+concatenated alignment length....:{:10d}""".format(
     name,
     "-" * len(name),
     no_of_alignments,
