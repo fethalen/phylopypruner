@@ -629,9 +629,9 @@ directory, overwrite?")
         if not os.path.isdir(dir_in):
             _error("input directory {} does not exist".format(dir_in))
 
-        corr_files = file_pairs_from_directory(dir_in)
+        file_pairs = file_pairs_from_directory(dir_in)
 
-        no_of_file_pairs = len(corr_files)
+        no_of_file_pairs = len(file_pairs)
         if no_of_file_pairs < 1:
             # no file pairs found in the provided directory
             _error("no file pairs were found in the provided directory")
@@ -644,14 +644,6 @@ directory, overwrite?")
         part_run = partial(_run_for_file_pairs, settings=settings,
                            dir_in=dir_in, dir_out=dir_out)
         progress = None
-        # file_pairs = list(corr_files.values())
-        file_pairs=corr_files
-        # SH: added
-        # if not (len(file_pairs)==2 and len(file_pairs[0]) == len(file_pairs[1])):
-        #     print("FILE PAIRS",file_pairs,file=sys.stderr)
-        #     print("CORR FILES",corr_files,file=sys.stderr)
-        #     print("ERROR File pairs not same size. Make sure names are the same", file=sys.stderr)
-        #     sys.exit()
 
         for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
             progress = "{}==>{} processing MSAs and trees{} ({}/{} file \
@@ -686,8 +678,6 @@ more relaxed settings")
                                args.include]
         summary, ortholog_report = decontamination.prune_by_exclusion(
             summary, otus_to_exclude, dir_out, threads, homolog_stats)
-    # else:
-    #     ortholog_report = summary.report("output", dir_out, homolog_stats)
 
     # Get OTUs and genes to exclude based on their occupancy.
     otus_to_exclude, genes_to_exclude = summary.matrix_occupancy(
@@ -705,8 +695,6 @@ more relaxed settings")
     if settings.taxonomic_groups:
         decontamination.score_monophyly(
             summary, settings.taxonomic_groups, dir_out)
-        # decontamination.discard_non_monophyly(
-        #     log.orthologs, settings.taxonomic_groups)
 
     supermatrix = Supermatrix(dir_out)
     supermatrix.partitions_from_summary(summary, dir_out)
@@ -717,11 +705,9 @@ more relaxed settings")
 
     ortholog_report = summary.report("output", dir_out, homolog_stats)
 
-    # print("{}\n{}".format(homolog_report, ortholog_report))
     print(ortholog_report)
 
     with open(dir_out + LOG_PATH, "a") as log_file:
-        # log_file.write("\n" + homolog_report)
         log_file.write("\n" + ortholog_report)
 
     summary.write_msas(args.wrap)

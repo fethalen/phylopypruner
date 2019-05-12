@@ -133,6 +133,9 @@ class Summary(object):
         no_of_otus = len(otus)
 
         for log in self.logs:
+            if len(log.msas_out) == 0:
+                continue
+
             for msa in log.msas_out:
 
                 gene_partition = os.path.basename(msa.filename)
@@ -198,7 +201,7 @@ class Summary(object):
         below_threshold = (len(above_otu_threshold), len(above_gene_threshold))
 
         # plot the occupancy matrix
-        if MATPLOTLIB and not no_plot:
+        if MATPLOTLIB and not no_plot and occupancies:
             plot_occupancy_matrix(occupancies, gene_partitions, otus, dir_out,
                                   below_threshold)
 
@@ -514,7 +517,7 @@ longest sequence (ungapped).......:{:10d} | {}
 % missing data....................:{:10.2f} | {}
 concatenated alignment length.....:{:10d} | {}""".format(
     name,
-    "-" * len(name) + " " * 29 + "  Input | Output",
+    "-" * len(name) + " " * 30 + "Input | Output",
     homolog_stats[1],
     no_of_alignments,
     homolog_stats[2],
