@@ -35,8 +35,10 @@ def _read_label(label, node, interior_node):
 
     if interior_node:
         node.dist = float(branch_len)
-        if label:
-            node.support = label
+        if isinstance(label, str):
+            node.name = label
+        if isinstance(label, float) or isinstance(label, int):
+            node.support = float(label)
     else:
         # Node label belongs to leaf, assign data to a new node.
         node.add_child(None, label, branch_len)
