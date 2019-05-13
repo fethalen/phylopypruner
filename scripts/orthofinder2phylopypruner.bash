@@ -49,6 +49,6 @@ readonly TARGET_DIR=$2
 
 find "${TARGET_DIR}" -type f -name '*.fa' | while read -r filename; do
   while read -r otu; do
-    gsed -i "s/${otu}_/${otu}@/g" "${filename}"
+    sed -i "s/${otu}_/${otu}@/g" "${filename}"
   done < "${SPECIES_LIST}"
 done

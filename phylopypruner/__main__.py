@@ -588,7 +588,8 @@ def main():
         dir_out = os.path.dirname(str(args.msa).rstrip("/"))
     dir_out = dir_out + "/phylopypruner_output"
 
-    if not args.overwrite and os.path.isfile(dir_out + ORTHO_STATS_PATH):
+    # if not args.overwrite and os.path.isfile(dir_out):
+    if not args.overwrite and os.path.isdir(dir_out):
         question = _warning("files from a previous run exist in the output \
 directory, overwrite?")
         if not _yes_or_no(question):
@@ -597,16 +598,13 @@ directory, overwrite?")
     if os.path.isdir(dir_out):
         # this removes the old 'phylopypruner_output' directory
         shutil.rmtree(dir_out)
+
     os.makedirs(dir_out)
+    os.makedirs(dir_out + ORTHOLOGS_PATH)
+
 
     with open(dir_out + LOG_PATH, "w") as log_file:
         log_file.write(ABOUT + "\n")
-
-    if os.path.isfile(dir_out + ORTHO_STATS_PATH):
-        os.remove(dir_out + ORTHO_STATS_PATH)
-
-    if os.path.isfile(dir_out + HOMOLOG_STATS_PATH):
-        os.remove(dir_out + HOMOLOG_STATS_PATH)
 
     with open(dir_out + ORTHO_STATS_PATH, "w") as ortho_stats_file:
         ortho_stats_file.write(ORTHOLOG_STATS_HEADER)
@@ -644,6 +642,13 @@ directory, overwrite?")
         part_run = partial(_run_for_file_pairs, settings=settings,
                            dir_in=dir_in, dir_out=dir_out)
         progress = None
+
+        # For debugging purposes only (gets rid of multiprocessing).
+        # for pair in file_pairs:
+        #     print(pair)
+        #     settings.fasta_file, settings.nw_file = pair
+        #     _get_orthologs(settings, dir_in, dir_out)
+        # exit()
 
         for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
             progress = "{}==>{} processing MSAs and trees{} ({}/{} file \
