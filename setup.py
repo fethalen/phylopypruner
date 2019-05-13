@@ -7,10 +7,10 @@ with open("README.md", "r") as fh:
 
 setup(
     name="phylopypruner",
-    version="0.6.7",
+    version="0.6.9",
     author="Felix Thalen",
     author_email="fe1430th-s@student.lu.se",
-    license="MIT",
+    license="GPL 3",
     description="tree-based orthology inference",
     scripts=['scripts/phylopypruner'],
     long_description=LONG_DESCRIPTION,
@@ -21,7 +21,7 @@ setup(
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
 )

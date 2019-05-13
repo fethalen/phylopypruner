@@ -386,8 +386,6 @@ class Log(object):
         basename, extension = os.path.splitext(msa_in_filename)
 
         orthologs_dir = "{}/output_alignments".format(dir_out)
-        if not os.path.isdir(orthologs_dir):
-            os.makedirs(orthologs_dir)
 
         if index:
             index = "_{}".format(index)
