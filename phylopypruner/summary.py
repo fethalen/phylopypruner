@@ -149,7 +149,10 @@ class Summary(object):
                 for sequence in msa.sequences:
                     otu = sequence.otu
                     otus_in_alignment.append(otu)
-                    occupancy = len(sequence.ungapped()) / float(len(sequence))
+                    if not len(sequence) == 0:
+                        occupancy = len(sequence.ungapped()) / float(len(sequence))
+                    else:
+                        occupancy = 0
                     gene_occupancies[gene_partition] += occupancy
 
                     if not otu in occupancy_matrix:
@@ -304,7 +307,7 @@ class Summary(object):
             plt.legend(loc='upper right', fontsize=14)
         plot_figure = plt.gcf()
         plot_figure.set_size_inches(12.0, len(otus) * 0.17)
-        plt.savefig(dir_out + FREQ_PLOT_FILE, bbox_inches='tight', dpi=300)
+        plt.savefig(dir_out + FREQ_PLOT_FILE, dpi=300)
 
         return paralog_freq
 
@@ -667,14 +670,13 @@ def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
 
     plot_figure.set_size_inches(width, height)
 
-    plot_figure.tight_layout()
     plt.xlabel("Gene partitions")
     plt.ylabel("OTUs")
     # Pad margins so that markers don't get clipped by the axes.
     plt.margins(0.2)
     # Tweak spacing to prevent clipping of tick-labels.
     plt.subplots_adjust(bottom=0.15)
-    plt.savefig(dir_out + OCCUPANCY_PLOT_FILE, bbox_inches="tight", dpi=300)
+    plt.savefig(dir_out + OCCUPANCY_PLOT_FILE, dpi=300)
 
 def _mean(data):
     """Returns the sample arithmetic mean of data. 0 is returned if an empty

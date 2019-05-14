@@ -203,7 +203,6 @@ def _run(settings, msa, tree):
     _validate_input(msa, tree, settings.nw_file)
 
     log = Log(VERSION, msa, tree, settings)
-    log.homology_tree = tree.view()
 
     # remove short sequences
     if settings.min_len:
