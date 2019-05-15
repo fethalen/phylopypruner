@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Implements various paralog pruning algorithms, used for finding orthologs in a
 gene tree.

@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 import re
 from sys import stderr
+from phylopypruner import report
 from phylopypruner.sequence import Sequence
 
 class MultipleSequenceAlignment(object):
@@ -62,8 +63,8 @@ class MultipleSequenceAlignment(object):
             try:
                 sequence.identifier = re.split(r"\||@", sequence.description)[1]
             except IndexError:
-                print >> stderr, "# Warning: No description found on split with | or @"
-                sequence.identifier = "None"
+                report.warning("no description found on split with | or @")
+                sequence.identifier = None
         elif description:
             sequence.otu = re.split(r"\||@", sequence.description)[0]
         elif sequence_data:

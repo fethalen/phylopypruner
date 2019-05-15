@@ -4,6 +4,7 @@ from __future__ import absolute_import
 import os, sys
 import datetime
 from phylopypruner import fasta
+from phylopypruner import report
 from textwrap import wrap
 from collections import defaultdict
 try:
@@ -14,13 +15,12 @@ try:
     import matplotlib.pylab as pylab
     MATPLOTLIB = True
 except ImportError:
-    print("{}tip:{} install Matplotlib (https://matplotlib.org/) to \
-get a barplot of the paralog frequency".format("\033[92m", "\033[0m"))
+    report.tip("install Matplotlib (https://matplotlib.org/) to get a barplot \
+of the paralog frequency")
     MATPLOTLIB = False
 HAVE_DISPLAY = "DISPLAY" in os.environ
 if not HAVE_DISPLAY:
-    print("{}warning:{} no display found; can't generate plot".format(
-        "\033[35m", "\033[0m"))
+    report.warning("no display found; can't generate plot")
     MATPLOTLIB = False
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUM_HEADER = "id;alignments;sequences;otus;meanSequences;meanOtus;meanSeqLen;\
@@ -210,14 +210,6 @@ class Summary(object):
 
         return above_otu_threshold, above_gene_threshold
 
-    def coverage_by_site(self):
-        """...
-        """
-        for log in self.logs:
-            for msa in log.msas_out:
-                for sequence in msa.sequences:
-                    print(len(sequence.ungapped()))
-
     def paralogy_frequency(self, dir_out, factor=None, no_plot=False):
         """Calculate the paralogy frequency (PF) for all OTUs within this
         summary, where paralogy frequency is the number of paralogs divided by
@@ -293,7 +285,8 @@ class Summary(object):
         try:
             plt.barh(y=indexes, color="black", edgecolor="black", width=freq, alpha=0.5)
         except TypeError:
-            print >> sys.stderr, "# Plotting function lacking indices. Try --no-plot\n", indexes[:2]
+            report.error("plotting function is lacking indices, try updating \
+Matplotlib or use the flag '--no-plot'")
             return paralog_freq
         plt.yticks(list(indexes), otus)
         plt.ylabel("OTU")
@@ -629,8 +622,8 @@ def remove_position_from_str(string, position):
 def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
     """...
     """
-    print("{}==>{} generating occupancy plot (disable with '--no-plot')".format(
-        "\033[34m", "\033[0m"))
+    message = "generating occupancy plot (disable with '--no-plot')"
+    report.progress_bar(message, replace=False)
 
     plot_figure = plt.figure()
     axes = plot_figure.add_subplot(111)
