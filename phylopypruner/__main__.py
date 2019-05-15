@@ -27,6 +27,7 @@ from phylopypruner import filtering
 from phylopypruner import decontamination
 from phylopypruner import mask_monophylies
 from phylopypruner import root
+from phylopypruner import report
 from phylopypruner import taxonomic_groups
 from phylopypruner.prune_paralogs import prune_paralogs
 from phylopypruner.summary import Summary
@@ -34,8 +35,6 @@ from phylopypruner.summary import mk_sum_out_title
 from phylopypruner.log import Log
 from phylopypruner.settings import Settings
 from phylopypruner.supermatrix import Supermatrix
-# ensures that input is working across Python 2.7 and 3+
-if hasattr(__builtins__, "raw_input"): input = raw_input
 
 VERSION = pkg_resources.require("phylopypruner")[0].version
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
@@ -58,71 +57,15 @@ NO_FILES = """Please provide either a multiple sequence alignment (MSA) and a
 Newick tree, or a path to a directory containing multiple MSAs and Newick
 trees."""
 
-def _warning(message):
-    """Print the provided message with the text 'warning: ' in front of it.
-
-    Parameters
-    ----------
-    message : str
-        Print this string
-
-    Returns
-    -------
-    None
-    """
-    return "{}warning: {}{}".format(
-        "\033[35m", "\033[0m", message)
-
-def _error(message):
-    """Print the provided message with the text 'error: ' in front of it and
-    exit.
-
-    Parameters
-    ----------
-    message : str
-        Print this message before exiting.
-
-    Returns
-    -------
-    None
-    """
-    print("{}error: {}{}".format("\033[31m", "\033[0m", message))
-    exit()
-
-def _yes_or_no(question):
-    """
-    Takes a question as an input and prompts the user for a yes or no. Returns
-    True if the answer is yes and False if the answer is no.
-
-    Parameters
-    ----------
-    question : str
-        Print this message before (y/n).
-
-    Returns
-    -------
-    True or False
-        True if answer is 'y', False if answer is 'n'.
-    """
-    # make input work the same way in both Python 2 and 3
-    answer = input(question + " (y/n): ".lower().rstrip())
-    while not (answer == "y" or answer == "n"):
-        print("type 'y' for yes and 'n' for no")
-        answer = input(question + " (y/n): ".lower().rstrip())
-    if answer[0] == "y":
-        return True
-    elif answer[0] == "n":
-        return False
-
 def _validate_input(msa, tree, tree_path):
     "Test to see if MSA and tree entries matches."
     descriptions = list(msa.iter_descriptions())
     names = list(tree.iter_names())
 
     if set(descriptions).intersection(names) < set(descriptions):
-        print("example tree names:",names[:2], file=sys.stderr)
-        print("example sequences:",descriptions[:2], file=sys.stderr)
-        _error("MSA names don't match tree \n   {}\n   {}".format(msa.filename, tree_path))
+        print("example tree names:", names[:2], file=sys.stderr)
+        print("example sequences:", descriptions[:2], file=sys.stderr)
+        report.error("MSA names don't match tree \n   {}\n   {}".format(msa.filename, tree_path))
 
 def _no_files(args):
     "Returns true if the required files are not provided."
@@ -136,61 +79,76 @@ def _no_files(args):
 def _validate_arguments(args):
     "Performs a series of checks to validate the input before execution."
 
+    errors = False
+
     if _no_files(args):
-        _error(NO_FILES)
+        report.error(NO_FILES)
+        errors = True
 
     if not args.outgroup and args.prune == "MO" or \
         not args.outgroup and args.prune == "RT":
-        _error("pruning method is set to {}, but no outgroup has been \
+        report.error("pruning method is set to {}, but no outgroup has been \
 specified".format(args.prune))
+        errors = True
 
     if args.min_support:
         if args.min_support < 0 or args.min_support > 100:
-            _error("minimum support value ('--min-support') has to be \
+            report.error("minimum support value ('--min-support') has to be \
 either in percentage (1-100) or in decimal format between 0.0 - 1.0")
+            errors = True
         elif args.min_support > 1:
             # convert from percentage to floating point
             args.min_support = args.min_support / 100
 
     if args.min_otu_occupancy:
         if args.min_otu_occupancy < 0 or args.min_otu_occupancy > 100:
-            _error("minimum OTU occupancy ('--min-otu-occupancy') has to be \
+            report.error("minimum OTU occupancy ('--min-otu-occupancy') has to be \
 either in percentage (1-100) or in decimal format between 0.0 - 1.0")
+            errors = True
         elif args.min_otu_occupancy > 1:
             # convert from percentage to floating point
             args.min_otu_occupancy = args.min_otu_occupancy / 100
 
     if args.min_gene_occupancy:
         if args.min_gene_occupancy < 0 or args.min_gene_occupancy > 100:
-            _error("minimum gene occupancy ('--min-gene-occupancy') has to be \
+            report.error("minimum gene occupancy ('--min-gene-occupancy') has to be \
 either in percentage (1-100) or in decimal format between 0.0 - 1.0")
+            errors = True
         elif args.min_gene_occupancy > 1:
             # convert from percentage to floating point
             args.min_gene_occupancy = args.min_gene_occupancy / 100
 
     if args.trim_divergent:
         if args.trim_divergent < 0 or args.trim_divergent > 100:
-            _error("the divergence threshold ('--trim-divergent') has to be \
+            report.error("the divergence threshold ('--trim-divergent') has to be \
 either in percentage (1-100) or in decimal format between 0.0 - 1.0")
+            errors = True
         elif args.trim_divergent > 1:
             # convert from percentage to floating point
             args.trim_divergent = args.trim_divergent / 100
 
     if args.min_len and args.min_len < 1:
-        _error("minimum sequence length ('--min-len') has to be a positive \
+        report.error("minimum sequence length ('--min-len') has to be a positive \
 integer (1, 2, 3, 4, ...)")
+        errors = True
 
     if args.threads and args.threads < 1:
-        _error("threads ('--threads') has to be a positive integer \
+        report.error("threads ('--threads') has to be a positive integer \
 (1, 2, 3, 4, ...)")
+        errors = True
 
     if args.min_taxa and args.min_taxa < 1:
-        _error("minimum number of taxa ('--min-taxa') has to be a positive \
+        report.error("minimum number of taxa ('--min-taxa') has to be a positive \
 integer (1, 2, 3, 4, ...)")
+        errors = True
 
     if args.trim_lb and args.trim_lb <= 0:
-        _error("the factor for removing long branches ('--trim-lb') \
+        report.error("the factor for removing long branches ('--trim-lb') \
 has to be a positive number")
+        errors = True
+
+    if errors:
+        sys.exit()
 
 def _run(settings, msa, tree):
     """
@@ -292,7 +250,6 @@ def _get_orthologs(settings, directory="", dir_out=None):
     msa = fasta.read(fasta_path)
     nw_file = newick.read(nw_path)
     log = _run(settings, msa, nw_file)
-
     log.get_msas_out(dir_out)
     log.report(dir_out)
     return log
@@ -318,61 +275,58 @@ def file_pairs_from_directory(directory):
 
     Returns
     -------
-    corr_files : dict
-        Short for 'corresponding files', that is, a file pair. This dictionary
-        contains tuples of two items where the first item corresponds to the
-        path to a multiple sequence alignment (MSA) file and the second item
-        corresponds to the path to a Newick tree file. These pairs where
-        generated by looking for pairs of files with matching filenames, but
-        with different filetype extensions.
+    file_pairs : dict
+        This dictionary contains tuples of two items where the first item
+        corresponds to the path to a multiple sequence alignment (MSA) file and
+        the second item corresponds to the path to a Newick tree file. These
+        pairs where generated by looking for pairs of files with matching
+        filenames, but with different filetype extensions.
     """
     if not os.path.isdir(directory):
-        _error("input directory {} does not exist".format(directory))
+        report.error("input directory {} does not exist".format(directory))
 
-    # corresponding files; filename is key, values are tuple pairs where
+    # file_pairs; filename is key, values are tuple pairs where
     # MSA comes first and tree second
-    corr_files = dict()
-    msa_list=[]
-    tree_list=[]
+    file_pairs = dict()
 
     for file in os.listdir(directory):
-        filename, extension = os.path.splitext(file)
-        # filename = ".".join(filename.split(".")[:-1])
+        # filename, extension = os.path.splitext(file)
+        # extension = extension.lower()
+        extension = os.path.splitext(file)[1]
         extension = extension.lower()
+        filename = file.split(os.extsep)[0]
 
-        if extension in FASTA_EXTENSIONS:
-            msa_list.append(file)
-        if extension in NW_EXTENSIONS:
-            tree_list.append(file)
-        # SORT and CHECK SIZES
-    if len(msa_list) == len(tree_list):
-        msa_list.sort()
-        tree_list.sort()
-        return list(zip(msa_list,tree_list))
-    else:
-        _error("mismatch in file pairs between trees ({}) and msa({}) in directory".format(len(tree_list),len(msa_list))
-               )
-        return None
+        if extension in FASTA_EXTENSIONS or extension in NW_EXTENSIONS:
+            if filename in file_pairs.keys():
+                if extension in NW_EXTENSIONS:
+                    file_pairs[filename] = file_pairs[filename] + (file,)
+                else:
+                    file_pairs[filename] = (file,) + file_pairs[filename]
+            else:
+                file_pairs[filename] = (file,)
 
-    #     if extension in FASTA_EXTENSIONS or extension in NW_EXTENSIONS:
-    #         if filename in corr_files.keys():
-    #             if extension in NW_EXTENSIONS:
-    #                 corr_files[filename] = corr_files[filename] + (file,)
-    #             else:
-    #                 corr_files[filename] = (file,) + corr_files[filename]
-    #         else:
-    #             corr_files[filename] = (file,)
-    #
-    # # remove file "pairs" where only 1 file was recovered
-    # pairs_to_remove = list()
-    # for filename in corr_files:
-    #     if len(corr_files[filename]) < 2:
-    #         pairs_to_remove.append(filename)
-    #
-    # for filename in pairs_to_remove:
-    #     corr_files.pop(filename)
-    #
-    # return corr_files
+    # Report errors if more than 2 file pairs are encountered and ignore file
+    # pairs with fewer than 2 files.
+    errors = False
+    to_remove = list()
+    for file_pair in file_pairs:
+        if len(file_pairs[file_pair]) > 2:
+            files = list(file_pairs[file_pair])
+            message = "{} files found with the name '{}' (expected 2):".format(
+                len(file_pairs[file_pair]), file_pair)
+            report.error(message)
+            print("  " + ", ".join([pair for pair in files]), file=sys.stderr)
+            errors = True
+        elif len(file_pairs[file_pair]) < 2:
+            to_remove.append(file_pair)
+
+    for file_pair in to_remove:
+        file_pairs.pop(file_pair)
+
+    if errors:
+        sys.exit()
+
+    return [file_pairs[file_pair] for file_pair in file_pairs]
 
 def parse_args():
     "Parse the arguments provided by the user."
@@ -589,9 +543,8 @@ def main():
 
     # if not args.overwrite and os.path.isfile(dir_out):
     if not args.overwrite and os.path.isdir(dir_out):
-        question = _warning("files from a previous run exist in the output \
-directory, overwrite?")
-        if not _yes_or_no(question):
+        if not report.yes_or_no(report.warning("files from a previous run exist \
+in the output directory, overwrite?", display=False)):
             exit()
 
     if os.path.isdir(dir_out):
@@ -600,7 +553,6 @@ directory, overwrite?")
 
     os.makedirs(dir_out)
     os.makedirs(dir_out + ORTHOLOGS_PATH)
-
 
     with open(dir_out + LOG_PATH, "w") as log_file:
         log_file.write(ABOUT + "\n")
@@ -624,14 +576,18 @@ directory, overwrite?")
             dir_in = args.dir
 
         if not os.path.isdir(dir_in):
-            _error("input directory {} does not exist".format(dir_in))
+            shutil.rmtree(dir_out)
+            report.error("input directory {} does not exist".format(dir_in))
+            sys.exit()
 
         file_pairs = file_pairs_from_directory(dir_in)
 
         no_of_file_pairs = len(file_pairs)
         if no_of_file_pairs < 1:
             # no file pairs found in the provided directory
-            _error("no file pairs were found in the provided directory")
+            report.error("no file pairs were found in the provided directory")
+            shutil.rmtree(dir_out)
+            sys.exit()
 
         if args.threads:
             threads = args.threads
@@ -640,20 +596,18 @@ directory, overwrite?")
         pool = Pool(processes=threads)
         part_run = partial(_run_for_file_pairs, settings=settings,
                            dir_in=dir_in, dir_out=dir_out)
-        progress = None
 
         # For debugging purposes only (gets rid of multiprocessing).
         # for pair in file_pairs:
         #     print(pair)
         #     settings.fasta_file, settings.nw_file = pair
         #     _get_orthologs(settings, dir_in, dir_out)
-        # exit()
+        # sys.exit()
 
         for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
-            progress = "{}==>{} processing MSAs and trees{} ({}/{} file \
-pairs)".format("\033[34m", "\033[0m", "\033[0m", index, no_of_file_pairs)
-            print(progress, end="\r")
-            sys.stdout.flush()
+            message = "processing MSAs and trees ({}/{})".format(index,
+                                                                 no_of_file_pairs)
+            report.progress_bar(message)
             summary.logs.append(log)
         pool.terminate()
 
@@ -661,8 +615,9 @@ pairs)".format("\033[34m", "\033[0m", "\033[0m", index, no_of_file_pairs)
         print("")
 
     if not summary:
-        _error("no orthologs recovered, check filetype extensions or try \
+        report.error("no orthologs recovered, check filetype extensions or try \
 more relaxed settings")
+        sys.exit()
 
     paralog_freq = summary.paralogy_frequency(dir_out, args.trim_freq_paralogs,
                                               args.no_plot)

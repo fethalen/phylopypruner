@@ -11,6 +11,7 @@ from functools import partial
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 from phylopypruner import filtering
+from phylopypruner import report
 from phylopypruner.summary import Summary
 from phylopypruner.prune_paralogs import prune_paralogs
 
@@ -78,9 +79,9 @@ def jackknife(summary, dir_out, threads):
 
     for index, resample_summary in enumerate(
             pool.imap_unordered(part_jackknife, taxa), 1):
-        print("{}==>{} jackknife resampling ({}/{} subsamples)".format(
-            "\033[34m", "\033[0m", index, total), end="\r")
-        sys.stdout.flush()
+        message = "jackknife resampling ({}/{} subsamples)".format(index,
+                                                                   total)
+        report.progress_bar(message)
         resamples.add(resample_summary)
     pool.terminate()
     print("")
@@ -206,7 +207,7 @@ def prune_by_exclusion(summary, otus, dir_out, threads, homolog_stats):
 
     Parameters
     ----------
-    summary : Summary object
+    summary_report : Summary object
         Prune masked trees within the logs of this summary.
     otus : list of strings
         Exclude OTUs within this list from the trees in the summary.
@@ -239,19 +240,18 @@ def prune_by_exclusion(summary, otus, dir_out, threads, homolog_stats):
 
     for index, log_copy in enumerate(
             pool.imap_unordered(part_rerun, summary_copy.logs), 1):
-    # for index, log in enumerate(summary_copy.logs, 1):
-        print("{}==>{} paralogy pruning with OTUs removed ({}/{} trees)".format(
-            "\033[34m", "\033[0m", index, alignments_count), end="\r")
-        sys.stdout.flush()
+        message = "paralogy pruning with OTUs removed ({}/{} trees)".format(
+            index, alignments_count)
+        report.progress_bar(message)
 
         if log_copy:
             summary_out.logs.append(log_copy)
 
     pool.terminate()
     print("")
-    report = summary_out.report(excluded_str, dir_out, homolog_stats)
+    summary_report = summary_out.report(excluded_str, dir_out, homolog_stats)
 
-    return summary_out, report
+    return summary_out, summary_report
 
 def trim_freq_paralogs(factor, paralog_freq):
     """Returns a set of OTUs with a paralogy frequency that is factor times
@@ -278,12 +278,9 @@ def trim_freq_paralogs(factor, paralog_freq):
         if paralog_freq[otu] > threshold:
             otus_above_threshold.append(otu)
 
-    if not otus_above_threshold:
-        print("OTUs with high paralogy frequency: none")
-        return otus_above_threshold
-
-    print("OTUs with high paralogy frequency: " +
-          ", ".join(otu for otu in otus_above_threshold))
+    message = "{} OTUs were above the paralogy frequency threshold".format(
+        len(otus_above_threshold))
+    report.progress_bar(message, replace=False)
 
     return otus_above_threshold
 
