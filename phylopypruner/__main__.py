@@ -563,7 +563,7 @@ in the output directory, overwrite?", display=False)):
     with open(dir_out + HOMOLOG_STATS_PATH, "w") as homo_stats_file:
         homo_stats_file.write(HOMOLOG_STATS_HEADER)
 
-    settings.report(args.dir, dir_out + LOG_PATH)
+    parameters_used = settings.report(args.dir, dir_out + LOG_PATH)
 
     if args.msa and args.tree:
         # run for a single pair of files
@@ -664,18 +664,20 @@ more relaxed settings")
 
     ortholog_report = summary.report("output", dir_out, homolog_stats)
 
+    # print(parameters_used)
     print(ortholog_report)
 
     with open(dir_out + LOG_PATH, "a") as log_file:
         log_file.write("\n" + ortholog_report)
 
     summary.write_msas(args.wrap)
-    run_time = "Run time: {} seconds".format(round(time.time() - START_TIME, 2))
-    run_time_report = "\n{}\n{}".format("-" * len(run_time), run_time)
-    print(run_time_report)
+    run_time = "\nCompleted in {} seconds".format(round(time.time() - START_TIME, 2))
+    print(run_time)
+    # run_time_report = "\n{}\n{}".format("-" * len(run_time), run_time)
+    # print(run_time_report)
 
     with open(dir_out + LOG_PATH, "a") as log_file:
-        log_file.write("\n" + run_time_report)
+        log_file.write("\n" + run_time)
 
 if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath('..'))

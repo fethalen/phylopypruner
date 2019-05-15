@@ -198,32 +198,34 @@ class Settings(object):
         report = """Input data:
   {}
 
-Parameters:
-  Minimum number of OTUs:\t{}
-  Minimum sequence length:\t{}
-  Long branch threshold:\t{}
-  Minimum support value:\t{}
-  Include:\t\t\t{}
-  Exclude:\t\t\t{}
-  Monophyly masking method:\t{}
-  Rooting method:\t\t{}
-  Outgroup rooting:\t\t{}
-  Paralogy pruning method:\t{}
-  Paralogy frequency threshold:\t{}
-  Trim divergent percentage:\t{}
-  Jackknife:\t\t\t{}""".format(input_files,
-                               self.min_taxa,
-                               self.min_len,
-                               self.trim_lb,
-                               self.min_support,
-                               self.include,
-                               self.exclude,
-                               self.mask,
-                               self.root,
-                               self.outgroup,
-                               self.prune,
-                               self.trim_freq_paralogs,
-                               self.trim_divergent,
-                               self.jackknife)
+Parameters used:
+  Minimum number of OTUs...........: {}
+  Minimum sequence length..........: {}
+  Long branch threshold............: {}
+  Minimum support value............: {}
+  Include..........................: {}
+  Exclude..........................: {}
+  Monophyly masking method.........: {}
+  Rooting method...................: {}
+  Outgroup rooting.................: {}
+  Paralogy pruning method..........: {}
+  Paralogy frequency threshold.....: {}
+  Trim divergent percentage........: {}
+  Jackknife........................: {}""".format(
+      input_files,
+      self.min_taxa,
+      self.min_len,
+      self.trim_lb,
+      self.min_support,
+      self.include,
+      self.exclude,
+      self.mask,
+      self.root,
+      self.outgroup,
+      self.prune,
+      self.trim_freq_paralogs,
+      self.trim_divergent,
+      self.jackknife)
         with open(log_path, "a") as log_file:
             log_file.write(report)
+            return report
