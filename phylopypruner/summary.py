@@ -506,39 +506,37 @@ concatenated alignment length....:{:10d}""".format(
         if homolog_stats:
             report = """
 {}
-{}
-# of alignments...................:{:10d} | {}
-# of sequences....................:{:10d} | {}
-# of OTUs.........................:{:10d} | {}
-avg # of sequences per alignment..:{:10d} | {}
-avg # of OTUs.....................:{:10d} | {}
-avg sequence length (ungapped)....:{:10d} | {}
-shortest sequence (ungapped)......:{:10d} | {}
-longest sequence (ungapped).......:{:10d} | {}
-% missing data....................:{:10.2f} | {}
-concatenated alignment length.....:{:10d} | {}""".format(
-    name,
-    "-" * len(name) + " " * 30 + "Input | Output",
-    homolog_stats[1],
-    no_of_alignments,
-    homolog_stats[2],
-    no_of_seqs,
-    homolog_stats[3],
-    no_of_otus,
-    homolog_stats[4],
-    avg_no_of_seqs,
-    homolog_stats[5],
-    avg_no_of_seqs,
-    homolog_stats[6],
-    avg_seq_len,
-    homolog_stats[7],
-    shortest,
-    homolog_stats[8],
-    longest,
-    homolog_stats[9],
-    missing_data,
-    homolog_stats[10],
-    cat_alignment_len)
+  # of alignments..................:{:10d} | {}
+  # of sequences...................:{:10d} | {}
+  # of OTUs........................:{:10d} | {}
+  avg # of sequences per alignment.:{:10d} | {}
+  avg # of OTUs....................:{:10d} | {}
+  avg sequence length (ungapped)...:{:10d} | {}
+  shortest sequence (ungapped).....:{:10d} | {}
+  longest sequence (ungapped)......:{:10d} | {}
+  % missing data...................:{:10.2f} | {}
+  concatenated alignment length....:{:10d} | {}""".format(
+      name + " " * 20 + "Input | Output",
+      homolog_stats[1],
+      no_of_alignments,
+      homolog_stats[2],
+      no_of_seqs,
+      homolog_stats[3],
+      no_of_otus,
+      homolog_stats[4],
+      avg_no_of_seqs,
+      homolog_stats[5],
+      avg_no_of_seqs,
+      homolog_stats[6],
+      avg_seq_len,
+      homolog_stats[7],
+      shortest,
+      homolog_stats[8],
+      longest,
+      homolog_stats[9],
+      missing_data,
+      homolog_stats[10],
+      cat_alignment_len)
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
             title,
@@ -572,7 +570,7 @@ concatenated alignment length.....:{:10d} | {}""".format(
         report : str
             Overview statistics of the summary.
         """
-        report, row = self.alignment_stats("Alignments", title, homolog_stats)
+        report, row = self.alignment_stats("Alignment statistics:", title, homolog_stats)
 
         with open(dir_out + SUM_PATH, "a") as sum_out_file:
             sum_out_file.write(row)
