@@ -437,7 +437,7 @@ concatenated alignment length....:{:10d}""".format(
 
         return report, row, stats
 
-    def alignment_stats(self, name, title, homolog_stats):
+    def alignment_stats(self, name, title, homolog_stats=None):
         """Returns a report, in text, and a CSV-row of a set of statistics
         based on this summary.
 
@@ -447,6 +447,9 @@ concatenated alignment length....:{:10d}""".format(
             The title to display in the text report.
         title : str
             The identifier for the CSV-row.
+        homolog_stats : list
+            Optional statistics for homlogs. If these are not provided, then no
+            report is returned.
 
         Returns
         -------
@@ -499,7 +502,9 @@ concatenated alignment length....:{:10d}""".format(
         else:
             avg_seq_len = 0
 
-        report = """
+        report = ""
+        if homolog_stats:
+            report = """
 {}
 {}
 # of alignments...................:{:10d} | {}
@@ -550,7 +555,7 @@ concatenated alignment length.....:{:10d} | {}""".format(
 
         return report, row
 
-    def report(self, title, dir_out, homolog_stats):
+    def report(self, title, dir_out, homolog_stats=None):
         """Output a summary of the files for this run.
 
         Parameters
@@ -559,6 +564,8 @@ concatenated alignment length.....:{:10d} | {}""".format(
             The ID of the summary file.
         dir_out : str
             Path to the output directory that the summary file is saved to.
+        homolog_stats : str
+            Provide this string if you wish to get a (printable) report.
 
         Return
         ------
