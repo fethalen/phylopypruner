@@ -173,21 +173,9 @@ class TreeNode(object):
         root.add_child(node)
         root.add_child(sister)
 
-        # remove unifurcations
-        for node in root.traverse_preorder():
-            parent = node.parent
-            if not parent:
-                continue
-
-            if len(parent) is 1 and not parent.is_root():
-                # Case where a child was removed from a bifurcating node; replace
-                # the node with the child.
-                child = parent.children[0]
-                parent.remove_child(child)
-                parent.name = child.name
-                parent.dist = parent.dist + child.dist
-                parent.support = child.support
-                parent.children = child.children
+        # Remove monofurcating nodes.
+        while self.has_monofurcations():
+            self.prune_monofurcations()
 
         # remove empty leaves
         while root.empty_leaves():
@@ -226,24 +214,21 @@ class TreeNode(object):
             This TreeNode object with nodes with names that matches the
             provided names removed
         """
+        match = False
         while nodes_to_remove:
             match = False
-
             for node in self.traverse_preorder():
-                if node in nodes_to_remove:
-                    if not node.is_root():
-                        match = True
-                        node.delete()
-                        nodes_to_remove.remove(node)
-                    break
+                if node in nodes_to_remove and not node.is_root():
+                    match = True
+                    node.delete()
+                    nodes_to_remove.remove(node)
 
             if not match:
-                # no node to remove could be found
                 break
 
-        for leaf in self.iter_leaves():
-            if leaf.name is None:
-                leaf.delete()
+        # Remove monofurcating nodes due to deleted nodes.
+        while self.has_monofurcations():
+            self.prune_monofurcations()
 
         return self
 
@@ -258,18 +243,78 @@ class TreeNode(object):
             raise AssertionError("can't remove a root node")
 
         parent = self.parent
-        parent.remove_child(self)
-        # self.parent = None
 
-        if len(parent) is 1 and not parent.is_root():
-            # Case where a child was removed from a bifurcating node; replace
-            # the node with the child.
-            child = parent.children[0]
-            parent.remove_child(child)
-            parent.name = child.name
-            parent.dist = parent.dist + child.dist
-            parent.support = child.support
-            parent.children = child.children
+        if not parent:
+            return self
+
+        if len(self.children) == 1:
+            self.children[0].dist += self.dist
+        elif len(self.children) > 1:
+            parent.dist += self.dist
+
+        for child in self.children:
+            parent.add_child(child)
+
+        parent.remove_child(self)
+
+        if parent.is_monofurcating():
+            parent.delete()
+
+        return self
+
+    def is_monofurcating(self):
+        """Returns True if the number of children that belongs to this node is
+        equal to 1 and this is not a root node.
+
+        Returns
+        -------
+        True if the number of children in this node == 1, else False.
+        """
+        return not self.is_leaf() and not self.is_root() and len(self.children) < 2
+
+    def has_monofurcations(self):
+        """Returns True if there are any non-root nodes which are
+        monofurcating, meaning that they have only one child.
+
+        Returns
+        -------
+        True if any non-root node within this node is monofurcating, else
+        False.
+        """
+        for branch in self.iter_branches():
+            if branch.is_monofurcating():
+                return True
+        return False
+
+    def prune_monofurcation(self):
+        """Remove a monofurcating node, meaning a non-root node with a single
+        child.
+
+        Returns
+        -------
+        self : TreeNode object
+            The monofurcating node, replaced with its child.
+        """
+        child = self.children[0]
+        child.delete()
+        return self
+
+    def prune_monofurcations(self):
+        """Remove multiple monofurcating nodes (a non-root with a single child)
+        within this node.
+
+        Returns
+        -------
+        self : TreeNode object
+            This node without monofurcations.
+        """
+        for node in self.traverse_preorder():
+            parent = node.parent
+            if not parent:
+                continue
+
+            if parent.is_monofurcating():
+                parent.prune_monofurcation()
 
         return self
 

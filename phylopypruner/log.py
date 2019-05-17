@@ -408,15 +408,12 @@ class Log(object):
             msa_out = MultipleSequenceAlignment(msa_out_path, extension)
 
             for leaf in ortholog.iter_leaves():
-                matching_seq = self.msa.get_sequence(leaf.name)
-                # if len(matching_seq) < 150:
-                #     print(leaf.name)
-                #     print(matching_seq)
-                #     print(len(matching_seq))
                 msa_out.add_sequence(self.msa.get_sequence(leaf.name))
 
             if msa_out:
                 self.msas_out.append(msa_out)
+
+        return self.msas_out
 
 def avg_seq_len(msa):
     """
