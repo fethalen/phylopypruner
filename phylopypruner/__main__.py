@@ -671,11 +671,9 @@ more relaxed settings")
         log_file.write("\n" + ortholog_report)
 
     summary.write_msas(args.wrap)
-    run_time = "\nCompleted in {} seconds".format(round(time.time() - START_TIME, 2))
-    print(run_time)
-    # run_time_report = "\n{}\n{}".format("-" * len(run_time), run_time)
-    # print(run_time_report)
+    print("\noutput written to:\n  {}".format(dir_out))
 
+    run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
     with open(dir_out + LOG_PATH, "a") as log_file:
         log_file.write("\n" + run_time)
 

@@ -134,19 +134,17 @@ def trim_short_seqs(msa, tree, threshold):
     """
     nodes_to_remove = set()
 
-    while _short_seqs(msa, tree, threshold):
-        for leaf in tree.iter_leaves():
-            match = msa.get_sequence(leaf.name)
+    for leaf in tree.iter_leaves():
+        sequence = msa.get_sequence(leaf.name)
 
-            if match:
-                sequence = match
+        if sequence:
+            if _is_short_sequence(sequence, threshold):
+                nodes_to_remove.add(leaf)
 
-                if _is_short_sequence(sequence, threshold):
-                    nodes_to_remove.add(leaf)
+    removed_nodes = copy.copy(nodes_to_remove)
+    tree.remove_nodes(nodes_to_remove)
 
-        tree.remove_nodes(nodes_to_remove)
-
-    return nodes_to_remove
+    return removed_nodes
 
 def _mean(data):
     """ Return the sample arithmetic mean of data, a sequence of real-valued

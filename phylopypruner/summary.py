@@ -54,7 +54,7 @@ class Summary(object):
     def logs(self, value):
         self._logs = value
 
-    def remove_gap_only_columns(self):
+    def remove_gap_only_columns(self, min_len=None):
         """Iterate over the output alignments within this summary and remove
         positions where no residues are present.
 
@@ -80,12 +80,15 @@ class Summary(object):
                         if not position in GAP_CHARACTERS:
                             presence[index] = True
 
-                # Remove columns where no residues are present.
+                if not False in presence:
+                    continue
+
                 for sequence in msa.sequences:
-                    for index, position in enumerate(presence):
-                        if not position:
+                    for index in range(0, len(presence))[::-1]:
+                        if not presence[index]:
                             sequence.sequence_data = remove_position_from_str(
                                 sequence.sequence_data, index)
+
         return self
 
     def matrix_occupancy(self, dir_out, min_otu_occupancy=None,
