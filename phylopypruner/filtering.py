@@ -90,7 +90,8 @@ def exclude(node, otus):
                     leaf.delete()
                     break
 
-    return rm_empty_root(node_excluded)
+    return node_excluded
+    # return rm_empty_root(node_excluded)
 
 def force_inclusion(trees, otus):
     """Takes a list of TreeNode objects and a list of OTUs as an input. Returns
