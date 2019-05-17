@@ -168,7 +168,8 @@ class TreeNode(object):
                 child.add_child(parent)
 
         sister = node.parent
-        node.delete()
+        # node.delete()
+        node.parent.remove_child(node)
         root = TreeNode()
         root.add_child(node)
         root.add_child(sister)
@@ -230,6 +231,22 @@ class TreeNode(object):
         while self.has_monofurcations():
             self.prune_monofurcations()
 
+        # remove empty leaves
+        while self.empty_leaves():
+            for leaf in self.iter_leaves():
+                if not leaf.name:
+                    leaf.delete()
+                    break
+
+        # workaround to make sure that child's parent is the same node as to
+        # which the child belongs to
+        for node in self.traverse_preorder():
+            if not self.children:
+                continue
+
+            for child in node.children:
+                child.parent = node
+
         return self
 
     def delete(self):
@@ -258,7 +275,7 @@ class TreeNode(object):
         parent.remove_child(self)
 
         if parent.is_monofurcating():
-            parent.delete()
+             parent.delete()
 
         return self
 
