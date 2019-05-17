@@ -439,7 +439,8 @@ class TreeNode(object):
         for child in self.children:
             parent.add_child(child)
 
-        self.delete()
+        parent.remove_child(self)
+        # self.delete()
 
         return self
 
