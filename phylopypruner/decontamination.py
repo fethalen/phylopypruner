@@ -24,7 +24,7 @@ def _exclude_and_rerun(taxon, summary, pruning_method, min_taxa, outgroup, dir_o
     resample_summary = Summary()
     for log in summary_copy.logs:
         log_resampled = _resample(log, taxon, pruning_method, min_taxa,
-                                    outgroup, dir_out)
+                                  outgroup, dir_out)
         if log_resampled:
             resample_summary.logs.append(log_resampled)
 
@@ -77,6 +77,11 @@ def jackknife(summary, dir_out, threads):
         pruning_method=pruning_method, min_taxa=min_taxa, outgroup=outgroup,
         dir_out=dir_out)
 
+    # For debugging purposes only: removes multiprocessing.
+    # for taxon in taxa:
+    #     part_jackknife(taxon)
+    # sys.exit()
+
     for index, resample_summary in enumerate(
             pool.imap_unordered(part_jackknife, taxa), 1):
         message = "jackknife resampling ({}/{} subsamples)".format(index,
@@ -87,7 +92,7 @@ def jackknife(summary, dir_out, threads):
     print("")
 
     for summary in resamples:
-        excluded = summary.logs[0].settings.exclude[0]
+        excluded = summary.logs[0].settings.exclude
         summary.report("{}_excluded".format(excluded), dir_out)
 
 def _mean(data):

@@ -169,7 +169,8 @@ class TreeNode(object):
 
         sister = node.parent
         # node.delete()
-        node.parent.remove_child(node)
+        if node.parent:
+            node.parent.remove_child(node)
         root = TreeNode()
         root.add_child(node)
         root.add_child(sister)
