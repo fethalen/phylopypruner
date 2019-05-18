@@ -134,7 +134,6 @@ def progress_bar(message, replace=True, display=True):
     progress : str
         Your message with the text '==>' prepended.
     """
-    # progress = "{}==> {}{}".format(BLUE, NORMAL, message)
     progress = "{}> {}{}".format(GREEN, NORMAL, message)
     if display and replace:
         sys.stdout.flush()
@@ -197,5 +196,5 @@ def display_otus(otus):
     """
     formatted_otus = ", ".join(
         ["{}{}{}".format(RED, otu, NORMAL) for otu in otus])
-    formatted_otus = "\n    ".join(wrap(formatted_otus, 160))
+    formatted_otus = "\n    ".join(wrap(formatted_otus, 150))
     return "    " + formatted_otus
