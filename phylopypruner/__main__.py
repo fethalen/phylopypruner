@@ -664,10 +664,9 @@ more relaxed settings")
         decontamination.jackknife(summary, dir_out, threads)
 
     ortholog_report = summary.report("output", dir_out, homolog_stats)
-    print(ortholog_report)
     path_out = report.print_path(dir_out, display=False)
-    print("")
     report.progress_bar("output written to:\n  {}\n".format(path_out))
+    print(ortholog_report)
     summary.write_msas(args.wrap)
     run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
 

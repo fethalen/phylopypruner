@@ -506,10 +506,19 @@ concatenated alignment length....:{:10d}""".format(
         else:
             avg_seq_len = 0
 
+        if not shortest:
+            shortest = 0
+        if not longest:
+            longest = 0
+
         # determine the column width from the longest statistic
-        COLUMN_WIDTH = max(len(str(no_of_seqs)), len(str(no_of_alignments)),
-                           len(str(cat_alignment_len)), len(str(no_of_otus)),
-                           len(str(longest))) + 1
+        COLUMN_WIDTH = max(
+            len(str(no_of_seqs)), len(str(no_of_alignments)),
+            len(str(cat_alignment_len)), len(str(no_of_otus)),
+            len(str(longest)), len(str(homolog_stats[1])),
+            len(str(homolog_stats[2])), len(str(homolog_stats[8])),
+            len(str(homolog_stats[10]))
+            ) + 1
 
         report = ""
         if homolog_stats:
