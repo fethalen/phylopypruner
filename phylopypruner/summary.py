@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 import os, sys
 import datetime
+from phylopypruner.report import underline
 from phylopypruner import fasta
 from phylopypruner import report
 from textwrap import wrap
@@ -505,41 +506,40 @@ concatenated alignment length....:{:10d}""".format(
         else:
             avg_seq_len = 0
 
+        # determine the column width from the longest statistic
+        COLUMN_WIDTH = max(len(str(no_of_seqs)), len(str(no_of_alignments)),
+                           len(str(cat_alignment_len)), len(str(no_of_otus)),
+                           len(str(longest))) + 1
+
         report = ""
         if homolog_stats:
+            title = "Alignment statistics:\n  " +\
+                    underline("{:33s}  {:{}s}   {:{}s}".format(
+                        name, "Input", COLUMN_WIDTH, "Output", COLUMN_WIDTH))
+
             report = """
 {}
-  # of alignments..................:{:10d} | {}
-  # of sequences...................:{:10d} | {}
-  # of OTUs........................:{:10d} | {}
-  avg # of sequences per alignment.:{:10d} | {}
-  avg # of OTUs....................:{:10d} | {}
-  avg sequence length (ungapped)...:{:10d} | {}
-  shortest sequence (ungapped).....:{:10d} | {}
-  longest sequence (ungapped)......:{:10d} | {}
-  % missing data...................:{:10.2f} | {}
-  concatenated alignment length....:{:10d} | {}""".format(
-      name + " " * 20 + "Input | Output",
-      homolog_stats[1],
-      no_of_alignments,
-      homolog_stats[2],
-      no_of_seqs,
-      homolog_stats[3],
-      no_of_otus,
-      homolog_stats[4],
-      avg_no_of_seqs,
-      homolog_stats[5],
-      avg_no_of_seqs,
-      homolog_stats[6],
-      avg_seq_len,
-      homolog_stats[7],
-      shortest,
-      homolog_stats[8],
-      longest,
-      homolog_stats[9],
-      missing_data,
-      homolog_stats[10],
-      cat_alignment_len)
+  # of alignments                   {:{}d}   {:{}d}
+  # of sequences                    {:{}d}   {:{}d}
+  # of OTUs                         {:{}d}   {:{}d}
+  avg # of sequences / alignment    {:{}d}   {:{}d}
+  avg # of OTUs                     {:{}d}   {:{}d}
+  avg sequence length (ungapped)    {:{}d}   {:{}d}
+  shortest sequence (ungapped)      {:{}d}   {:{}d}
+  longest sequence (ungapped)       {:{}d}   {:{}d}
+  % missing data                    {:{}.2f}   {:{}.2f}
+  concatenated alignment length     {:{}d}   {:{}d}  """.format(
+      title,
+      homolog_stats[1], COLUMN_WIDTH, no_of_alignments, COLUMN_WIDTH,
+      homolog_stats[2], COLUMN_WIDTH, no_of_seqs, COLUMN_WIDTH,
+      homolog_stats[3], COLUMN_WIDTH, no_of_otus, COLUMN_WIDTH,
+      homolog_stats[4], COLUMN_WIDTH, avg_no_of_seqs, COLUMN_WIDTH,
+      homolog_stats[5], COLUMN_WIDTH, avg_no_of_seqs, COLUMN_WIDTH,
+      homolog_stats[6], COLUMN_WIDTH, avg_seq_len, COLUMN_WIDTH,
+      homolog_stats[7], COLUMN_WIDTH, shortest, COLUMN_WIDTH,
+      homolog_stats[8], COLUMN_WIDTH, longest, COLUMN_WIDTH,
+      homolog_stats[9], COLUMN_WIDTH, missing_data, COLUMN_WIDTH,
+      homolog_stats[10], COLUMN_WIDTH, cat_alignment_len, COLUMN_WIDTH)
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
             title,
@@ -573,7 +573,7 @@ concatenated alignment length....:{:10d}""".format(
         report : str
             Overview statistics of the summary.
         """
-        report, row = self.alignment_stats("Alignment statistics:", title, homolog_stats)
+        report, row = self.alignment_stats("Description", title, homolog_stats)
 
         with open(dir_out + SUM_PATH, "a") as sum_out_file:
             sum_out_file.write(row)

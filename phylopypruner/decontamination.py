@@ -12,6 +12,7 @@ from multiprocessing import Pool
 from multiprocessing import cpu_count
 from phylopypruner import filtering
 from phylopypruner import report
+from phylopypruner.report import display_otus
 from phylopypruner.summary import Summary
 from phylopypruner.prune_paralogs import prune_paralogs
 
@@ -89,7 +90,10 @@ def jackknife(summary, dir_out, threads):
         report.progress_bar(message)
         resamples.add(resample_summary)
     pool.terminate()
-    print("")
+    if len(taxa) < 1:
+        report.progress_bar("no OTUs left for taxon jackknifing\n")
+    else:
+        print("", file=sys.stderr)
 
     for summary in resamples:
         excluded = summary.logs[0].settings.exclude
@@ -283,9 +287,16 @@ def trim_freq_paralogs(factor, paralog_freq):
         if paralog_freq[otu] > threshold:
             otus_above_threshold.append(otu)
 
-    message = "{} OTUs were above the paralogy frequency threshold".format(
-        len(otus_above_threshold))
+    no_otus_above = len(otus_above_threshold)
+    if no_otus_above == 1:
+        otu_str = "OTU was"
+    else:
+        otu_str = "OTUs were"
+    message = "{} {} above the paralogy frequency threshold:".format(
+        no_otus_above, otu_str)
+
     report.progress_bar(message, replace=False)
+    print(display_otus(otus_above_threshold))
 
     return otus_above_threshold
 

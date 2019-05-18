@@ -51,7 +51,8 @@ ORTHO_STATS_PATH = "/output_alignment_stats.csv"
 LOG_PATH = "/phylopypruner.log"
 ORTHOLOGS_PATH = "/output_alignments"
 TIMESTAMP = datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p")
-ABOUT = "PhyloPyPruner version {}\n{}\n{}".format(
+ABOUT = report.underline("PhyloPyPruner version {}".format(VERSION))
+ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
     VERSION, TIMESTAMP, "-" * len(TIMESTAMP))
 NO_FILES = """Please provide either a multiple sequence alignment (MSA) and a
 Newick tree, or a path to a directory containing multiple MSAs and Newick
@@ -555,7 +556,7 @@ in the output directory, overwrite?", display=False)):
     os.makedirs(dir_out + ORTHOLOGS_PATH)
 
     with open(dir_out + LOG_PATH, "w") as log_file:
-        log_file.write(ABOUT + "\n")
+        log_file.write(ABOUT_LOG + "\n")
 
     with open(dir_out + ORTHO_STATS_PATH, "w") as ortho_stats_file:
         ortho_stats_file.write(ORTHOLOG_STATS_HEADER)
@@ -663,18 +664,17 @@ more relaxed settings")
         decontamination.jackknife(summary, dir_out, threads)
 
     ortholog_report = summary.report("output", dir_out, homolog_stats)
-
-    # print(parameters_used)
     print(ortholog_report)
-
-    with open(dir_out + LOG_PATH, "a") as log_file:
-        log_file.write("\n" + ortholog_report)
-
+    path_out = report.print_path(dir_out, display=False)
+    print("")
+    report.progress_bar("output written to:\n  {}\n".format(path_out))
     summary.write_msas(args.wrap)
-    print("\noutput written to:\n  {}".format(dir_out))
-
     run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
+
     with open(dir_out + LOG_PATH, "a") as log_file:
+        ortholog_report = ortholog_report.replace("\33[0m", "")
+        ortholog_report = ortholog_report.replace("\33[4m", "")
+        log_file.write("\n" + ortholog_report)
         log_file.write("\n" + run_time)
 
 if __name__ == "__main__":
