@@ -124,7 +124,7 @@ def yes_or_no(question):
     """
     # make input work the same way in both Python 2 and 3
     answer = input(question + " (y/n): ".lower().rstrip())
-    while not (answer[0] == "y" or answer[0] == "n"):
+    while not (answer == "y" or answer == "n"):
         answer = input("please answer yes or no" + " (y/n): ".lower().rstrip())
     return answer[0] == "y"
 
