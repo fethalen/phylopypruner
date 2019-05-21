@@ -2,12 +2,9 @@
 
 from phylopypruner import report
 
-CHECKED = u"{}\u25CF{}".format(report.GREEN, report.NORMAL)
-UNCHECKED = u"{}\u25CB{}".format(report.RED, report.NORMAL)
+ON = u"{}\u2713{}".format(report.GREEN, report.NORMAL)
+OFF = u"{}x{}".format(report.RED, report.NORMAL)
 DEFAULT = "({}default{})".format(report.YELLOW, report.NORMAL)
-# CHECKED = "{}{}[x]".format(report.GREEN, report.NORMAL)
-# UNCHECKED = "{}{}[ ]".format(report.RED, report.NORMAL)
-# DEFAULT = "({}default{})".format(report.YELLOW, report.NORMAL)
 
 class Settings(object):
     """
@@ -250,40 +247,40 @@ polytomies".format(support_pct)
         else:
             support_str = "do not collapse weakly supported branches into polytomies"
 
-        settings_report = u"""
-Parameters used/order of operations:
-  \033[34m1. \033[0m {} {} {}
-  \033[34m2. \033[0m {} minimum number of OTUs in output: {} {}
-  \033[34m3. \033[0m {} branches longer than {} times the SD of all branches were removed
-  \033[34m4. \033[0m {} {}
-  \033[34m5. \033[0m {} Monophyly masking method.........: {}
-  \033[34m6. \033[0m {} Rooting method...................: {}
-  \033[34m7. \033[0m {} Outgroup rooting.................: {}
-  \033[34m8. \033[0m {} the {} method was used for paralogy pruning {}
-  \033[34m9. \033[0m {} The Paralogy frequency threshold.....: {}
-  \033[34m10.\033[0m {} Trim divergent percentage........: {}
-  \033[34m11.\033[0m {} include these OTUs, even if deemed problematic: {}
-  \033[34m12.\033[0m {} always exclude the following OTUs: {}
-  \033[34m13.\033[0m {} {}
-
-Unused parameters:
-  ...""".format(
-      CHECKED if self.min_len else UNCHECKED, len_str, DEFAULT if not self.min_len
+        settings_report = u"""Parameters \
+({} = used, {} = unused, SDs = standard deviations):
+  {} {} {}
+  {} branches longer than {} SDs of all branches were removed
+  {} {}
+  {} the {} method was used for monophyly masking {}
+  {} OTUs used for outgroup rooting: {}
+  {} rooting used if outgroup rooting was off or failed: {}
+  {} the {} method was used for paralogy pruning {}
+  {} The Paralogy frequency threshold.....: {}
+  {} Trim divergent percentage........: {} {}
+  {} these OTUs were included, even if deemed problematic: {}
+  {} always exclude the following OTUs: {}
+  {} output alignments with fewer than {} sequences were discarded {}
+  {} taxon jackknifing is {}performed {}""".format(
+      ON, OFF,
+      ON if self.min_len else OFF, len_str, DEFAULT if not self.min_len
       else "",
-      CHECKED if self.min_taxa else UNCHECKED, self.min_taxa, DEFAULT if
-      self.min_taxa == 4 else "",
-      CHECKED if self.trim_lb else UNCHECKED, self.trim_lb,
-      CHECKED if self.min_support else UNCHECKED, support_str,
-      CHECKED if self.mask else UNCHECKED, self.mask,
-      CHECKED if self.root else UNCHECKED, self.root,
-      CHECKED if self.outgroup else UNCHECKED, self.outgroup,
-      CHECKED if self.prune else UNCHECKED, self.prune, DEFAULT if self.prune
+      ON if self.trim_lb else OFF, self.trim_lb,
+      ON if self.min_support else OFF, support_str,
+      ON, self.mask, DEFAULT if self.mask ==
+      "pdist" else "",
+      ON if self.outgroup else OFF, self.outgroup,
+      ON if self.root else OFF, self.root,
+      ON, self.prune, DEFAULT if self.prune
       == "LS" else "",
-      CHECKED if self.trim_freq_paralogs else UNCHECKED, self.trim_freq_paralogs,
-      CHECKED if self.trim_divergent else UNCHECKED, self.trim_divergent,
-      CHECKED if self.include else UNCHECKED, self.include,
-      CHECKED if self.exclude else UNCHECKED, self.exclude,
-      CHECKED if self.jackknife else UNCHECKED,
-      "taxon jackknifing is performed" if self.jackknife else "do not perform \
-taxon jackknifing")
+      ON if self.trim_freq_paralogs else OFF, self.trim_freq_paralogs,
+      ON if self.trim_divergent else OFF, self.trim_divergent, DEFAULT if not
+      self.trim_divergent else "",
+      ON if self.include else OFF, self.include,
+      ON if self.exclude else OFF, self.exclude,
+      ON, self.min_taxa, DEFAULT if
+      self.min_taxa == 4 else "",
+      ON if self.jackknife else OFF,
+      "" if self.jackknife else "not ",
+      DEFAULT if not self.jackknife else "")
         print(settings_report)

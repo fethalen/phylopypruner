@@ -4,9 +4,8 @@
 # Date: July 24, 2018
 
 """
-PhyloPyPruner is a Python package for tree-based orthology inference that is
-used to refine the output of a graph-based approach by removing sequences
-related via gene duplication. See gitlab.com/fethalen/phylopypruner for details.
+A tree-based orthology inference program with additional functionality for
+reducing contamination. See gitlab.com/fethalen/phylopypruner for details.
 """
 
 from __future__ import print_function
@@ -331,173 +330,158 @@ def parse_args():
                         action="version",
                         version=str(VERSION),
                         help="display the version number and exit")
-    parser.add_argument("--threads",
-                        metavar="<count>",
-                        default=None,
-                        type=int,
-                        help="limit the number of threads used for processing \
-                              files in parallel; default: use all available \
-                              threads")
-    parser.add_argument("--wrap",
-                        metavar="<max column>",
-                        default=None,
-                        type=int,
-                        help="wrap output sequences at column <max column>; \
-                              sequence data is kept at a single line by \
-                              default")
     parser.add_argument("--overwrite",
                         default=False,
                         action="store_true",
-                        help="overwrite any pre-existing files within the \
-                              output directory")
+                        help="overwrite pre-existing output files without\
+                              asking")
     parser.add_argument("--no-plot",
                         default=False,
                         action="store_true",
-                        help="shorten the run time by not generating any plot")
+                        help="do not generate plots (faster)")
+    parser.add_argument("--wrap",
+                        metavar="COLUMN",
+                        default=None,
+                        type=int,
+                        help="wrap output sequences at this column instead \
+                              of writing each sequence to a single line")
+    parser.add_argument("--threads",
+                        metavar="COUNT",
+                        default=None,
+                        type=int,
+                        help="use this many threads instead of up to 10")
     parser.add_argument("--output",
-                        metavar="<directory>",
+                        metavar="DIRECTORY",
                         type=str,
                         default=None,
-                        help="set output directory; default: same directory \
-                              as the input alignments")
+                        help="save output files to this directory instead of \
+                              the input directory")
 
-    group = parser.add_argument_group("input data (required)")
+    group = parser.add_argument_group("input data")
     group.add_argument("--dir",
-                       metavar="<directory>",
+                       metavar="DIRECTORY",
                        type=str,
                        default=None,
-                       help="path to a directory containing multiple MSAs \
-                             and trees")
+                       help="a folder containing 1+ alignment and tree files")
 
-    group = parser.add_argument_group("prefiltering")
+    group = parser.add_argument_group("filters")
     group.add_argument("--min-taxa",
-                       metavar="<threshold>",
+                       metavar="COUNT",
                        type=int,
                        default=4,
-                       help="minimum number of OTUs allowed in output; \
-                             4 by default")
+                       help="discard output alignments with fewer OTUs than \
+                             this (4 by default)")
     group.add_argument("--min-len",
-                       metavar="<threshold>",
+                       metavar="LENGTH",
                        default=None,
                        type=int,
-                       help="remove sequences shorter than <threshold>")
+                       help="remove sequences with fewer bases than this")
     group.add_argument("--min-support",
-                       metavar="<threshold>",
+                       metavar="SUPPORT",
                        default=None,
                        type=float,
-                       help="collapse nodes with a support value below \
-                             <threshold> into polytomies; in percent \
-                             or in decimal format (0.0-1.0)")
+                       help="collapse nodes with less support than this into \
+                             polytomies")
     group.add_argument("--trim-lb",
                        default=None,
-                       metavar="<factor>",
+                       metavar="FACTOR",
                        type=float,
-                       help="remove sequences with a branch length that is \
-                             <factor> times larger than the standard \
-                             deviation of all branches within its tree")
+                       help="remove branches longer than FACTOR standard \
+                             deviations of all branches")
     group.add_argument("--min-pdist",
                        default=None,
-                       metavar="<distance>",
+                       metavar="DISTANCE",
                        type=float,
-                       help="remove pairs of sequences with a tip-to-tip \
-                             distance that is less than <distance>")
+                       help="remove sequence pairs with less tip-to-tip \
+                             distance than this")
     group.add_argument("--include",
                        nargs="+",
-                       metavar="<OTU>",
+                       metavar="OTU",
                        default=None,
                        type=str,
-                       help="include the OTUs in the specified list, even if \
-                             they were deemed problematic by \
-                             '--trim-freq-paralogs' or '--trim-divergent'")
+                       help="include these OTUs, even if deemed problematic \
+                             by '--trim-freq-paralogs' or '--trim-divergent'")
     group.add_argument("--exclude",
                        nargs='+',
-                       metavar="<OTU>",
+                       metavar="OTU",
                        default=None,
                        type=str,
-                       help="exclude these OTUs in this run")
+                       help="exclude these OTUs")
     group.add_argument("--force-inclusion",
                        nargs="+",
-                       metavar="<OTU>",
+                       metavar="OTU",
                        default=None,
                        type=str,
-                       help="do not output any orthologs where these OTUs \
-                             are not present")
+                       help="discard output alignments where these OTUs are \
+                             missing")
     group.add_argument("--min-otu-occupancy",
-                       metavar="<percentage>",
+                       metavar="OCCUPANCY",
                        default=None,
                        type=float,
-                       help="remove OTUs with less occupancy than \
-                       <percentage> from the supermatrix; \
-                       in percent or in decimal format (0.0-1.0)")
+                       help="do not include OTUs with less occupancy than \
+                       this")
     group.add_argument("--min-gene-occupancy",
-                       metavar="<percentage>",
+                       metavar="OCCUPANCY",
                        default=None,
                        type=float,
-                       help="remove genes with less occupancy than \
-                       <percentage> from the supermatrix; \
-                       in percent or in decimal format (0.0-1.0)")
+                       help="discard output alignments with less occupancy \
+                       than this")
 
     group = parser.add_argument_group("tree-based orthology inference")
     group.add_argument("--outgroup",
                        nargs="+",
-                       metavar="<OTU>",
+                       metavar="OTU",
                        default=None,
                        type=str,
-                       help="root trees using one or more outgroup OTUs if \
-                             at least one outgroup OTU is present and that \
-                             the ones that are present are non-repetetive \
-                             and form a monophyletic group")
+                       help="root trees using these OTUs if at least one OTU \
+                             is present and if all present OTUs are \
+                             non-repetetive and form a clade")
     group.add_argument("--root",
                        default=None,
                        type=str,
                        choices=["midpoint"],
-                       help="root trees using this method in case no \
-                             outgroups were provided or if outgroup rooting \
-                             fails")
+                       help="root trees using this method in cases where no \
+                             outgroup rooting is not performed")
     group.add_argument("--mask",
                        default="pdist",
                        type=str,
                        choices=["longest", "pdist"],
-                       help="specify the method for masking monophylies; \
-                             pairwise distance ('pdist') is used by default")
+                       help="if 2+ sequences from a single OTU forms a clade, \
+                             choose which sequence to keep using this method")
     group.add_argument("--prune",
                        default="LS",
                        type=str,
                        choices=["LS", "MI", "MO", "RT", "1to1"],
-                       help="set the paralogy pruning method; default is \
-                             largest subtree ('LS')")
+                       help="set the paralogy pruning method (default: LS)")
 
     group = parser.add_argument_group("decontamination")
     group.add_argument("--trim-freq-paralogs",
                        default=None,
-                       metavar="<factor>",
+                       metavar="FACTOR",
                        type=float,
-                       help="remove OTUs with a paralogy frequency (PF) \
-                             larger than <factor> times the standard \
-                             deviation of the PF for all OTUs")
+                       help="exclude OTUs with more paralogy frequency (PF) \
+                             than FACTOR standard deviations of all PFs")
     group.add_argument("--trim-divergent",
                        default=None,
-                       metavar="<percentage>",
+                       metavar="PERCENTAGE",
                        type=float,
-                       help="exclude OTUs on a per-alignment basis, where \
-                             the ratio between the maximum pairwise distance \
-                             between sequences within the OTU and the \
-                             average pairwise distance between sequences \
-                             outside the OTU exceeds the user-defined \
-                             percentage")
+                       help="for each alignment: discard all sequences from an OTU on a \
+                       per-alignment-basis, if the ratio between the largest \
+                       pairwise distance of sequences from this OTU and \
+                       the average pairwise distance of sequences from this \
+                       OTU to other's exceed this percentage")
+    group.add_argument("--subclades",
+                       default=None,
+                       metavar="FILE",
+                       type=str,
+                       help="specify a set of subclades within this file \
+                             and analyse their overall stability")
     group.add_argument("--jackknife",
                        default=False,
                        action="store_true",
-                       help="leave out each OTU one by one and output \
-                       statistics for each OTU left out into the summary \
-                       file; use the '--exclude' flag in a subsequent run \
-                       to remove taxa deemed as problematic")
-    group.add_argument("--subclades",
-                       default=None,
-                       metavar="<subclade definition file>",
-                       type=str,
-                       help="specify a set of subclades and analyse\
-                       their overall stability")
+                       help="exclude each OTU one by one, rerun the whole \
+                             analysis and generate statistics for each \
+                             subsample")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
 def main():
@@ -568,6 +552,9 @@ run, overwrite these files?", display=False)):
         report.error("no file pairs were found in the provided directory")
         shutil.rmtree(dir_out)
         sys.exit()
+
+    # settings.print_settings()
+    # print("", file=sys.stderr)
 
     # count and report the number of threads used
     threads_available = cpu_count()
@@ -653,8 +640,6 @@ more relaxed settings")
     print(ortholog_report)
     summary.write_msas(args.wrap)
     run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
-
-    # settings.print_settings()
 
     with open(dir_out + LOG_PATH, "a") as log_file:
         ortholog_report = ortholog_report.replace("\33[0m", "")

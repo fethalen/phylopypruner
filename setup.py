@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="phylopypruner",
-    version="0.8.0",
+    version="0.8.1",
     author="Felix Thalen",
     author_email="fe1430th-s@student.lu.se",
     license="GPL 3",
