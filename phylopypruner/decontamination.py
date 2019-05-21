@@ -257,7 +257,7 @@ def prune_by_exclusion(summary, otus, dir_out, threads, homolog_stats):
             summary_out.logs.append(log_copy)
 
     pool.terminate()
-    print("")
+    print("", file=sys.stderr)
     summary_report = summary_out.report(excluded_str, dir_out, homolog_stats)
 
     return summary_out, summary_report
@@ -288,15 +288,14 @@ def trim_freq_paralogs(factor, paralog_freq):
             otus_above_threshold.append(otu)
 
     no_otus_above = len(otus_above_threshold)
-    if no_otus_above == 1:
-        otu_str = "OTU was"
-    else:
-        otu_str = "OTUs were"
-    message = "{} {} above the paralogy frequency threshold:".format(
-        no_otus_above, otu_str)
+    otu_str = "OTU was" if no_otus_above == 1 else "OTUs were"
+    ending = "" if no_otus_above == 0 else ":"
+    message = "{} {} above the paralogy frequency threshold{}".format(
+        no_otus_above, otu_str, ending)
 
     report.progress_bar(message, replace=False)
-    print(display_otus(otus_above_threshold))
+    if no_otus_above != 0:
+        display_otus(otus_above_threshold)
 
     return otus_above_threshold
 

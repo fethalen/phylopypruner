@@ -1,9 +1,10 @@
 """
-Routines for formatting reports.
+Routines for formatting output.
 """
 
 from __future__ import print_function
 import sys
+import os
 from textwrap import wrap
 # ensures that input is working across Python 2.7 and 3+
 try:
@@ -12,12 +13,32 @@ try:
 except (ImportError, AttributeError):
     pass
 
+def supports_color():
+    """
+    Returns True if the running system's terminal supports color, and False
+    otherwise.
+    """
+    plat = sys.platform
+    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                  'ANSICON' in os.environ)
+    # isatty is not always implemented, #6223.
+    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+    if not supported_platform or not is_a_tty:
+        return False
+    return True
+
+if supports_color():
+    COLOR_SUPPORT = True
+# colors
 NORMAL = "\033[0m"
-PURPLE = "\033[35m"
 RED = "\033[31m"
-BLUE = "\033[34m"
 GREEN = "\033[32m"
+YELLOW = "\033[33m"
+BLUE = "\033[34m"
+PURPLE = "\033[35m"
 CYAN = "\033[36m"
+# styles
+BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 
 def warning(message, display=True):
@@ -103,20 +124,17 @@ def yes_or_no(question):
     """
     # make input work the same way in both Python 2 and 3
     answer = input(question + " (y/n): ".lower().rstrip())
-    while not (answer == "y" or answer == "n"):
-        answer = input(question + " (y/n): ".lower().rstrip())
-    if answer[0] == "y":
-        return True
-    elif answer[0] == "n":
-        return False
+    while not (answer[0] == "y" or answer[0] == "n"):
+        answer = input("please answer yes or no" + " (y/n): ".lower().rstrip())
+    return answer[0] == "y"
 
 def progress_bar(message, replace=True, display=True):
-    """Takes a text string as an input and prints it to standard error, with
-    the text '==>' prepended. Only returns the message itself, if the boolean
-    display is set to False (DEFAULT: True). By default, the last line is
-    replaced as this function is intended to be used to display a continues
-    progress. If you do not wish to overwrite the last line, then set replace
-    to False.
+    """Takes a text string as an input and prints it to standard error, with a
+    greater than sign '>' prepended to the text. Only returns the message
+    itself, if the boolean display is set to False (DEFAULT: True). By default,
+    the last line is replaced as this function is intended to be used to
+    display a continues progress. If you do not wish to overwrite the last
+    line, then set replace to False.
 
     Parameters
     ----------
@@ -132,9 +150,9 @@ def progress_bar(message, replace=True, display=True):
     Returns
     -------
     progress : str
-        Your message with the text '==>' prepended.
+        Your message with a greater than sign ('>') prepended to it.
     """
-    progress = "{}> {}{}".format(GREEN, NORMAL, message)
+    progress = "{} {}".format(colorize(">", "green"), message)
     if display and replace:
         sys.stdout.flush()
         print(progress, file=sys.stderr, end="\r")
@@ -158,7 +176,7 @@ def print_path(path, display=True):
     path_in_blue : str
       The provided path in blue.
     """
-    path_in_blue = ("{}{}{}".format(BLUE, path, NORMAL))
+    path_in_blue = colorize(path, "blue")
     if display:
         print(path_in_blue, file=sys.stderr)
     return path_in_blue
@@ -179,7 +197,23 @@ def underline(text):
     underlined_text = ("{}{}{}".format(UNDERLINE, text, NORMAL))
     return underlined_text
 
-def display_otus(otus):
+def bold(text):
+    """Returns the provided text in bold.
+
+    Parameters
+    ----------
+    text : str
+        The text you wish to make bold.
+
+    Returns
+    -------
+    bold_text : str
+        The provided text in bold.
+    """
+    bold_text = ("{}{}{}".format(BOLD, text, NORMAL))
+    return bold_text
+
+def display_otus(otus, display=True):
     """Takes a list of OTUs as an input and returns the OTUs as a string, where
     each OTU, except for the last OTU, is separated by a comma. OTUs are also
     displayed in the color red.
@@ -189,12 +223,44 @@ def display_otus(otus):
     otus : list
       A list of OTUs.
 
+    display : bool
+      The OTUs are printed to stderr if display is set to True. True by
+      default.
+
     Returns
     -------
     formatted_otus : str
       A list of the OTUs as a text string.
     """
     formatted_otus = ", ".join(
-        ["{}{}{}".format(RED, otu, NORMAL) for otu in otus])
+        [colorize(otu, "red") for otu in otus])
     formatted_otus = "\n    ".join(wrap(formatted_otus, 150))
+    if display:
+        print("    " + formatted_otus, file=sys.stderr)
     return "    " + formatted_otus
+
+def colorize(text, color):
+    """Returns the provided text in the chosen color. The color you pick should
+    be one of the following: "red", "green", "yellow", "blue", "purle", or
+    "cyan". If colors are not supported by your terminal, then no color is
+    applied.
+
+    Parameters
+    ----------
+    text : str
+      The text you wish to colorize.
+
+    color : str
+      The name of the color you wish to use, in lowercase.
+
+    Returns
+    -------
+    colored_text : str
+      The provided text in color, given that colors are supported.
+    """
+    palette = {"red": RED, "green": GREEN, "yellow": YELLOW, "blue": BLUE,
+               "purple": PURPLE}
+    colored_text = "{}{}{}".format(palette[color], text, NORMAL)
+    if COLOR_SUPPORT:
+        return colored_text
+    return text

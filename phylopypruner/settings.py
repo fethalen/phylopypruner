@@ -1,12 +1,21 @@
 "Module for storing and retrieving a set of options."
 
+from phylopypruner import report
+
+CHECKED = u"{}\u25CF{}".format(report.GREEN, report.NORMAL)
+UNCHECKED = u"{}\u25CB{}".format(report.RED, report.NORMAL)
+DEFAULT = "({}default{})".format(report.YELLOW, report.NORMAL)
+# CHECKED = "{}{}[x]".format(report.GREEN, report.NORMAL)
+# UNCHECKED = "{}{}[ ]".format(report.RED, report.NORMAL)
+# DEFAULT = "({}default{})".format(report.YELLOW, report.NORMAL)
+
 class Settings(object):
     """
     A list of settings used in a single run.
     """
     def __init__(self, arguments=None):
-        self._fasta_file = arguments.msa
-        self._nw_file = arguments.tree
+        self._fasta_file = None
+        self._nw_file = None
         self._min_taxa = arguments.min_taxa
         self._min_len = arguments.min_len
         self._min_support = arguments.min_support
@@ -190,11 +199,7 @@ class Settings(object):
 
     def report(self, directory, log_path):
         "Generate a report of what settings were used."
-        if directory:
-            input_files = "Directory:\t{}".format(directory)
-        else:
-            input_files = "MSA:\t{}\n  Tree:\t{}".format(
-                self.fasta_file, self.nw_file)
+        input_files = "Directory:\t{}".format(directory)
         report = """Input data:
   {}
 
@@ -226,6 +231,59 @@ Parameters used:
       self.trim_freq_paralogs,
       self.trim_divergent,
       self.jackknife)
+
         with open(log_path, "a") as log_file:
             log_file.write(report)
             return report
+
+    def print_settings(self):
+        """TODO: write in past or present?
+        """
+        if self.min_len:
+            len_str = "sequences shorter than {} bases were removed".format(self.min_len)
+        else:
+            len_str = "short sequences were not removed"
+        if self.min_support:
+            support_pct = int(self.min_support * 100)
+            support_str = "collapse branches with less support than {}% into \
+polytomies".format(support_pct)
+        else:
+            support_str = "do not collapse weakly supported branches into polytomies"
+
+        settings_report = u"""
+Parameters used/order of operations:
+  \033[34m1. \033[0m {} {} {}
+  \033[34m2. \033[0m {} minimum number of OTUs in output: {} {}
+  \033[34m3. \033[0m {} branches longer than {} times the SD of all branches were removed
+  \033[34m4. \033[0m {} {}
+  \033[34m5. \033[0m {} Monophyly masking method.........: {}
+  \033[34m6. \033[0m {} Rooting method...................: {}
+  \033[34m7. \033[0m {} Outgroup rooting.................: {}
+  \033[34m8. \033[0m {} the {} method was used for paralogy pruning {}
+  \033[34m9. \033[0m {} The Paralogy frequency threshold.....: {}
+  \033[34m10.\033[0m {} Trim divergent percentage........: {}
+  \033[34m11.\033[0m {} include these OTUs, even if deemed problematic: {}
+  \033[34m12.\033[0m {} always exclude the following OTUs: {}
+  \033[34m13.\033[0m {} {}
+
+Unused parameters:
+  ...""".format(
+      CHECKED if self.min_len else UNCHECKED, len_str, DEFAULT if not self.min_len
+      else "",
+      CHECKED if self.min_taxa else UNCHECKED, self.min_taxa, DEFAULT if
+      self.min_taxa == 4 else "",
+      CHECKED if self.trim_lb else UNCHECKED, self.trim_lb,
+      CHECKED if self.min_support else UNCHECKED, support_str,
+      CHECKED if self.mask else UNCHECKED, self.mask,
+      CHECKED if self.root else UNCHECKED, self.root,
+      CHECKED if self.outgroup else UNCHECKED, self.outgroup,
+      CHECKED if self.prune else UNCHECKED, self.prune, DEFAULT if self.prune
+      == "LS" else "",
+      CHECKED if self.trim_freq_paralogs else UNCHECKED, self.trim_freq_paralogs,
+      CHECKED if self.trim_divergent else UNCHECKED, self.trim_divergent,
+      CHECKED if self.include else UNCHECKED, self.include,
+      CHECKED if self.exclude else UNCHECKED, self.exclude,
+      CHECKED if self.jackknife else UNCHECKED,
+      "taxon jackknifing is performed" if self.jackknife else "do not perform \
+taxon jackknifing")
+        print(settings_report)

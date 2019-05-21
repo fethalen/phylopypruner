@@ -54,9 +54,9 @@ TIMESTAMP = datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p")
 ABOUT = report.underline("PhyloPyPruner version {}".format(VERSION))
 ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
     VERSION, TIMESTAMP, "-" * len(TIMESTAMP))
-NO_FILES = """Please provide either a multiple sequence alignment (MSA) and a
-Newick tree, or a path to a directory containing multiple MSAs and Newick
-trees."""
+NO_FILES = """You did not specify any input data. Use the flag '--dir', followed
+by the path to a directory, to point to a directory which contain your
+multiple sequence alignments (MSAs) and input trees."""
 
 def _validate_input(msa, tree, tree_path):
     "Test to see if MSA and tree entries matches."
@@ -69,13 +69,8 @@ def _validate_input(msa, tree, tree_path):
         report.error("MSA names don't match tree \n   {}\n   {}".format(msa.filename, tree_path))
 
 def _no_files(args):
-    "Returns true if the required files are not provided."
-    if not args.msa and not args.tree and not args.dir:
-        return True
-    elif args.msa and not args.tree or not args.msa and args.tree:
-        return True
-    else:
-        return False
+    "Returns True if the required files are not provided."
+    return not args.dir
 
 def _validate_arguments(args):
     "Performs a series of checks to validate the input before execution."
@@ -336,12 +331,13 @@ def parse_args():
                         action="version",
                         version=str(VERSION),
                         help="display the version number and exit")
-    parser.add_argument("--output",
-                        metavar="<directory>",
-                        type=str,
+    parser.add_argument("--threads",
+                        metavar="<count>",
                         default=None,
-                        help="set output directory; DEFAULT: same directory \
-                              as the input alignments")
+                        type=int,
+                        help="limit the number of threads used for processing \
+                              files in parallel; default: use all available \
+                              threads")
     parser.add_argument("--wrap",
                         metavar="<max column>",
                         default=None,
@@ -349,32 +345,23 @@ def parse_args():
                         help="wrap output sequences at column <max column>; \
                               sequence data is kept at a single line by \
                               default")
-    parser.add_argument("--threads",
-                        metavar="<count>",
-                        default=None,
-                        type=int,
-                        help="limit the number of logical cores used for \
-                              processing files in parallel")
     parser.add_argument("--overwrite",
                         default=False,
                         action="store_true",
-                        help="overwrite an older run, if it exist within \
-                              the output directory")
+                        help="overwrite any pre-existing files within the \
+                              output directory")
     parser.add_argument("--no-plot",
                         default=False,
                         action="store_true",
                         help="shorten the run time by not generating any plot")
+    parser.add_argument("--output",
+                        metavar="<directory>",
+                        type=str,
+                        default=None,
+                        help="set output directory; default: same directory \
+                              as the input alignments")
 
-    group = parser.add_argument_group("input files (MSA and tree or directory)")
-    group.add_argument("--msa",
-                       metavar="<MSA>",
-                       type=str,
-                       help="path to a multiple sequence alignment (MSA) in \
-                             FASTA format")
-    group.add_argument("--tree",
-                       metavar="<tree>",
-                       type=str,
-                       help="path to a Newick tree file")
+    group = parser.add_argument_group("input data (required)")
     group.add_argument("--dir",
                        metavar="<directory>",
                        type=str,
@@ -388,7 +375,7 @@ def parse_args():
                        type=int,
                        default=4,
                        help="minimum number of OTUs allowed in output; \
-                             DEFAULT: 4")
+                             4 by default")
     group.add_argument("--min-len",
                        metavar="<threshold>",
                        default=None,
@@ -472,7 +459,7 @@ def parse_args():
                        type=str,
                        choices=["longest", "pdist"],
                        help="specify the method for masking monophylies; \
-                             DEFAULT: pairwise distance ('pdist')")
+                             pairwise distance ('pdist') is used by default")
     group.add_argument("--prune",
                        default="LS",
                        type=str,
@@ -516,7 +503,7 @@ def parse_args():
 def main():
     "Parse args, run filter and infer orthologs."
     args = parse_args()
-    print(ABOUT)
+    print(ABOUT, file=sys.stderr)
     _validate_arguments(args)
     summary = Summary()
 
@@ -534,18 +521,15 @@ def main():
 
     dir_out = None
     if args.output:
-        # create output directory if it does not currently exist
         dir_out = args.output.rstrip("/") # get rid of trailing slash in path
     elif args.dir:
         dir_out = str(args.dir).rstrip("/")
-    else:
-        dir_out = os.path.dirname(str(args.msa).rstrip("/"))
     dir_out = dir_out + "/phylopypruner_output"
 
     # if not args.overwrite and os.path.isfile(dir_out):
     if not args.overwrite and os.path.isdir(dir_out):
-        if not report.yes_or_no(report.warning("files from a previous run exist \
-in the output directory, overwrite?", display=False)):
+        if not report.yes_or_no(report.warning("found files from a previous \
+run, overwrite these files?", display=False)):
             exit()
 
     if os.path.isdir(dir_out):
@@ -566,54 +550,54 @@ in the output directory, overwrite?", display=False)):
 
     parameters_used = settings.report(args.dir, dir_out + LOG_PATH)
 
-    if args.msa and args.tree:
-        # run for a single pair of files
-        summary.logs.append(_get_orthologs(settings, "", dir_out))
+    if not args.dir[-1] == "/":
+        dir_in = args.dir + "/"
+    else:
+        dir_in = args.dir
 
-    elif args.dir:
-        if not args.dir[-1] == "/":
-            dir_in = args.dir + "/"
-        else:
-            dir_in = args.dir
+    if not os.path.isdir(dir_in):
+        shutil.rmtree(dir_out)
+        report.error("input directory {} does not exist".format(dir_in))
+        sys.exit()
 
-        if not os.path.isdir(dir_in):
-            shutil.rmtree(dir_out)
-            report.error("input directory {} does not exist".format(dir_in))
-            sys.exit()
+    file_pairs = file_pairs_from_directory(dir_in)
 
-        file_pairs = file_pairs_from_directory(dir_in)
+    no_of_file_pairs = len(file_pairs)
+    if no_of_file_pairs < 1:
+        # no file pairs found in the provided directory
+        report.error("no file pairs were found in the provided directory")
+        shutil.rmtree(dir_out)
+        sys.exit()
 
-        no_of_file_pairs = len(file_pairs)
-        if no_of_file_pairs < 1:
-            # no file pairs found in the provided directory
-            report.error("no file pairs were found in the provided directory")
-            shutil.rmtree(dir_out)
-            sys.exit()
+    # count and report the number of threads used
+    threads_available = cpu_count()
+    if args.threads:
+        threads = args.threads if threads <= threads_available else threads_available
+    else:
+        threads = threads_available if threads_available <= 10 else 10
+    pool = Pool(processes=threads)
+    part_run = partial(_run_for_file_pairs, settings=settings,
+                       dir_in=dir_in, dir_out=dir_out)
+    report.progress_bar("using {} out of {} available threads".format(
+        threads, threads_available))
+    print("", file=sys.stderr)
 
-        if args.threads:
-            threads = args.threads
-        else:
-            threads = cpu_count()
-        pool = Pool(processes=threads)
-        part_run = partial(_run_for_file_pairs, settings=settings,
-                           dir_in=dir_in, dir_out=dir_out)
+    # For debugging purposes only (gets rid of multiprocessing).
+    # for pair in file_pairs:
+    #     print(pair)
+    #     settings.fasta_file, settings.nw_file = pair
+    #     _get_orthologs(settings, dir_in, dir_out)
+    # sys.exit()
 
-        # For debugging purposes only (gets rid of multiprocessing).
-        # for pair in file_pairs:
-        #     print(pair)
-        #     settings.fasta_file, settings.nw_file = pair
-        #     _get_orthologs(settings, dir_in, dir_out)
-        # sys.exit()
+    for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
+        message = "processing MSAs and trees ({}/{})".format(index,
+                                                             no_of_file_pairs)
+        report.progress_bar(message)
+        summary.logs.append(log)
+    pool.terminate()
 
-        for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
-            message = "processing MSAs and trees ({}/{})".format(index,
-                                                                 no_of_file_pairs)
-            report.progress_bar(message)
-            summary.logs.append(log)
-        pool.terminate()
-
-        mk_sum_out_title(dir_out)
-        print("")
+    mk_sum_out_title(dir_out)
+    print("")
 
     if not summary:
         report.error("no orthologs recovered, check filetype extensions or try \
@@ -665,10 +649,12 @@ more relaxed settings")
 
     ortholog_report = summary.report("output", dir_out, homolog_stats)
     path_out = report.print_path(dir_out, display=False)
-    report.progress_bar("output written to:\n  {}\n".format(path_out))
+    report.progress_bar("wrote output to:\n  {}\n".format(path_out))
     print(ortholog_report)
     summary.write_msas(args.wrap)
     run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
+
+    # settings.print_settings()
 
     with open(dir_out + LOG_PATH, "a") as log_file:
         ortholog_report = ortholog_report.replace("\33[0m", "")

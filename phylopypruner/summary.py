@@ -396,6 +396,11 @@ Matplotlib or use the flag '--no-plot'")
         else:
             avg_seq_len = 0
 
+        if not shortest:
+            shortest = 0
+        if not longest:
+            longest = 0
+
         report = """
 {}
 {}
@@ -511,21 +516,20 @@ concatenated alignment length....:{:10d}""".format(
         if not longest:
             longest = 0
 
-        # determine the column width from the longest statistic
-        COLUMN_WIDTH = max(
-            len(str(no_of_seqs)), len(str(no_of_alignments)),
-            len(str(cat_alignment_len)), len(str(no_of_otus)),
-            len(str(longest)), len(str(homolog_stats[1])),
-            len(str(homolog_stats[2])), len(str(homolog_stats[8])),
-            len(str(homolog_stats[10]))
-            ) + 1
-
         report = ""
         if homolog_stats:
+            # determine the column width from the longest statistic
+            COLUMN_WIDTH = max(
+                len(str(no_of_seqs)), len(str(no_of_alignments)),
+                len(str(cat_alignment_len)), len(str(no_of_otus)),
+                len(str(longest)), len(str(homolog_stats[1])),
+                len(str(homolog_stats[2])), len(str(homolog_stats[8])),
+                len(str(homolog_stats[10]))
+                ) + 1
+
             title = "Alignment statistics:\n  " +\
                     underline("{:33s}  {:{}s}   {:{}s}".format(
                         name, "Input", COLUMN_WIDTH, "Output", COLUMN_WIDTH))
-
             report = """
 {}
   # of alignments                   {:{}d}   {:{}d}

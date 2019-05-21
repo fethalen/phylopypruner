@@ -4,6 +4,9 @@
 ##
 ## Author: Felix Thalen <felix.thalen@uni-goettingen.de>
 ##
+## Usage:
+##   ./orthofinder2phylopypruner.bash <species_list> <MSA directory>
+##
 ## About:
 ##   This script will format the output of OrthoFinder into a format that is
 ##   suitable for PhyloPyPruner. OrthoFinder should be run using the flags '-os -M
@@ -12,8 +15,6 @@
 ##   directory. Also provide a list of species names, separated by line, within a
 ##   file. See usage instructions below.
 ##
-## Usage:
-##   ./orthofinder2phylopypruner.bash <species_list> <MSA directory>
 ##
 ## What will happen to my files?
 ##   '>OTU_identifier' will be converted into '>OTU@identifier'
@@ -39,7 +40,7 @@ usage() {
   exit 2
 } 2>/dev/null
 
-if [[ $# != 2 ]]; then
+if [[ "${#}" != 2 || "${1}" == "[-]-h[elp]" ]]; then
   usage "$@"
   exit 1
 fi
