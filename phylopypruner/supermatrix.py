@@ -121,8 +121,13 @@ class Supermatrix(object):
         # looking at the first log's input MSA.
         is_dna = summary.logs[0].msa.is_dna()
 
+        # First, get a list of all the OTUs within the output alignments. ALl
+        # OTUs may not be represented in every alignment, so we need to replace
+        # these with a '?' or an 'X' (missing nucleotide and missing amino acid
+        # respectively).
         for log in summary.logs:
-            otus.update(log.msa.otus())
+            for msa in log.msas_out:
+                otus.update(msa.otus())
 
         for log in summary.logs:
             for msa in log.msas_out:

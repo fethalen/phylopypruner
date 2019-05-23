@@ -259,7 +259,7 @@ def colorize(text, color):
       The provided text in color, given that colors are supported.
     """
     palette = {"red": RED, "green": GREEN, "yellow": YELLOW, "blue": BLUE,
-               "purple": PURPLE}
+               "purple": PURPLE, "cyan": CYAN}
     colored_text = "{}{}{}".format(palette[color], text, NORMAL)
     if COLOR_SUPPORT:
         return colored_text

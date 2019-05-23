@@ -416,13 +416,13 @@ def parse_args():
                              missing")
     group.add_argument("--min-otu-occupancy",
                        metavar="OCCUPANCY",
-                       default=None,
+                       default=0.1,
                        type=float,
                        help="do not include OTUs with less occupancy than \
                        this")
     group.add_argument("--min-gene-occupancy",
                        metavar="OCCUPANCY",
-                       default=None,
+                       default=0.1,
                        type=float,
                        help="discard output alignments with less occupancy \
                        than this")
@@ -553,9 +553,6 @@ run, overwrite these files?", display=False)):
         shutil.rmtree(dir_out)
         sys.exit()
 
-    # settings.print_settings()
-    # print("", file=sys.stderr)
-
     # count and report the number of threads used
     threads_available = cpu_count()
     if args.threads:
@@ -627,19 +624,26 @@ more relaxed settings")
         decontamination.score_monophyly(
             summary, settings.taxonomic_groups, dir_out)
 
-    supermatrix = Supermatrix(dir_out)
-    supermatrix.partitions_from_summary(summary, dir_out)
-
     # Perform taxon jackknifing.
     if args.jackknife:
         decontamination.jackknife(summary, dir_out, threads)
 
-    ortholog_report = summary.report("output", dir_out, homolog_stats)
+    # print the output
     path_out = report.print_path(dir_out, display=False)
     report.progress_bar("wrote output to:\n  {}\n".format(path_out))
+
+    # print settings
+    # print("", file=sys.stderr)
+    # settings.print_settings()
+
+    # print alignment statistics
+    ortholog_report = summary.report("output", dir_out, homolog_stats)
     print(ortholog_report)
     summary.write_msas(args.wrap)
     run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
+
+    supermatrix = Supermatrix(dir_out)
+    supermatrix.partitions_from_summary(summary, dir_out)
 
     with open(dir_out + LOG_PATH, "a") as log_file:
         ortholog_report = ortholog_report.replace("\33[0m", "")
