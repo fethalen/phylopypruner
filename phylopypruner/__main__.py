@@ -280,6 +280,9 @@ def file_pairs_from_directory(directory):
     if not os.path.isdir(directory):
         report.error("input directory {} does not exist".format(directory))
 
+    report.progress_bar("fetching files from directory")
+    print("", file=sys.stderr)
+
     # file_pairs; filename is key, values are tuple pairs where
     # MSA comes first and tree second
     file_pairs = dict()
@@ -416,13 +419,13 @@ def parse_args():
                              missing")
     group.add_argument("--min-otu-occupancy",
                        metavar="OCCUPANCY",
-                       default=0.1,
+                       default=None,
                        type=float,
                        help="do not include OTUs with less occupancy than \
                        this")
     group.add_argument("--min-gene-occupancy",
                        metavar="OCCUPANCY",
-                       default=0.1,
+                       default=None,
                        type=float,
                        help="discard output alignments with less occupancy \
                        than this")
@@ -544,15 +547,6 @@ run, overwrite these files?", display=False)):
         report.error("input directory {} does not exist".format(dir_in))
         sys.exit()
 
-    file_pairs = file_pairs_from_directory(dir_in)
-
-    no_of_file_pairs = len(file_pairs)
-    if no_of_file_pairs < 1:
-        # no file pairs found in the provided directory
-        report.error("no file pairs were found in the provided directory")
-        shutil.rmtree(dir_out)
-        sys.exit()
-
     # count and report the number of threads used
     threads_available = cpu_count()
     if args.threads:
@@ -565,6 +559,15 @@ run, overwrite these files?", display=False)):
     report.progress_bar("using {} out of {} available threads".format(
         threads, threads_available))
     print("", file=sys.stderr)
+
+    file_pairs = file_pairs_from_directory(dir_in)
+
+    no_of_file_pairs = len(file_pairs)
+    if no_of_file_pairs < 1:
+        # no file pairs found in the provided directory
+        report.error("no file pairs were found in the provided directory")
+        shutil.rmtree(dir_out)
+        sys.exit()
 
     # For debugging purposes only (gets rid of multiprocessing).
     # for pair in file_pairs:
@@ -628,6 +631,13 @@ more relaxed settings")
     if args.jackknife:
         decontamination.jackknife(summary, dir_out, threads)
 
+    ortholog_report = summary.report("output", dir_out, homolog_stats)
+    summary.write_msas(args.wrap)
+
+    # concatenate output alignments into a supermatrix
+    supermatrix = Supermatrix(dir_out)
+    supermatrix.partitions_from_summary(summary, dir_out)
+
     # print the output
     path_out = report.print_path(dir_out, display=False)
     report.progress_bar("wrote output to:\n  {}\n".format(path_out))
@@ -637,13 +647,8 @@ more relaxed settings")
     # settings.print_settings()
 
     # print alignment statistics
-    ortholog_report = summary.report("output", dir_out, homolog_stats)
     print(ortholog_report)
-    summary.write_msas(args.wrap)
     run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
-
-    supermatrix = Supermatrix(dir_out)
-    supermatrix.partitions_from_summary(summary, dir_out)
 
     with open(dir_out + LOG_PATH, "a") as log_file:
         ortholog_report = ortholog_report.replace("\33[0m", "")

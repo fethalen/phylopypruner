@@ -356,6 +356,7 @@ def trim_divergent(node, divergence_threshold=0.25, include=[]):
 
     for leaf in node.iter_leaves():
         if leaf.otu() in otus_above_threshold:
+            print(leaf.otu())
             nodes_to_remove.add(leaf)
             otus_removed += 1
 

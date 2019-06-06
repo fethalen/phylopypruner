@@ -132,7 +132,8 @@ class Summary(object):
         above_gene_threshold = list()
 
         for log in self.logs:
-            otus.update(log.msa.otus())
+            for msa in log.msas_out:
+                otus.update(msa.otus())
 
         no_of_otus = len(otus)
 
@@ -527,22 +528,22 @@ concatenated alignment length....:{:10d}""".format(
                 len(str(homolog_stats[10]))
                 ) + 1
 
-            title = "Alignment statistics:\n  " +\
+            header = "Alignment statistics:\n  " +\
                     underline("{:33s}  {:{}s}   {:{}s}".format(
                         name, "Input", COLUMN_WIDTH, "Output", COLUMN_WIDTH))
             report = """
 {}
-  # of alignments                   {:{}d}   {:{}d}
-  # of sequences                    {:{}d}   {:{}d}
-  # of OTUs                         {:{}d}   {:{}d}
-  avg # of sequences / alignment    {:{}d}   {:{}d}
-  avg # of OTUs                     {:{}d}   {:{}d}
-  avg sequence length (ungapped)    {:{}d}   {:{}d}
-  shortest sequence (ungapped)      {:{}d}   {:{}d}
-  longest sequence (ungapped)       {:{}d}   {:{}d}
-  % missing data                    {:{}.2f}   {:{}.2f}
-  concatenated alignment length     {:{}d}   {:{}d}  """.format(
-      title,
+  No. of alignments                 {:{}d}   {:{}d}
+  No. of sequences                  {:{}d}   {:{}d}
+  No. of OTUs                       {:{}d}   {:{}d}
+  Avg no. of sequences / alignment  {:{}d}   {:{}d}
+  Avg no. of OTUs                   {:{}d}   {:{}d}
+  Avg sequence length (ungapped)    {:{}d}   {:{}d}
+  Shortest sequence (ungapped)      {:{}d}   {:{}d}
+  Longest sequence (ungapped)       {:{}d}   {:{}d}
+  Percent missing data              {:{}.2f}   {:{}.2f}
+  Concatenated alignment length     {:{}d}   {:{}d}  """.format(
+      header,
       homolog_stats[1], COLUMN_WIDTH, no_of_alignments, COLUMN_WIDTH,
       homolog_stats[2], COLUMN_WIDTH, no_of_seqs, COLUMN_WIDTH,
       homolog_stats[3], COLUMN_WIDTH, no_of_otus, COLUMN_WIDTH,
@@ -648,7 +649,7 @@ def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
 
     plot_figure = plt.figure()
     axes = plot_figure.add_subplot(111)
-    plot = axes.matshow(matrix, cmap="viridis_r", interpolation="nearest")
+    plot = axes.matshow(matrix, cmap="ocean_r", interpolation="nearest")
     plot_figure.colorbar(plot)
 
     # set default plot size and font size
