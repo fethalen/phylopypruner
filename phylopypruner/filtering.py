@@ -193,8 +193,8 @@ def trim_zero_len_branches(node, min_len=1e-7):
     dists = node.distances()
     for pair in dists:
         if dists[pair] < min_len:
-            leaves_to_remove.add(pair[0], pair[1])
-
+            leaves_to_remove.add(pair[0])
+            leaves_to_remove.add(pair[1])
     return leaves_to_remove
 
 def collapse_nodes(node, threshold):

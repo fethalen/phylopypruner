@@ -1,10 +1,13 @@
 "Module for working with supermatrices."
 
 from __future__ import absolute_import
+from __future__ import print_function
 import os
+from sys import stderr
 from phylopypruner.gene_partition import GenePartition
 from phylopypruner.msa import MultipleSequenceAlignment
 from phylopypruner.sequence import Sequence
+from phylopypruner.report import progress_bar
 from phylopypruner import fasta
 SUPERMATRIX_FILENAME = "/supermatrix.fas"
 PARTITION_FILENAME = "/partition_data.txt"
@@ -116,6 +119,9 @@ class Supermatrix(object):
         """
         start = 1
         otus = set()
+
+        progress_bar("concatenating output alignments into a supermatrix")
+        print("", file=stderr)
 
         # Infer whether the data consists of nucleotides or amino acids by
         # looking at the first log's input MSA.
