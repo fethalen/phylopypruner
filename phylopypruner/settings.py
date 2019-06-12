@@ -133,7 +133,7 @@ class Settings(object):
     @property
     def include(self):
         "A list of taxa to include, despite being deemed problematic."
-        return self._exclude
+        return self._include
 
     @include.setter
     def include(self, value):
