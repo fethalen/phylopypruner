@@ -1,7 +1,3 @@
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-public-methods
-# pylint: disable=too-many-branches
-
 "Module for working with a phylogenetic tree."
 
 import re

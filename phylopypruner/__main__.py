@@ -288,8 +288,6 @@ def file_pairs_from_directory(directory):
     file_pairs = dict()
 
     for file in os.listdir(directory):
-        # filename, extension = os.path.splitext(file)
-        # extension = extension.lower()
         extension = os.path.splitext(file)[1]
         extension = extension.lower()
         filename = file.split(os.extsep)[0]
@@ -568,13 +566,6 @@ run, overwrite these files?", display=False)):
         report.error("no file pairs were found in the provided directory")
         shutil.rmtree(dir_out)
         sys.exit()
-
-    # For debugging purposes only (gets rid of multiprocessing).
-    # for pair in file_pairs:
-    #     print(pair)
-    #     settings.fasta_file, settings.nw_file = pair
-    #     _get_orthologs(settings, dir_in, dir_out)
-    # sys.exit()
 
     for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
         message = "processing MSAs and trees ({}/{})".format(index,
