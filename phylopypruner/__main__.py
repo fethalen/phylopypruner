@@ -173,7 +173,7 @@ def _run(settings, msa, tree):
 
     # trim zero length branches
     if settings.trim_zero_len:
-        filtering.trim_zero_len_branches(tree, settings.trim_zero_len)
+        log.ultra_short_branches = filtering.trim_zero_len_branches(tree, settings.trim_zero_len)
 
     if filtering.too_few_otus(tree, settings.min_taxa):
         return log
@@ -192,7 +192,7 @@ def _run(settings, msa, tree):
 
     # trim divergent sequences
     if settings.trim_divergent:
-        log.divergent = decontamination.trim_divergent(
+        log.divergent, log.divergent_removed = decontamination.trim_divergent(
             tree, settings.trim_divergent, settings.include)
 
     if filtering.too_few_otus(tree, settings.min_taxa):
@@ -598,9 +598,8 @@ more relaxed settings")
         if args.include:
             otus_to_exclude = [otu for otu in otus_to_exclude if not otu in
                                args.include]
-        summary, ortholog_report = decontamination.prune_by_exclusion(
-            summary, otus_to_exclude, dir_out, threads, homolog_stats)
-
+        summary = decontamination.prune_by_exclusion(
+            summary, otus_to_exclude, dir_out, threads)
     # Get OTUs and genes to exclude based on their occupancy.
     otus_to_exclude, genes_to_exclude = summary.matrix_occupancy(
         dir_out, args.min_otu_occupancy, args.min_gene_occupancy, args.no_plot)
@@ -633,13 +632,13 @@ more relaxed settings")
     path_out = report.print_path(dir_out, display=False)
     report.progress_bar("wrote output to:\n  {}\n".format(path_out))
 
-    # print settings
-    # print("", file=sys.stderr)
-    # settings.print_settings()
-
     # print alignment statistics
     print(ortholog_report)
     run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
+
+    # print settings
+    # print("", file=sys.stderr)
+    # settings.print_settings()
 
     with open(dir_out + LOG_PATH, "a") as log_file:
         ortholog_report = ortholog_report.replace("\33[0m", "")

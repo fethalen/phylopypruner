@@ -209,7 +209,7 @@ def exclude_genes(summary, msas):
 
     return summary
 
-def prune_by_exclusion(summary, otus, dir_out, threads, homolog_stats):
+def prune_by_exclusion(summary, otus, dir_out, threads):
     """Exclude the OTUs within the provided list of OTUs from the masked trees
     within summary, perform paralogy pruning and output statistics and
     alignments for each ortholog recovered.
@@ -258,9 +258,8 @@ def prune_by_exclusion(summary, otus, dir_out, threads, homolog_stats):
 
     pool.terminate()
     print("", file=sys.stderr)
-    summary_report = summary_out.report(excluded_str, dir_out, homolog_stats)
 
-    return summary_out, summary_report
+    return summary_out
 
 def trim_freq_paralogs(factor, paralog_freq):
     """Returns a set of OTUs with a paralogy frequency that is factor times
@@ -364,9 +363,10 @@ def trim_divergent(node, divergence_threshold=0.25, include=[]):
             if otu in nodes_to_remove:
                 nodes_to_remove.remove(otu)
 
+    removed = copy.copy(nodes_to_remove)
     node.remove_nodes(nodes_to_remove)
 
-    return otus_above_threshold
+    return otus_above_threshold, removed
 
 def score_monophyly(summary, taxonomic_groups, dir_out):
     """Takes a Summary object, a list of TaxonomicGroup objects, and the path

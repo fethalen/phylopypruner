@@ -41,6 +41,8 @@ class Log(object):
         self._divergent = []
         self._trimmed_seqs = []
         self._lbs_removed = []
+        self._divergent_removed = []
+        self._ultra_short_branches = []
         self._monophylies_masked = []
         self._orthologs = []
         self._paralogs = []
@@ -203,6 +205,31 @@ class Log(object):
     @lbs_removed.setter
     def lbs_removed(self, value):
         self._lbs_removed = value
+
+    @property
+    def divergent_removed(self):
+        """
+        A list of nodes that were removed due to belonging to an OTU which was
+        flagged as being divergent. Unlike 'divergent', this is a list of nodes
+        that were removed and not OTUs.
+        """
+        return self._divergent_removed
+
+    @divergent_removed.setter
+    def divergent_removed(self, value):
+        self._divergent_removed = value
+
+    @property
+    def ultra_short_branches(self):
+        """
+        A list of branches that were removed due to being below the short
+        sequence threshold.
+        """
+        return self._ultra_short_branches
+
+    @ultra_short_branches.setter
+    def ultra_short_branches(self, value):
+        self._ultra_short_branches = value
 
     @property
     def orthologs(self):
