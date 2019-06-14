@@ -184,8 +184,9 @@ def prune_long_branches(node, factor):
         if node.distance_to(leaf) > threshold:
             leaves_to_remove.add(leaf)
 
+    removed = copy.copy(leaves_to_remove)
     node.remove_nodes(leaves_to_remove)
-    return leaves_to_remove
+    return removed
 
 def trim_zero_len_branches(node, min_len=1e-7):
     leaves_to_remove = set()
@@ -195,7 +196,10 @@ def trim_zero_len_branches(node, min_len=1e-7):
         if dists[pair] < min_len:
             leaves_to_remove.add(pair[0])
             leaves_to_remove.add(pair[1])
-    return leaves_to_remove
+
+    removed = copy.copy(leaves_to_remove)
+    node.remove_nodes(leaves_to_remove)
+    return removed
 
 def collapse_nodes(node, threshold):
     """

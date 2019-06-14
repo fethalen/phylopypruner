@@ -10,24 +10,20 @@ from textwrap import wrap
 from collections import defaultdict
 try:
     import matplotlib
-    matplotlib.use("agg")
     import matplotlib.pyplot as plt
     from matplotlib.pyplot import figure as fig
-    import matplotlib.pylab as pylab
     MATPLOTLIB = True
 except ImportError:
     report.tip("install Matplotlib (https://matplotlib.org/) to get a barplot \
 of the paralog frequency")
     MATPLOTLIB = False
-HAVE_DISPLAY = "DISPLAY" in os.environ
-if not HAVE_DISPLAY:
-    report.warning("no display found; can't generate plot")
-    MATPLOTLIB = False
+if not "DISPLAY" in os.environ:
+    matplotlib.use("agg")
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUM_HEADER = "id;alignments;sequences;otus;meanSequences;meanOtus;meanSeqLen;\
 shortestSeq;longestSeq;pctMissingData;catAlignmentLen\n"
 SUM_PATH = "/supermatrix_stats.csv"
-OCCUPANCY_PLOT_FILE ="/occupancy_matrix.png"
+OCCUPANCY_PLOT_FILE = "/occupancy_matrix.png"
 FREQ_PLOT_FILE = "/paralogy_freq_plot.png"
 FREQ_CSV_FILE = "/otu_stats.csv"
 GAP_CHARACTERS = {"-", "?", "x"}
@@ -472,6 +468,7 @@ concatenated alignment length....:{:10d}""".format(
         no_of_seqs = 0
         seq_lens = 0
         cat_alignment_len = 0
+        method_stats = [0, 0, 0, 0, 0]
         pct_missing = 0.0
         shortest = None
         longest = None
@@ -496,6 +493,12 @@ concatenated alignment length....:{:10d}""".format(
 
         no_of_otus = len(otus)
         for log in self.logs:
+            method_stats[0] += len(log.trimmed_seqs)
+            method_stats[1] += len(log.lbs_removed)
+            method_stats[2] += len(log.ultra_short_branches)
+            method_stats[3] += len(log.divergent_removed)
+            method_stats[4] += log.collapsed_nodes
+
             for msa in log.msas_out:
                 otus_missing = no_of_otus - len(list(msa.otus()))
                 pct_missing += msa.missing_data(otus_missing)
@@ -531,6 +534,9 @@ concatenated alignment length....:{:10d}""".format(
             header = "Alignment statistics:\n  " +\
                     underline("{:33s}  {:{}s}   {:{}s}".format(
                         name, "Input", COLUMN_WIDTH, "Output", COLUMN_WIDTH))
+            methods_header = "Methods summary:\n  " +\
+                    underline("{:33s}           {:{}s}   {:{}s}".format(
+                        name, "Total", COLUMN_WIDTH, "% of input", COLUMN_WIDTH))
             report = """
 {}
   No. of alignments                 {:{}d}   {:{}d}
@@ -541,8 +547,15 @@ concatenated alignment length....:{:10d}""".format(
   Avg sequence length (ungapped)    {:{}d}   {:{}d}
   Shortest sequence (ungapped)      {:{}d}   {:{}d}
   Longest sequence (ungapped)       {:{}d}   {:{}d}
-  Percent missing data              {:{}.2f}   {:{}.2f}
-  Concatenated alignment length     {:{}d}   {:{}d}  """.format(
+  % missing data                    {:{}.2f}   {:{}.2f}
+  Concatenated alignment length     {:{}d}   {:{}d}
+
+{}
+  No. of short sequences removed            {:{}d}  {:{}.2f}
+  No. of long branches removed              {:{}d}  {:{}.2f}
+  No. of ultrashort distance pairs removed  {:{}d}  {:{}.2f}
+  No. of divergent sequences removed        {:{}d}  {:{}.2f}
+  No. of collapsed nodes                    {:{}d}  {:{}.2f}""".format(
       header,
       homolog_stats[1], COLUMN_WIDTH, no_of_alignments, COLUMN_WIDTH,
       homolog_stats[2], COLUMN_WIDTH, no_of_seqs, COLUMN_WIDTH,
@@ -553,7 +566,13 @@ concatenated alignment length....:{:10d}""".format(
       homolog_stats[7], COLUMN_WIDTH, shortest, COLUMN_WIDTH,
       homolog_stats[8], COLUMN_WIDTH, longest, COLUMN_WIDTH,
       homolog_stats[9], COLUMN_WIDTH, missing_data, COLUMN_WIDTH,
-      homolog_stats[10], COLUMN_WIDTH, cat_alignment_len, COLUMN_WIDTH)
+      homolog_stats[10], COLUMN_WIDTH, cat_alignment_len, COLUMN_WIDTH,
+      methods_header,
+      method_stats[0], COLUMN_WIDTH, 100 * method_stats[0] / homolog_stats[2], COLUMN_WIDTH,
+      method_stats[1], COLUMN_WIDTH, 100 * method_stats[1] / homolog_stats[2], COLUMN_WIDTH,
+      method_stats[2], COLUMN_WIDTH, 100 * method_stats[2] / homolog_stats[2], COLUMN_WIDTH,
+      method_stats[3], COLUMN_WIDTH, 100 * method_stats[3] / homolog_stats[2], COLUMN_WIDTH,
+      method_stats[4], COLUMN_WIDTH, 100 * method_stats[4] / homolog_stats[2], COLUMN_WIDTH)
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
             title,
@@ -653,17 +672,17 @@ def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
     plot_figure.colorbar(plot)
 
     # set default plot size and font size
-    width = 8
-    height = 8
-    xfont = 7
-    yfont = 7
+    width = 3
+    height = 3
+    xfont = 3
+    yfont = 3
 
     # allow for occupancy plots of various sizes
-    if len(xlabels) > 100 or len(ylabels) > 100:
+    if len(xlabels) > 100:
         width = 0.05 * len(xlabels)
-        xfont = 3
+
+    if len(ylabels) > 100:
         height = 0.05 * len(ylabels)
-        yfont = 3
 
     axes.set_title("Occupancy Matrix")
     axes.xaxis.set_ticks_position("bottom")

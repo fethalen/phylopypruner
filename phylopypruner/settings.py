@@ -2,8 +2,8 @@
 
 from phylopypruner import report
 
-ON = u"{}\u2713{}".format(report.GREEN, report.NORMAL)
-OFF = u"{}x{}".format(report.RED, report.NORMAL)
+ON = u"{}\u25cf{}".format(report.NORMAL, report.NORMAL)
+OFF = u"{}\u25cb{}".format(report.NORMAL, report.NORMAL)
 DEFAULT = "({}default{})".format(report.YELLOW, report.NORMAL)
 MISSING = report.underline("   ")
 
@@ -238,7 +238,7 @@ Parameters used:
         """TODO: write in past or present?
         """
         if self.min_len:
-            len_str = report.colorize(self.min_len, "cyan")
+            len_str = self.min_len
         else:
             len_str = MISSING
         if self.min_support:
@@ -248,42 +248,45 @@ Parameters used:
 
         settings_report = u"""Parameters \
 ({} = used, {} = unused, SDs = standard deviations):
-{} remove sequences shorter than {} bases {}
-{} remove branches longer than {} SDs of all branches {}
-{} collapse branches with less support than {}% into polytomies {}
-{} if 2+ sequences from a single OTU form a clade, keep the {} {}
-{} OTUs used for outgroup rooting: {}
-{} rooting used if outgroup rooting was off or failed: {}
-{} the {} method was used for paralogy pruning {}
-{} The Paralogy frequency threshold.....: {}
-{} Trim divergent percentage........: {} {}
-{} these OTUs were included, even if deemed problematic: {}
-{} always exclude the following OTUs: {}
-{} output alignments with fewer than {} sequences were discarded {}
-{} taxon jackknifing is {}performed {}""".format(
-    ON, OFF,
-    ON if self.min_len else OFF, len_str, DEFAULT if not self.min_len
-    else "",
-    ON if self.trim_lb else OFF, self.trim_lb if self.trim_lb else MISSING,
-    DEFAULT if not self.trim_lb else "",
-    ON if self.min_support else OFF, support_str, DEFAULT if not
-    self.min_support else "",
-    ON,
-    "sequence with the \n      shortest pairwise distance to its sister" if
-    self.mask == "pdist" else "longest sequence",
-    DEFAULT if self.mask == "pdist" else "",
-    ON if self.outgroup else OFF, self.outgroup,
-    ON if self.root else OFF, self.root,
-    ON, self.prune, DEFAULT if self.prune
-    == "LS" else "",
-    ON if self.trim_freq_paralogs else OFF, self.trim_freq_paralogs,
-    ON if self.trim_divergent else OFF, self.trim_divergent, DEFAULT if not
-    self.trim_divergent else "",
-    ON if self.include else OFF, self.include,
-    ON if self.exclude else OFF, self.exclude,
-    ON, self.min_taxa, DEFAULT if
-    self.min_taxa == 4 else "",
-    ON if self.jackknife else OFF,
-    "" if self.jackknife else "not ",
-    DEFAULT if not self.jackknife else "")
+  {} Remove sequences shorter than {} bases {}
+  {} Remove branches longer than {} SDs of all branches {}
+  {} Collapse branches with less support than {}% into polytomies {}
+  {} If 2+ sequences from a single OTU form a clade, keep the {} {}
+  {} These OTUs were used for outgroup rooting: {} {}
+  {} Alternative rooting method: {} {}
+  {} The {} method was used for paralogy pruning {}
+  {} Paralogy frequency threshold {} {}
+  {} Divergence threshold: {} {}
+  {} These OTUs were included, even if deemed problematic: {} {}
+  {} Always exclude the following OTUs: {}
+  {} Output alignments with fewer than {} sequences were discarded {}
+  {} Taxon jackknifing is {}performed {}""".format(
+      ON, OFF,
+      ON if self.min_len else OFF, len_str, DEFAULT if not self.min_len
+      else "",
+      ON if self.trim_lb else OFF, self.trim_lb if self.trim_lb else MISSING,
+      DEFAULT if not self.trim_lb else "",
+      ON if self.min_support else OFF, support_str, DEFAULT if not
+      self.min_support else "",
+      ON,
+      "sequence with the \n      shortest pairwise distance to its sister" if
+      self.mask == "pdist" else "longest sequence",
+      DEFAULT if self.mask == "pdist" else "",
+      ON if self.outgroup else OFF, self.outgroup, DEFAULT if not self.outgroup
+      else "",
+      ON if self.root else OFF, self.root, DEFAULT if not self.root else "",
+      ON, self.prune, DEFAULT if self.prune
+      == "LS" else "",
+      ON if self.trim_freq_paralogs else OFF, self.trim_freq_paralogs, DEFAULT
+      if not self.trim_freq_paralogs else "",
+      ON if self.trim_divergent else OFF, self.trim_divergent, DEFAULT if not
+      self.trim_divergent else "",
+      ON if self.include else OFF, self.include, DEFAULT if not self.include
+      else "",
+      ON if self.exclude else OFF, self.exclude,
+      ON, self.min_taxa, DEFAULT if
+      self.min_taxa == 4 else "",
+      ON if self.jackknife else OFF,
+      "" if self.jackknife else "not ",
+      DEFAULT if not self.jackknife else "")
         print(settings_report)
