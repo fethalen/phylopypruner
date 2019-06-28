@@ -29,7 +29,6 @@ def supports_color():
 
 if supports_color():
     COLOR_SUPPORT = True
-# colors
 NORMAL = "\033[0m"
 RED = "\033[31m"
 GREEN = "\033[32m"
@@ -37,7 +36,6 @@ YELLOW = "\033[33m"
 BLUE = "\033[34m"
 PURPLE = "\033[35m"
 CYAN = "\033[36m"
-# styles
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 
@@ -58,7 +56,7 @@ def warning(message, display=True):
     warning_message : str
         The formatted string which is also printed to stderr.
     """
-    warning_message = "{}warning: {}{}".format(PURPLE, NORMAL, message)
+    warning_message = "{}warning: {}{}".format(YELLOW, NORMAL, message)
     if display:
         print(warning_message, file=sys.stderr)
     return warning_message
@@ -107,7 +105,6 @@ def tip(message, display=True):
         print(tip_message, file=sys.stderr)
     return tip_message
 
-
 def yes_or_no(question):
     """Takes a question as an input and prompts the user for a yes or no. Returns
     True if the answer is yes and False if the answer is no.
@@ -124,7 +121,7 @@ def yes_or_no(question):
     """
     # make input work the same way in both Python 2 and 3
     answer = input(question + " (y/n): ".lower().rstrip())
-    while not (answer == "y" or answer == "n"):
+    while not answer in ("y", "n"):
         answer = input("please answer yes or no" + " (y/n): ".lower().rstrip())
     return answer[0] == "y"
 
@@ -152,7 +149,7 @@ def progress_bar(message, replace=True, display=True):
     progress : str
         Your message with a greater than sign ('>') prepended to it.
     """
-    progress = "{} {}".format(colorize(">", "green"), message)
+    progress = "{} {}".format(colorize(u">", "green"), message)
     if display and replace:
         sys.stdout.flush()
         print(progress, file=sys.stderr, end="\r")
@@ -176,10 +173,9 @@ def print_path(path, display=True):
     path_in_blue : str
       The provided path in blue.
     """
-    path_in_blue = colorize(path, "blue")
     if display:
-        print(path_in_blue, file=sys.stderr)
-    return path_in_blue
+        print(path, file=sys.stderr)
+    return path
 
 def underline(text):
     """Returns the provided text with an underline.
@@ -258,9 +254,34 @@ def colorize(text, color):
     colored_text : str
       The provided text in color, given that colors are supported.
     """
-    palette = {"red": RED, "green": GREEN, "yellow": YELLOW, "blue": BLUE,
-               "purple": PURPLE, "cyan": CYAN}
+    palette = {"red": RED,
+               "green": GREEN,
+               "yellow": YELLOW,
+               "blue": BLUE,
+               "purple": PURPLE,
+               "cyan": CYAN}
     colored_text = "{}{}{}".format(palette[color], text, NORMAL)
     if COLOR_SUPPORT:
         return colored_text
     return text
+
+def format_otus(otus):
+    """Returns the provided OTUs as a formatted string, where each OTU in the
+    list is separated by a comma and a space (', '). Also add a newline and 8
+    spaces to string. If the list of OTUs is empty, then return 'None'.
+
+    Parameters
+    ----------
+    otus : list
+      List of the OTUs.
+
+    Returns
+    -------
+    otus_as_str : str
+      Formatted string of the provided OTUs or 'None' if OTUs is empty.
+    """
+    if not otus:
+        otus_as_str = "None"
+    else:
+        otus_as_str = "\n" + " " * 8 + ", ".join([otu for otu in otus])
+    return otus_as_str

@@ -8,12 +8,9 @@
 ##   ./orthofinder2phylopypruner.bash <species_list> <MSA directory>
 ##
 ## About:
-##   This script will format the output of OrthoFinder into a format that is
-##   suitable for PhyloPyPruner. OrthoFinder should be run using the flags '-os -M
-##   msa'. Output MSAs from OrthoFinder will be stored in the
-##   'Single_Copy_Orthologue_Sequences' directory. Use this directory as your MSA
-##   directory. Also provide a list of species names, separated by line, within a
-##   file. See usage instructions below.
+## This script will format the output of OrthoFinder into a format that is
+## suitable for PhyloPyPruner. 'OTU_identifier' will be converted into
+## 'OTU@identifier'.
 ##
 ##
 ## What will happen to my files?
@@ -33,23 +30,64 @@
 
 set -euo pipefail
 
-# Print instructions.
-usage() {
+readonly ARGS=( "$@" )
+readonly NO_OF_ARGS="${#}"
+readonly FASTA_EXT=".fa"
+readonly NEWICK_EXT=".tre"
+
+# Print usage instructions.
+print_usage_instructions() {
   [ "$*" ] && echo "$0: $*"
   sed -n '/^##/,/^$/s/^## \{0,1\}//p' "$0"
   exit 2
 } 2>/dev/null
 
-if [[ "${#}" != 2 || "${1}" == "[-]-h[elp]" ]]; then
-  usage "$@"
-  exit 1
-fi
+# Print usage instructions and exit if the number of arguments is not 2.
+parse_args() {
+  if [[ ${NO_OF_ARGS} != 2 || "${ARGS[0]}" =~ -?-h(elp)? ]]
+  then
+    print_usage_instructions
+    exit 1
+  fi
+}
 
-readonly SPECIES_LIST=$1
-readonly TARGET_DIR=$2
+# Takes the path to a directory and a list of species as an input.
+rename_alignments() {
+  local species_list=$1
+  local target_dir=$2
 
-find "${TARGET_DIR}" -type f -name '*.fa' | while read -r filename; do
-  while read -r otu; do
-    sed -i "s/${otu}_/${otu}@/g" "${filename}"
-  done < "${SPECIES_LIST}"
-done
+  find "${target_dir}" -type f -name "*${FASTA_EXT}" \
+    | while read -r filename
+  do
+    while read -r otu
+    do
+      sed -i "s/>${otu}_/>${otu}@/g" "${filename}"
+    done < "${species_list}"
+  done
+}
+
+rename_trees() {
+  local species_list=$1
+  local target_dir=$2
+
+  find "${target_dir}" -type f -name "*${NEWICK_EXT}" \
+    | while read -r filename
+  do
+    while read -r otu
+    do
+      sed -i "s/${otu}_/(${otu}@/g" "${filename}"
+    done < "${species_list}"
+  done
+}
+
+main() {
+  parse_args
+
+  local species_list=${ARGS[0]}
+  local target_dir=${ARGS[1]}
+
+  rename_alignments ${species_list} ${target_dir}
+  rename_trees ${species_list} ${target_dir}
+}
+
+main
