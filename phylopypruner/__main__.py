@@ -600,6 +600,7 @@ more relaxed settings")
                                args.include]
         summary = decontamination.prune_by_exclusion(
             summary, otus_to_exclude, dir_out, threads)
+
     # Get OTUs and genes to exclude based on their occupancy.
     otus_to_exclude, genes_to_exclude = summary.matrix_occupancy(
         dir_out, args.min_otu_occupancy, args.min_gene_occupancy, args.no_plot)
@@ -632,18 +633,21 @@ more relaxed settings")
     path_out = report.print_path(dir_out, display=False)
     report.progress_bar("wrote output to:\n  {}\n".format(path_out))
 
+    # print settings
+    print("", file=sys.stderr)
+    settings.print_settings()
+
     # print alignment statistics
     print(ortholog_report)
     run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
-
-    # print settings
-    # print("", file=sys.stderr)
-    # settings.print_settings()
 
     with open(dir_out + LOG_PATH, "a") as log_file:
         ortholog_report = ortholog_report.replace("\33[0m", "")
         ortholog_report = ortholog_report.replace("\33[4m", "")
         log_file.write("\n" + ortholog_report)
+        log_file.write(
+            "\n\nReuse these parameters:\n" +
+            " ".join([arg for arg in sys.argv]))
         log_file.write("\n" + run_time)
 
 if __name__ == "__main__":

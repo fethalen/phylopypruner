@@ -6,10 +6,8 @@ import sys
 import copy
 import datetime
 from collections import defaultdict
-from itertools import combinations
 from functools import partial
 from multiprocessing import Pool
-from multiprocessing import cpu_count
 from phylopypruner import filtering
 from phylopypruner import report
 from phylopypruner.report import display_otus
@@ -90,13 +88,14 @@ def jackknife(summary, dir_out, threads):
         report.progress_bar(message)
         resamples.add(resample_summary)
     pool.terminate()
-    if len(taxa) < 1:
+
+    if not taxa:
         report.progress_bar("no OTUs left for taxon jackknifing\n")
     else:
         print("", file=sys.stderr)
 
-    for summary in resamples:
-        excluded = summary.logs[0].settings.exclude
+    for resample in resamples:
+        excluded = resample.logs[0].settings.exclude
         summary.report("{}_excluded".format(excluded), dir_out)
 
 def _mean(data):
@@ -393,10 +392,10 @@ def score_monophyly(summary, taxonomic_groups, dir_out):
     otu_scores_ordered = list()
     group_scores = defaultdict(int)
     row = defaultdict(int)
-    group_names = set([group.name for group in taxonomic_groups])
+    group_names = {group.name for group in taxonomic_groups}
     trees = set()
 
-    print("{}==>{} calculating monophyly scores".format("\033[34m", "\033[0m"))
+    report.progress_bar("calculating monophyly scores")
 
     # compile sets of trees and OTUs
     for log in summary.logs:
@@ -472,8 +471,11 @@ def score_monophyly(summary, taxonomic_groups, dir_out):
 
     # write the results to a CSV file.
     with open(dir_out + SUBCLADE_STATS_FILE, "w") as subclades_file:
-        subclades_file.write("otu;monophylyScore;" + ";".join([group for group in group_names]) +
-                "\n")
+        subclades_file.write(
+            "otu;monophylyScore;" +
+            ";".join([group for group in group_names]) +
+            "\n")
         for row in scores_otu_row:
-            subclades_file.write(";".join([str(item) for item in row]) +
-                    "\n")
+            subclades_file.write(
+                ";".join([str(item) for item in row]) +
+                "\n")

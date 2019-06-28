@@ -1,24 +1,22 @@
 "Module for working with collections of Log objects."
 
 from __future__ import absolute_import
-import os, sys
+import os
 import datetime
+from collections import defaultdict
 from phylopypruner.report import underline
 from phylopypruner import fasta
 from phylopypruner import report
-from textwrap import wrap
-from collections import defaultdict
 try:
-    import matplotlib
+    import matplotlib as mpl
+    if not "DISPLAY" in os.environ:
+        mpl.use("agg")
     import matplotlib.pyplot as plt
-    from matplotlib.pyplot import figure as fig
     MATPLOTLIB = True
 except ImportError:
-    report.tip("install Matplotlib (https://matplotlib.org/) to get a barplot \
-of the paralog frequency")
+    report.tip("install Matplotlib (https://matplotlib.org/) to generate \
+plots")
     MATPLOTLIB = False
-if not "DISPLAY" in os.environ:
-    matplotlib.use("agg")
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUM_HEADER = "id;alignments;sequences;otus;meanSequences;meanOtus;meanSeqLen;\
 shortestSeq;longestSeq;pctMissingData;catAlignmentLen\n"
@@ -27,10 +25,13 @@ OCCUPANCY_PLOT_FILE = "/occupancy_matrix.png"
 FREQ_PLOT_FILE = "/paralogy_freq_plot.png"
 FREQ_CSV_FILE = "/otu_stats.csv"
 GAP_CHARACTERS = {"-", "?", "x"}
+RESOLUTION = 300
+XFONT_SIZE = 2.5
+YFONT_SIZE = 2.5
 
 class Summary(object):
     "Represents a collection of Log objects from previous runs."
-    def __init__(self, dir_out=None):
+    def __init__(self):
         self._logs = []
 
     def __len__(self):
@@ -51,7 +52,7 @@ class Summary(object):
     def logs(self, value):
         self._logs = value
 
-    def remove_gap_only_columns(self, min_len=None):
+    def remove_gap_only_columns(self):
         """Iterate over the output alignments within this summary and remove
         positions where no residues are present.
 
@@ -242,7 +243,7 @@ class Summary(object):
         paralog_freq = defaultdict(int) # key is OTU, value is no. of paralogs
         presence = defaultdict(int) # key is OTU, value is
         divergent = defaultdict(int) # key is OTU, divergent sequences is value
-        first_iteration = True
+
         for log in self.logs:
             otus_in_alignment = log.msa.otus()
             for otu in otus_in_alignment:
@@ -284,10 +285,10 @@ class Summary(object):
             return paralog_freq
 
         try:
-            plt.barh(y=indexes, color="black", edgecolor="black", width=freq, alpha=0.5)
+            plt.barh(y=indexes, color="c0", width=freq, alpha=0.5)
         except TypeError:
             report.error("plotting function is lacking indices, try updating \
-Matplotlib or use the flag '--no-plot'")
+mpl or use the flag '--no-plot'")
             return paralog_freq
         plt.yticks(list(indexes), otus)
         plt.ylabel("OTU")
@@ -298,10 +299,10 @@ Matplotlib or use the flag '--no-plot'")
                         color="red",
                         label="cutoff = {}".format(round(threshold, 3)),
                         linestyle="--")
-            plt.legend(loc='upper right', fontsize=14)
+            plt.legend(loc='upper right', fontsize=8)
         plot_figure = plt.gcf()
-        plot_figure.set_size_inches(12.0, len(otus) * 0.17)
-        plt.savefig(dir_out + FREQ_PLOT_FILE, dpi=300)
+        plot_figure.set_size_inches(12.8, len(otus) * 0.17)
+        plt.savefig(dir_out + FREQ_PLOT_FILE, dpi=RESOLUTION)
 
         return paralog_freq
 
@@ -319,7 +320,7 @@ Matplotlib or use the flag '--no-plot'")
         report : str
             Overview statistics of the summary.
         """
-        homolog_report, row, stats = self.homolog_alignment_stats("Input Alignments", "input")
+        row, stats = self.homolog_alignment_stats("Input Alignments", "input")
 
         with open(dir_out + SUM_PATH, "a") as sum_out_file:
             sum_out_file.write(row)
@@ -398,32 +399,6 @@ Matplotlib or use the flag '--no-plot'")
         if not longest:
             longest = 0
 
-        report = """
-{}
-{}
-# of alignments..................:{:10d}
-# of sequences...................:{:10d}
-# of OTUs........................:{:10d}
-avg # of sequences per alignment.:{:10d}
-avg # of OTUs....................:{:10d}
-avg sequence length (ungapped)...:{:10d}
-shortest sequence (ungapped).....:{:10d}
-longest sequence (ungapped)......:{:10d}
-% missing data...................:{:10.2f}
-concatenated alignment length....:{:10d}""".format(
-    name,
-    "-" * len(name),
-    no_of_alignments,
-    no_of_seqs,
-    no_of_otus,
-    avg_no_of_seqs,
-    avg_no_of_otus,
-    avg_seq_len,
-    shortest,
-    longest,
-    missing_data,
-    cat_alignment_len)
-
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
             title,
             no_of_alignments,
@@ -438,10 +413,10 @@ concatenated alignment length....:{:10d}""".format(
             cat_alignment_len)
 
         stats = [title, no_of_alignments, no_of_seqs, no_of_otus,
-                avg_no_of_seqs, avg_no_of_otus, avg_seq_len, shortest, longest,
-                missing_data, cat_alignment_len]
+                 avg_no_of_seqs, avg_no_of_otus, avg_seq_len, shortest, longest,
+                 missing_data, cat_alignment_len]
 
-        return report, row, stats
+        return row, stats
 
     def alignment_stats(self, name, title, homolog_stats=None):
         """Returns a report, in text, and a CSV-row of a set of statistics
@@ -464,86 +439,91 @@ concatenated alignment length....:{:10d}""".format(
         row : str
             A CSV-row where each column is separated by a semicolon, ';'.
         """
-        no_of_alignments = 0
-        no_of_seqs = 0
-        seq_lens = 0
-        cat_alignment_len = 0
-        method_stats = [0, 0, 0, 0, 0]
+
         pct_missing = 0.0
-        shortest = None
-        longest = None
         otus = set()
+        stats = {
+            "alignments": 0,
+            "sequences": 0,
+            "seq_lens": 0,
+            "cat_alignment_len": 0,
+            "short": 0,
+            "long": 0,
+            "ultrashort": 0,
+            "divergent": 0,
+            "shortest": 0,
+            "longest": 0,
+            "collapsed": 0,
+            "avg_no_of_seqs": 0,
+            "avg_seq_len": 0,
+            "no_of_otus": 0
+                }
 
         for log in self.logs:
             for msa in log.msas_out:
-                no_of_alignments += 1
+                stats["alignments"] += 1
                 otus.update(msa.otus())
-                cat_alignment_len += msa.alignment_len()
+                stats["cat_alignment_len"] += msa.alignment_len()
 
                 for sequence in msa.sequences:
-                    no_of_seqs += 1
+                    stats["sequences"] += 1
                     seq_len = len(sequence.ungapped())
-                    seq_lens += seq_len
+                    stats["seq_lens"] += seq_len
 
-                    if not shortest or shortest > seq_len:
-                        shortest = seq_len
+                    if stats["shortest"] == 0 or stats["shortest"] > seq_len:
+                        stats["shortest"] = seq_len
 
-                    if not longest or longest < seq_len:
-                        longest = seq_len
+                    if stats["longest"] < seq_len:
+                        stats["longest"] = seq_len
 
-        no_of_otus = len(otus)
+        stats["no_of_otus"] = len(otus)
+
         for log in self.logs:
-            method_stats[0] += len(log.trimmed_seqs)
-            method_stats[1] += len(log.lbs_removed)
-            method_stats[2] += len(log.ultra_short_branches)
-            method_stats[3] += len(log.divergent_removed)
-            method_stats[4] += log.collapsed_nodes
+            stats["short"] += len(log.trimmed_seqs)
+            stats["long"] += len(log.lbs_removed)
+            stats["ultrashort"] += len(log.ultra_short_branches)
+            stats["divergent"] += len(log.divergent_removed)
+            stats["collapsed"] += log.collapsed_nodes
 
             for msa in log.msas_out:
-                otus_missing = no_of_otus - len(list(msa.otus()))
+                otus_missing = stats["no_of_otus"] - len(list(msa.otus()))
                 pct_missing += msa.missing_data(otus_missing)
 
-        if no_of_alignments > 0:
-            avg_no_of_seqs = int(no_of_seqs / no_of_alignments)
-            missing_data = round((pct_missing / no_of_alignments) * 100, 1)
-        else:
-            avg_no_of_seqs = 0
-            missing_data = 0
+        if stats["alignments"] > 0:
+            stats["avg_no_of_seqs"] = int(stats["sequences"]/ stats["alignments"])
+            stats["missing_data"] = round((pct_missing / stats["alignments"]) * 100, 1)
 
-        if no_of_seqs > 0:
-            avg_seq_len = int(seq_lens / no_of_seqs)
-        else:
-            avg_seq_len = 0
+        if stats["sequences"] > 0:
+            stats["avg_seq_len"] = int(stats["seq_lens"] / stats["sequences"])
 
-        if not shortest:
-            shortest = 0
-        if not longest:
-            longest = 0
-
-        report = ""
+        stats_report = ""
         if homolog_stats:
             # determine the column width from the longest statistic
-            COLUMN_WIDTH = max(
-                len(str(no_of_seqs)), len(str(no_of_alignments)),
-                len(str(cat_alignment_len)), len(str(no_of_otus)),
-                len(str(longest)), len(str(homolog_stats[1])),
-                len(str(homolog_stats[2])), len(str(homolog_stats[8])),
+            col_width = max(
+                len(str(stats["sequences"])),
+                len(str(stats["alignments"])),
+                len(str(stats["cat_alignment_len"])),
+                len(str(stats["no_of_otus"])),
+                len(str(stats["longest"])),
+                len(str(homolog_stats[1])),
+                len(str(homolog_stats[2])),
+                len(str(homolog_stats[8])),
                 len(str(homolog_stats[10]))
                 ) + 1
 
             header = "Alignment statistics:\n  " +\
                     underline("{:33s}  {:{}s}   {:{}s}".format(
-                        name, "Input", COLUMN_WIDTH, "Output", COLUMN_WIDTH))
+                        name, "Input", col_width, "Output", col_width))
             methods_header = "Methods summary:\n  " +\
                     underline("{:33s}           {:{}s}   {:{}s}".format(
-                        name, "Total", COLUMN_WIDTH, "% of input", COLUMN_WIDTH))
-            report = """
+                        name, "Total", col_width, "% of input", col_width))
+            stats_report = """
 {}
   No. of alignments                 {:{}d}   {:{}d}
   No. of sequences                  {:{}d}   {:{}d}
   No. of OTUs                       {:{}d}   {:{}d}
   Avg no. of sequences / alignment  {:{}d}   {:{}d}
-  Avg no. of OTUs                   {:{}d}   {:{}d}
+  Avg no. of OTUs /alignment        {:{}d}   {:{}d}
   Avg sequence length (ungapped)    {:{}d}   {:{}d}
   Shortest sequence (ungapped)      {:{}d}   {:{}d}
   Longest sequence (ungapped)       {:{}d}   {:{}d}
@@ -557,37 +537,37 @@ concatenated alignment length....:{:10d}""".format(
   No. of divergent sequences removed        {:{}d}  {:{}.2f}
   No. of collapsed nodes                    {:{}d}  {:{}.2f}""".format(
       header,
-      homolog_stats[1], COLUMN_WIDTH, no_of_alignments, COLUMN_WIDTH,
-      homolog_stats[2], COLUMN_WIDTH, no_of_seqs, COLUMN_WIDTH,
-      homolog_stats[3], COLUMN_WIDTH, no_of_otus, COLUMN_WIDTH,
-      homolog_stats[4], COLUMN_WIDTH, avg_no_of_seqs, COLUMN_WIDTH,
-      homolog_stats[5], COLUMN_WIDTH, avg_no_of_seqs, COLUMN_WIDTH,
-      homolog_stats[6], COLUMN_WIDTH, avg_seq_len, COLUMN_WIDTH,
-      homolog_stats[7], COLUMN_WIDTH, shortest, COLUMN_WIDTH,
-      homolog_stats[8], COLUMN_WIDTH, longest, COLUMN_WIDTH,
-      homolog_stats[9], COLUMN_WIDTH, missing_data, COLUMN_WIDTH,
-      homolog_stats[10], COLUMN_WIDTH, cat_alignment_len, COLUMN_WIDTH,
+      homolog_stats[1], col_width, stats["alignments"], col_width,
+      homolog_stats[2], col_width, stats["sequences"], col_width,
+      homolog_stats[3], col_width, stats["no_of_otus"], col_width,
+      homolog_stats[4], col_width, stats["avg_no_of_seqs"], col_width,
+      homolog_stats[5], col_width, stats["avg_no_of_seqs"], col_width,
+      homolog_stats[6], col_width, stats["avg_seq_len"], col_width,
+      homolog_stats[7], col_width, stats["shortest"], col_width,
+      homolog_stats[8], col_width, stats["longest"], col_width,
+      homolog_stats[9], col_width, stats["missing_data"], col_width,
+      homolog_stats[10], col_width, stats["cat_alignment_len"], col_width,
       methods_header,
-      method_stats[0], COLUMN_WIDTH, 100 * method_stats[0] / homolog_stats[2], COLUMN_WIDTH,
-      method_stats[1], COLUMN_WIDTH, 100 * method_stats[1] / homolog_stats[2], COLUMN_WIDTH,
-      method_stats[2], COLUMN_WIDTH, 100 * method_stats[2] / homolog_stats[2], COLUMN_WIDTH,
-      method_stats[3], COLUMN_WIDTH, 100 * method_stats[3] / homolog_stats[2], COLUMN_WIDTH,
-      method_stats[4], COLUMN_WIDTH, 100 * method_stats[4] / homolog_stats[2], COLUMN_WIDTH)
+      stats["short"], col_width, 100 * stats["short"] / homolog_stats[2], col_width,
+      stats["long"], col_width, 100 * stats["long"] / homolog_stats[2], col_width,
+      stats["ultrashort"], col_width, 100 * stats["ultrashort"] / homolog_stats[2], col_width,
+      stats["divergent"], col_width, 100 * stats["divergent"] / homolog_stats[2], col_width,
+      stats["collapsed"], col_width, 100 * stats["collapsed"] / homolog_stats[2], col_width)
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
             title,
-            no_of_alignments,
-            no_of_seqs,
-            no_of_otus,
-            avg_no_of_seqs,
-            avg_no_of_seqs,
-            avg_seq_len,
-            shortest,
-            longest,
-            missing_data,
-            cat_alignment_len)
+            stats["alignments"],
+            stats["sequences"],
+            stats["no_of_otus"],
+            stats["avg_no_of_seqs"],
+            stats["avg_no_of_seqs"],
+            stats["avg_seq_len"],
+            stats["shortest"],
+            stats["longest"],
+            stats["missing_data"],
+            stats["cat_alignment_len"])
 
-        return report, row
+        return stats_report, row
 
     def report(self, title, dir_out, homolog_stats=None):
         """Output a summary of the files for this run.
@@ -674,8 +654,6 @@ def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
     # set default plot size and font size
     width = 3
     height = 3
-    xfont = 3
-    yfont = 3
 
     # allow for occupancy plots of various sizes
     if len(xlabels) > 100:
@@ -689,8 +667,8 @@ def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
     axes.set_xticks(list(range(len(xlabels))))
     axes.set_yticks(list(range(len(ylabels))))
     axes.set_xticklabels(list(xlabels), rotation="vertical",
-                         fontsize=xfont, stretch="expanded")
-    axes.set_yticklabels(list(ylabels), fontsize=yfont)
+                         fontsize=XFONT_SIZE, stretch="expanded")
+    axes.set_yticklabels(list(ylabels), fontsize=YFONT_SIZE)
 
     otus_below, genes_below = below_threshold
 
@@ -710,7 +688,7 @@ def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
     plt.margins(0.2)
     # Tweak spacing to prevent clipping of tick-labels.
     plt.subplots_adjust(bottom=0.15)
-    plt.savefig(dir_out + OCCUPANCY_PLOT_FILE, dpi=300)
+    plt.savefig(dir_out + OCCUPANCY_PLOT_FILE, dpi=RESOLUTION)
 
 def _mean(data):
     """Returns the sample arithmetic mean of data. 0 is returned if an empty

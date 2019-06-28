@@ -272,7 +272,7 @@ class TreeNode(object):
         parent.remove_child(self)
 
         if parent.is_monofurcating():
-             parent.delete()
+            parent.delete()
 
         return self
 

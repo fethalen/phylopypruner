@@ -2,10 +2,10 @@
 
 from phylopypruner import report
 
-ON = u"{}\u25cf{}".format(report.NORMAL, report.NORMAL)
-OFF = u"{}\u25cb{}".format(report.NORMAL, report.NORMAL)
-DEFAULT = "({}default{})".format(report.YELLOW, report.NORMAL)
-MISSING = report.underline("   ")
+ON = u"[{}]".format(report.colorize("\u2713", "green"))
+OFF = u"[ ]"
+BULLET = " ~ "
+MISSING = report.underline("  ")
 
 class Settings(object):
     """
@@ -234,59 +234,53 @@ Parameters used:
             log_file.write(report)
             return report
 
-    def print_settings(self):
-        """TODO: write in past or present?
-        """
+    def to_str(self):
+        "Return these settings as a formatted string."
         if self.min_len:
             len_str = self.min_len
         else:
             len_str = MISSING
+
         if self.min_support:
             support_str = int(self.min_support * 100)
         else:
             support_str = MISSING
 
+        exclude_str = report.format_otus(self.exclude)
+        outgroup_str = report.format_otus(self.outgroup)
+
         settings_report = u"""Parameters \
-({} = used, {} = unused, SDs = standard deviations):
-  {} Remove sequences shorter than {} bases {}
-  {} Remove branches longer than {} SDs of all branches {}
-  {} Collapse branches with less support than {}% into polytomies {}
-  {} If 2+ sequences from a single OTU form a clade, keep the {} {}
-  {} These OTUs were used for outgroup rooting: {} {}
-  {} Alternative rooting method: {} {}
-  {} The {} method was used for paralogy pruning {}
-  {} Paralogy frequency threshold {} {}
-  {} Divergence threshold: {} {}
-  {} These OTUs were included, even if deemed problematic: {} {}
+({} = used, {} = unused):
+  {} Mask monophylies using the {} method
+  {} Prune paralogs using the {} method
+  {} Remove sequences shorter than {} bases
+  {} Remove branches longer than {} standard deviations of all branches
+  {} Collapse branches with less support than {}% into polytomies
+  {} These OTUs were used for outgroup rooting: {}
+  {} Alternative rooting method: {}
+  {} The Paralogy frequency threshold is set to {}
+  {} The Divergence threshold is set to {}
+  {} Include these OTUs, even if deemed problematic: {}
   {} Always exclude the following OTUs: {}
-  {} Output alignments with fewer than {} sequences were discarded {}
-  {} Taxon jackknifing is {}performed {}""".format(
+  {} Discard output alignments with fewer than {} sequences
+  {} Taxon jackknifing is {}performed""".format(
       ON, OFF,
-      ON if self.min_len else OFF, len_str, DEFAULT if not self.min_len
-      else "",
+      ON if self.mask else OFF, self.mask,
+      ON if self.prune else OFF, self.prune,
+      ON if self.min_len else OFF, len_str,
       ON if self.trim_lb else OFF, self.trim_lb if self.trim_lb else MISSING,
-      DEFAULT if not self.trim_lb else "",
-      ON if self.min_support else OFF, support_str, DEFAULT if not
-      self.min_support else "",
-      ON,
-      "sequence with the \n      shortest pairwise distance to its sister" if
-      self.mask == "pdist" else "longest sequence",
-      DEFAULT if self.mask == "pdist" else "",
-      ON if self.outgroup else OFF, self.outgroup, DEFAULT if not self.outgroup
-      else "",
-      ON if self.root else OFF, self.root, DEFAULT if not self.root else "",
-      ON, self.prune, DEFAULT if self.prune
-      == "LS" else "",
-      ON if self.trim_freq_paralogs else OFF, self.trim_freq_paralogs, DEFAULT
-      if not self.trim_freq_paralogs else "",
-      ON if self.trim_divergent else OFF, self.trim_divergent, DEFAULT if not
-      self.trim_divergent else "",
-      ON if self.include else OFF, self.include, DEFAULT if not self.include
-      else "",
-      ON if self.exclude else OFF, self.exclude,
-      ON, self.min_taxa, DEFAULT if
-      self.min_taxa == 4 else "",
+      ON if self.min_support else OFF, support_str,
+      ON if self.outgroup else OFF, outgroup_str,
+      ON if self.root else OFF, self.root,
+      ON if self.trim_freq_paralogs else OFF, self.trim_freq_paralogs,
+      ON if self.trim_divergent else OFF, self.trim_divergent,
+      ON if self.include else OFF, self.include,
+      ON if self.exclude else OFF, exclude_str,
+      ON, self.min_taxa,
       ON if self.jackknife else OFF,
-      "" if self.jackknife else "not ",
-      DEFAULT if not self.jackknife else "")
-        print(settings_report)
+      "" if self.jackknife else "not ")
+        return settings_report
+
+    def print_settings(self):
+        "Print these settings in a formatted report."
+        print(self.to_str())
