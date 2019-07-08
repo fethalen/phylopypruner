@@ -4,8 +4,8 @@ from phylopypruner import report
 
 ON = u"[{}]".format(report.colorize("\u2713", "green"))
 OFF = u"[ ]"
-BULLET = " ~ "
-MISSING = report.underline("  ")
+BULLET = "~"
+MISSING = "_"
 
 class Settings(object):
     """
@@ -250,32 +250,34 @@ Parameters used:
         outgroup_str = report.format_otus(self.outgroup)
 
         settings_report = u"""Parameters \
-({} = used, {} = unused):
-  {} Mask monophylies using the {} method
-  {} Prune paralogs using the {} method
+({} = required, {} = used, {} = unused):
+  {} Always exclude the following OTUs: {}
   {} Remove sequences shorter than {} bases
   {} Remove branches longer than {} standard deviations of all branches
   {} Collapse branches with less support than {}% into polytomies
+   {}  Mask monophylies using the {} method
   {} These OTUs were used for outgroup rooting: {}
   {} Alternative rooting method: {}
   {} The Paralogy frequency threshold is set to {}
   {} The Divergence threshold is set to {}
   {} Include these OTUs, even if deemed problematic: {}
-  {} Always exclude the following OTUs: {}
+   {}  Prune paralogs using the {} method
   {} Discard output alignments with fewer than {} sequences
   {} Taxon jackknifing is {}performed""".format(
-      ON, OFF,
-      ON if self.mask else OFF, self.mask,
-      ON if self.prune else OFF, self.prune,
+      BULLET, ON, OFF,
+      ON if self.exclude else OFF, exclude_str,
       ON if self.min_len else OFF, len_str,
       ON if self.trim_lb else OFF, self.trim_lb if self.trim_lb else MISSING,
       ON if self.min_support else OFF, support_str,
+      BULLET, self.mask,
       ON if self.outgroup else OFF, outgroup_str,
       ON if self.root else OFF, self.root,
-      ON if self.trim_freq_paralogs else OFF, self.trim_freq_paralogs,
-      ON if self.trim_divergent else OFF, self.trim_divergent,
+      ON if self.trim_freq_paralogs else OFF,
+      self.trim_freq_paralogs if self.trim_freq_paralogs else MISSING,
+      ON if self.trim_divergent else OFF,
+      self.trim_divergent if self.trim_divergent else MISSING,
       ON if self.include else OFF, self.include,
-      ON if self.exclude else OFF, exclude_str,
+      BULLET, self.prune,
       ON, self.min_taxa,
       ON if self.jackknife else OFF,
       "" if self.jackknife else "not ")

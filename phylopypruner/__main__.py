@@ -157,6 +157,13 @@ def _run(settings, msa, tree):
 
     log = Log(VERSION, msa, tree, settings)
 
+    # exclude taxa within the list settings.exclude
+    if settings.exclude:
+        tree = filtering.exclude(tree, settings.exclude)
+
+    if filtering.too_few_otus(tree, settings.min_taxa):
+        return log
+
     # remove short sequences
     if settings.min_len:
         log.trimmed_seqs = filtering.trim_short_seqs(msa, tree, settings.min_len)
@@ -208,13 +215,6 @@ def _run(settings, msa, tree):
     if not rooted and settings.root:
         if settings.root == "midpoint":
             tree = root.midpoint(tree)
-
-    # exclude taxa within the list settings.exclude
-    if settings.exclude:
-        tree = filtering.exclude(tree, settings.exclude)
-
-    if filtering.too_few_otus(tree, settings.min_taxa):
-        return log
 
     # mask monophyletic groups
     if settings.mask:

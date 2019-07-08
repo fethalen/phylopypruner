@@ -12,6 +12,7 @@ from phylopypruner import fasta
 SUPERMATRIX_FILENAME = "/supermatrix.fas"
 PARTITION_FILENAME = "/partition_data.txt"
 
+
 class Supermatrix(object):
     """
     Represents a supermatrix. A supermatrix consists of many multiple sequence
