@@ -456,7 +456,8 @@ mpl or use the flag '--no-plot'")
             "collapsed": 0,
             "avg_no_of_seqs": 0,
             "avg_seq_len": 0,
-            "no_of_otus": 0
+            "no_of_otus": 0,
+            "missing_data": 0
                 }
 
         for log in self.logs:
@@ -490,8 +491,10 @@ mpl or use the flag '--no-plot'")
                 pct_missing += msa.missing_data(otus_missing)
 
         if stats["alignments"] > 0:
-            stats["avg_no_of_seqs"] = int(stats["sequences"]/ stats["alignments"])
-            stats["missing_data"] = round((pct_missing / stats["alignments"]) * 100, 1)
+            stats["avg_no_of_seqs"] = int(
+                stats["sequences"] / stats["alignments"])
+            stats["missing_data"] = round(
+                (pct_missing / stats["alignments"]) * 100, 1)
 
         if stats["sequences"] > 0:
             stats["avg_seq_len"] = int(stats["seq_lens"] / stats["sequences"])
@@ -511,6 +514,9 @@ mpl or use the flag '--no-plot'")
                 len(str(homolog_stats[10]))
                 ) + 1
 
+            if col_width < 4:
+                col_width = 4
+
             header = "Alignment statistics:\n  " +\
                     underline("{:33s}  {:{}s}   {:{}s}".format(
                         name, "Input", col_width, "Output", col_width))
@@ -523,7 +529,7 @@ mpl or use the flag '--no-plot'")
   No. of sequences                  {:{}d}   {:{}d}
   No. of OTUs                       {:{}d}   {:{}d}
   Avg no. of sequences / alignment  {:{}d}   {:{}d}
-  Avg no. of OTUs /alignment        {:{}d}   {:{}d}
+  Avg no. of OTUs / alignment       {:{}d}   {:{}d}
   Avg sequence length (ungapped)    {:{}d}   {:{}d}
   Shortest sequence (ungapped)      {:{}d}   {:{}d}
   Longest sequence (ungapped)       {:{}d}   {:{}d}
@@ -535,24 +541,23 @@ mpl or use the flag '--no-plot'")
   No. of long branches removed              {:{}d}  {:{}.2f}
   No. of ultrashort distance pairs removed  {:{}d}  {:{}.2f}
   No. of divergent sequences removed        {:{}d}  {:{}.2f}
-  No. of collapsed nodes                    {:{}d}  {:{}.2f}""".format(
-      header,
-      homolog_stats[1], col_width, stats["alignments"], col_width,
-      homolog_stats[2], col_width, stats["sequences"], col_width,
-      homolog_stats[3], col_width, stats["no_of_otus"], col_width,
-      homolog_stats[4], col_width, stats["avg_no_of_seqs"], col_width,
-      homolog_stats[5], col_width, stats["avg_no_of_seqs"], col_width,
-      homolog_stats[6], col_width, stats["avg_seq_len"], col_width,
-      homolog_stats[7], col_width, stats["shortest"], col_width,
-      homolog_stats[8], col_width, stats["longest"], col_width,
-      homolog_stats[9], col_width, stats["missing_data"], col_width,
-      homolog_stats[10], col_width, stats["cat_alignment_len"], col_width,
-      methods_header,
-      stats["short"], col_width, 100 * stats["short"] / homolog_stats[2], col_width,
-      stats["long"], col_width, 100 * stats["long"] / homolog_stats[2], col_width,
-      stats["ultrashort"], col_width, 100 * stats["ultrashort"] / homolog_stats[2], col_width,
-      stats["divergent"], col_width, 100 * stats["divergent"] / homolog_stats[2], col_width,
-      stats["collapsed"], col_width, 100 * stats["collapsed"] / homolog_stats[2], col_width)
+  No. of collapsed nodes                    {:{}d}  {:{}.2f}""".format(header,
+          homolog_stats[1], col_width, stats["alignments"], col_width,
+          homolog_stats[2], col_width, stats["sequences"], col_width,
+          homolog_stats[3], col_width, stats["no_of_otus"], col_width,
+          homolog_stats[4], col_width, stats["avg_no_of_seqs"], col_width,
+          homolog_stats[5], col_width, stats["avg_no_of_seqs"], col_width,
+          homolog_stats[6], col_width, stats["avg_seq_len"], col_width,
+          homolog_stats[7], col_width, stats["shortest"], col_width,
+          homolog_stats[8], col_width, stats["longest"], col_width,
+          homolog_stats[9], col_width, stats["missing_data"], col_width,
+          homolog_stats[10], col_width, stats["cat_alignment_len"], col_width,
+          methods_header,
+          stats["short"], col_width, 100 * stats["short"] / homolog_stats[2], col_width,
+          stats["long"], col_width, 100 * stats["long"] / homolog_stats[2], col_width,
+          stats["ultrashort"], col_width, 100 * stats["ultrashort"] / homolog_stats[2], col_width,
+          stats["divergent"], col_width, 100 * stats["divergent"] / homolog_stats[2], col_width,
+  stats["collapsed"], col_width, 100 * stats["collapsed"] / homolog_stats[2], col_width)
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
             title,

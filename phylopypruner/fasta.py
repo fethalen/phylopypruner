@@ -5,8 +5,8 @@ Module for working with the FASTA file format.
 from __future__ import absolute_import
 from os import path
 from textwrap import wrap
-import re
 from phylopypruner import msa
+
 
 def read(filename):
     """
@@ -33,6 +33,7 @@ def read(filename):
         if sequence_data:
             alignment.add_sequence(None, description, sequence_data)
     return alignment
+
 
 def write(alignment, max_column):
     """
