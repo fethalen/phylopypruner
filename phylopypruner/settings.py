@@ -30,6 +30,8 @@ class Settings(object):
         self._trim_divergent = arguments.trim_divergent
         self._jackknife = arguments.jackknife
         self._taxonomic_groups = arguments.subclades
+        self._min_otu_occupancy = arguments.min_otu_occupancy
+        self._min_gene_occupancy = arguments.min_gene_occupancy
 
     @property
     def fasta_file(self):
@@ -185,6 +187,28 @@ class Settings(object):
         self._taxonomic_groups = value
 
     @property
+    def min_otu_occupancy(self):
+        "The mimum OTU occupancy allowed in the output."
+        return self._min_otu_occupancy
+
+    @min_otu_occupancy.setter
+    def min_otu_occupancy(self, value):
+        self._min_otu_occupancy = value
+
+    @property
+    def min_gene_occupancy(self):
+        "The mimum amount of gene occupancy allowed in the output."
+        return self._min_gene_occupancy
+
+    @min_gene_occupancy.setter
+    def min_gene_occupancy(self, value):
+        self._min_gene_occupancy = value
+
+    @taxonomic_groups.setter
+    def taxonomic_groups(self, value):
+        self._taxonomic_groups = value
+
+    @property
     def force_inclusion(self):
         """A list of OTUs, don't output orthologs where these OTUs are not
         present.
@@ -246,6 +270,16 @@ Parameters used:
         else:
             support_str = MISSING
 
+        if self.min_otu_occupancy:
+            min_otu_str = int(self.min_otu_occupancy * 100)
+        else:
+            min_otu_str = MISSING
+
+        if self.min_gene_occupancy:
+            min_gene_str = int(self.min_gene_occupancy * 100)
+        else:
+            min_gene_str = MISSING
+
         exclude_str = report.format_otus(self.exclude)
         outgroup_str = report.format_otus(self.outgroup)
 
@@ -263,7 +297,9 @@ Parameters used:
   {} Include these OTUs, even if deemed problematic: {}
    {}  Prune paralogs using the {} method
   {} Discard output alignments with fewer than {} sequences
-  {} Taxon jackknifing is {}performed""".format(
+  {} Taxon jackknifing is {}performed
+  {} Discard OTUs with less than {}% occupancy
+  {} Discard genes with less than {}% occupancy""".format(
       BULLET, ON, OFF,
       ON if self.exclude else OFF, exclude_str,
       ON if self.min_len else OFF, len_str,
@@ -280,7 +316,9 @@ Parameters used:
       BULLET, self.prune,
       ON, self.min_taxa,
       ON if self.jackknife else OFF,
-      "" if self.jackknife else "not ")
+      "" if self.jackknife else "not ",
+      ON if self.min_otu_occupancy else OFF, min_otu_str,
+      ON if self.min_gene_occupancy else OFF, min_gene_str)
         return settings_report
 
     def print_settings(self):
