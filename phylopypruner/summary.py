@@ -557,7 +557,7 @@ mpl or use the flag '--no-plot'")
                         name, "Input", col_width, "Output", col_width))
             methods_header = "Methods summary:\n  " +\
                     underline("{:29s} {:{}s}    {:{}s}".format(
-                        name, "# removed", col_width, "% of input", col_width))
+                        name, "No. removed", col_width, "% of input", col_width))
             stats_report = """
 {}
   No. of alignments                 {:{}d}   {:{}d}
@@ -572,13 +572,13 @@ mpl or use the flag '--no-plot'")
   Concatenated alignment length     {:{}d}   {:{}d}
 
 {}
-  Short sequences            {:{}d}       {:{}.2f}
-  Long branches              {:{}d}       {:{}.2f}
-  Ultrashort distance pairs  {:{}d}       {:{}.2f}
-  Divergent sequences        {:{}d}       {:{}.2f}
-  Collapsed nodes            {:{}d}       {:{}.2f}
-  OTUs < occupancy threshold {:{}d}       {:{}.2f}
-  Genes < occupancy threshold{:{}d}       {:{}.2f}""".format(
+  Short sequences            {:{}d}         {:{}.2f}
+  Long branches              {:{}d}         {:{}.2f}
+  Ultrashort distance pairs  {:{}d}         {:{}.2f}
+  Divergent sequences        {:{}d}         {:{}.2f}
+  Collapsed nodes            {:{}d}         {:{}.2f}
+  OTUs < occupancy threshold {:{}d}         {:{}.2f}
+  Genes < occupancy threshold{:{}d}         {:{}.2f}""".format(
       header,
       homolog_stats[1], col_width, stats["alignments"], col_width,
       homolog_stats[2], col_width, stats["sequences"], col_width,
