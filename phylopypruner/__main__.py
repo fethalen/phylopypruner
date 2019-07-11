@@ -607,9 +607,11 @@ more relaxed settings")
 
     if otus_to_exclude:
         summary = decontamination.exclude_otus(summary, otus_to_exclude)
+        summary.discarded_otus = otus_to_exclude
 
     if genes_to_exclude:
         summary = decontamination.exclude_genes(summary, genes_to_exclude)
+        summary.discarded_genes = genes_to_exclude
 
     # Remove gap-only columns from the output alignments.
     summary = summary.remove_gap_only_columns()

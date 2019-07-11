@@ -33,6 +33,8 @@ class Summary(object):
     "Represents a collection of Log objects from previous runs."
     def __init__(self):
         self._logs = []
+        self._discarded_otus = None
+        self._discarded_genes = None
 
     def __len__(self):
         return len(self.logs)
@@ -51,6 +53,29 @@ class Summary(object):
     @logs.setter
     def logs(self, value):
         self._logs = value
+
+    @property
+    def discarded_otus(self):
+        """A set of OTUs that were discarded due to being below the allowed
+        occupancy threshold.
+        """
+        return self._discarded_otus
+
+    @discarded_otus.setter
+    def discarded_otus(self, value):
+        self._discarded_otus = value
+
+    @property
+    def discarded_genes(self):
+        """A set of genes that were discarded due to being below the allowed
+        gene occupancy threshold.
+        """
+        return self._discarded_genes
+
+    @discarded_genes.setter
+    def discarded_genes(self, value):
+        self._discarded_genes = value
+
 
     def remove_gap_only_columns(self):
         """Iterate over the output alignments within this summary and remove
@@ -514,6 +539,16 @@ mpl or use the flag '--no-plot'")
                 len(str(homolog_stats[10]))
                 ) + 1
 
+            if self.discarded_otus:
+                no_otus = len(self.discarded_otus)
+            else:
+                no_otus = 0
+
+            if self.discarded_genes:
+                no_genes = len(self.discarded_genes)
+            else:
+                no_genes = 0
+
             if col_width < 4:
                 col_width = 4
 
@@ -521,8 +556,8 @@ mpl or use the flag '--no-plot'")
                     underline("{:33s}  {:{}s}   {:{}s}".format(
                         name, "Input", col_width, "Output", col_width))
             methods_header = "Methods summary:\n  " +\
-                    underline("{:33s}           {:{}s}   {:{}s}".format(
-                        name, "Total", col_width, "% of input", col_width))
+                    underline("{:29s} {:{}s}    {:{}s}".format(
+                        name, "# removed", col_width, "% of input", col_width))
             stats_report = """
 {}
   No. of alignments                 {:{}d}   {:{}d}
@@ -537,27 +572,34 @@ mpl or use the flag '--no-plot'")
   Concatenated alignment length     {:{}d}   {:{}d}
 
 {}
-  No. of short sequences removed            {:{}d}  {:{}.2f}
-  No. of long branches removed              {:{}d}  {:{}.2f}
-  No. of ultrashort distance pairs removed  {:{}d}  {:{}.2f}
-  No. of divergent sequences removed        {:{}d}  {:{}.2f}
-  No. of collapsed nodes                    {:{}d}  {:{}.2f}""".format(header,
-          homolog_stats[1], col_width, stats["alignments"], col_width,
-          homolog_stats[2], col_width, stats["sequences"], col_width,
-          homolog_stats[3], col_width, stats["no_of_otus"], col_width,
-          homolog_stats[4], col_width, stats["avg_no_of_seqs"], col_width,
-          homolog_stats[5], col_width, stats["avg_no_of_seqs"], col_width,
-          homolog_stats[6], col_width, stats["avg_seq_len"], col_width,
-          homolog_stats[7], col_width, stats["shortest"], col_width,
-          homolog_stats[8], col_width, stats["longest"], col_width,
-          homolog_stats[9], col_width, stats["missing_data"], col_width,
-          homolog_stats[10], col_width, stats["cat_alignment_len"], col_width,
-          methods_header,
-          stats["short"], col_width, 100 * stats["short"] / homolog_stats[2], col_width,
-          stats["long"], col_width, 100 * stats["long"] / homolog_stats[2], col_width,
-          stats["ultrashort"], col_width, 100 * stats["ultrashort"] / homolog_stats[2], col_width,
-          stats["divergent"], col_width, 100 * stats["divergent"] / homolog_stats[2], col_width,
-  stats["collapsed"], col_width, 100 * stats["collapsed"] / homolog_stats[2], col_width)
+  Short sequences            {:{}d}       {:{}.2f}
+  Long branches              {:{}d}       {:{}.2f}
+  Ultrashort distance pairs  {:{}d}       {:{}.2f}
+  Divergent sequences        {:{}d}       {:{}.2f}
+  Collapsed nodes            {:{}d}       {:{}.2f}
+  OTUs < occupancy threshold {:{}d}       {:{}.2f}
+  Genes < occupancy threshold{:{}d}       {:{}.2f}""".format(
+      header,
+      homolog_stats[1], col_width, stats["alignments"], col_width,
+      homolog_stats[2], col_width, stats["sequences"], col_width,
+      homolog_stats[3], col_width, stats["no_of_otus"], col_width,
+      homolog_stats[4], col_width, stats["avg_no_of_seqs"], col_width,
+      homolog_stats[5], col_width, stats["avg_no_of_seqs"], col_width,
+      homolog_stats[6], col_width, stats["avg_seq_len"], col_width,
+      homolog_stats[7], col_width, stats["shortest"], col_width,
+      homolog_stats[8], col_width, stats["longest"], col_width,
+      homolog_stats[9], col_width, stats["missing_data"], col_width,
+      homolog_stats[10], col_width, stats["cat_alignment_len"], col_width,
+      methods_header,
+      stats["short"], col_width, 100 * stats["short"] / homolog_stats[2], col_width,
+      stats["long"], col_width, 100 * stats["long"] / homolog_stats[2], col_width,
+      stats["ultrashort"], col_width, 100 * stats["ultrashort"] / homolog_stats[2], col_width,
+      stats["divergent"], col_width, 100 * stats["divergent"] / homolog_stats[2], col_width,
+      stats["collapsed"], col_width, 100 * stats["collapsed"] / homolog_stats[2],
+      col_width,
+      no_otus, col_width, 100 * no_otus / len(otus), col_width,
+      no_genes, col_width, 100 * no_genes / homolog_stats[2], col_width
+  )
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
             title,
