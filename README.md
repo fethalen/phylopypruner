@@ -1,15 +1,25 @@
 <img src="https://gitlab.com/fethalen/phylopypruner/raw/master/doc/images/ppp_logo.png" alt="ppp_logotype" width="350"/>
 
-## What is PhyloPyPruner?
+## About
+
+*Orthologs* are genes that are related through a speciation event, while
+*paralogs* are genes that are related through a gene duplication event.
+Accurate identification of orthologs is a prerequisite for phylogenomics, since
+including genes that diverged because of a gene duplication event for species
+tree inference can cause an erroneous inference of speciation nodes, due to
+disparencies between individual gene trees and the species tree. Unfortunately,
+contaminants present in even a single taxon can cause a tree-based orthology
+inference method to erroneuosly infer paralogy and unnecessarily exclude
+sequences.
 
 PhyloPyPruner is a Python package for phylogenetic tree-based orthology
-inference, using the species overlap method. It uses the output from a
-graph-based orthology inference approach, such as
-[OrthoMCL](https://www.ncbi.nlm.nih.gov/pubmed/12952885),
+inference, using the species overlap method. It uses trees and alignments
+inferred from the output of a graph-based orthology inference approach, such
+as [OrthoMCL](https://www.ncbi.nlm.nih.gov/pubmed/12952885),
 [OrthoFinder](https://www.ncbi.nlm.nih.gov/pubmed/26243257) or
 [HaMStR](https://www.ncbi.nlm.nih.gov/pubmed/19586527), in order to obtain sets
 of sequences that are 1:1 orthologous. In addition to algorithms seen in
-pre-existing tools (for example,
+pre-existing tree-based tools (for example,
 [PhyloTreePruner](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3825643/),
 [UPhO](https://academic.oup.com/mbe/article/33/8/2117/2578877),
 [Agalma](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3840672/) or
@@ -20,18 +30,6 @@ provides new methods for reducing potential contamination.
 ![proteomes2orthologs](https://gitlab.com/fethalen/phylopypruner/raw/master/doc/images/proteomes2orthologs.png)
 
 **Figure 1.** A rough overview of a tree-based orthology inference approach.
-
-## Motivation
-
-*Orthologs* are genes that are related through a speciation event, while
-*paralogs* are genes related through a gene duplication event. Accurate
-identification of orthologs is a prerequisite to phylogenomics, since including
-genes that diverged because of a gene duplication event for species tree
-inference can cause an erroneous inference of speciation nodes, due to
-disparencies between individual gene trees and the species tree. Unfortunately,
-contaminants present in even a single taxon can a tree-based orthology
-inference method to erroneuosly infer paralogy and unnecessarily exclude
-sequences.
 
 ## Quick installation
 
