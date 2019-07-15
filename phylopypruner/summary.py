@@ -160,7 +160,7 @@ class Summary(object):
         no_of_otus = len(otus)
 
         for log in self.logs:
-            if len(log.msas_out) == 0:
+            if not log.msas_out:
                 continue
 
             for msa in log.msas_out:
@@ -176,7 +176,7 @@ class Summary(object):
                 for sequence in msa.sequences:
                     otu = sequence.otu
                     otus_in_alignment.append(otu)
-                    if not len(sequence) == 0:
+                    if not sequence:
                         occupancy = len(sequence.ungapped()) / float(len(sequence))
                     else:
                         occupancy = 0
@@ -540,14 +540,19 @@ mpl or use the flag '--no-plot'")
                 ) + 1
 
             if self.discarded_otus:
-                no_otus = len(self.discarded_otus)
+                otus_removed_count = len(self.discarded_otus)
             else:
-                no_otus = 0
+                otus_removed_count = 0
 
             if self.discarded_genes:
-                no_genes = len(self.discarded_genes)
+                genes_removed_count = len(self.discarded_genes)
             else:
-                no_genes = 0
+                genes_removed_count = 0
+
+            if otus:
+                otus_removed_pct = 100 * otus_removed_count / len(otus)
+            else:
+                otus_removed_pct = 0
 
             if col_width < 4:
                 col_width = 4
@@ -597,8 +602,8 @@ mpl or use the flag '--no-plot'")
       stats["divergent"], col_width, 100 * stats["divergent"] / homolog_stats[2], col_width,
       stats["collapsed"], col_width, 100 * stats["collapsed"] / homolog_stats[2],
       col_width,
-      no_otus, col_width, 100 * no_otus / len(otus), col_width,
-      no_genes, col_width, 100 * no_genes / homolog_stats[2], col_width
+      otus_removed_count, col_width, otus_removed_pct, col_width,
+      genes_removed_count, col_width, 100 * genes_removed_count / homolog_stats[2], col_width
   )
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
@@ -688,7 +693,8 @@ def remove_position_from_str(string, position):
     return string[:position] + string[position + 1:]
 
 def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
-    """...
+    """Generate a heatmap that displays the number of positions covered for
+    each gene and OTU.
     """
     message = "generating occupancy plot (disable with '--no-plot')"
     report.progress_bar(message, replace=False)

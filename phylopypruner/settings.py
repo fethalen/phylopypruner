@@ -2,7 +2,7 @@
 
 from phylopypruner import report
 
-ON = u"[{}]".format(report.colorize("\u2713", "green"))
+ON = u"[{}]".format(report.colorize("x", "green"))
 OFF = u"[ ]"
 BULLET = "~"
 MISSING = "_"
