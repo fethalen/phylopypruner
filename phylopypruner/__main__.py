@@ -452,7 +452,7 @@ def parse_args():
     group.add_argument("--prune",
                        default="LS",
                        type=str,
-                       choices=["LS", "MI", "MO", "RT", "1to1"],
+                       choices=["LS", "MI", "MO", "RT", "1to1", "TD"],
                        help="set the paralogy pruning method (default: LS)")
 
     group = parser.add_argument_group("decontamination")

@@ -7,17 +7,16 @@ from __future__ import absolute_import
 from phylopypruner import root
 
 def _has_enough_taxa(node, min_taxa):
+    """Takes a TreeNode object and a threshold as an input. Returns False if
+    there are fewer than [min_taxa] OTUs within the node, else True.
     """
-    Takes a TreeNode object and a threshold as an input. Returns False if there
-    are fewer than [min_taxa] OTUs within the node, else True.
-    """
-    otus = set([_ for _ in node.iter_otus()])
+    otus = {_ for _ in node.iter_otus}
     return len(otus) >= min_taxa
 
 def largest_subtree(node, min_taxa):
-    """
-    Takes a TreeNode object and a minimum number of taxa as an input. Find and
-    return the TreeNode object of the largest subtree with non-repeating OTUs.
+    """Takes a TreeNode object and a minimum number of taxa as an input. Find
+    and return the TreeNode object of the largest subtree with non-repeating
+    OTUs.
     """
     max_subtree = None
     largest = 0
@@ -42,6 +41,17 @@ def largest_subtree(node, min_taxa):
             largest = size
 
     return max_subtree
+
+def largest_subtree_to_list(tree, min_taxa):
+    """Takes a TreeNode object and the minimum allowed number of OTUs as an
+    input. If there is a node that has no overlapping OTUs and that satisfies
+    the OTU requirement, then return that TreeNode as a list of one object. If
+    no such node is found, then return an empty list.
+    """
+    largest_node = largest_subtree(tree, min_taxa)
+    if largest_node:
+        return [largest_node]
+    return []
 
 def maximum_inclusion(tree, min_taxa):
     """
@@ -165,9 +175,8 @@ def rooted_tree(tree, min_taxa, outgroups):
         outgroup_clade = largest_root(tree, outgroups, min_taxa)
 
 def monophyletic_outgroups(tree, min_taxa, outgroups):
-    """
-    Takes a TreeNode object, the minimum number of taxa allowed and a list of
-    outgroups as an input. Looks for subtrees where all outgroup OTUs are
+    """Takes a TreeNode object, the minimum number of taxa allowed and a list
+    of outgroups as an input. Looks for subtrees where all outgroup OTUs are
     present and forms a monophyletic group, cuts the tree off, roots it and
     returns the largest subtree with non-repetetive taxa within that tree. An
     iterator object is returned, where each object is the most inclusive
@@ -198,29 +207,45 @@ def monophyletic_outgroups(tree, min_taxa, outgroups):
             return
 
 def one_to_one_orthologs(tree):
-    """
-    Takes a Newick tree as an input and returns an unmodified tree if and only
-    if the OTUs are non-repetetive.
+    """Takes a TreeNode object as an input and returns an unmodified tree if
+    and only if the OTUs are non-repetetive.
     """
     if not bool(tree.paralogs()):
         return tree
 
-def prune_paralogs(method, tree, min_taxa, outgroup):
+def one_to_one_orthologs_to_list(tree):
+    """Takes a TreeNode object as an input. If the provided TreeNode object is
+    a one-to-one ortholog (the number of OTUs is the same as the number of
+    sequences), then return that TreeNode object as an item in a list. If not,
+    then return an empty list.
     """
-    Takes the name of the paralogy pruning algorithm to use and a TreeNode
+    one_to_one_ortholog = one_to_one_orthologs(tree)
+    if one_to_one_ortholog:
+        return [one_to_one_ortholog]
+    return []
+
+def tree_decomposition(tree):
+    """Takes
+    """
+    for internal_node in tree.iter_branches():
+        if internal_node.paralogs():
+            for child in internal_node.children:
+                print(child.view())
+    yield tree
+
+def prune_paralogs(method, tree, min_taxa, outgroup):
+    """Takes the name of the paralogy pruning algorithm to use and a TreeNode
     object as an input. Returns a list of TreeNode objects, where each object
     is an inferred orthology tree.
     """
     subtrees = []
-    methods = ("LS", "MI", "MO", "RT", "1to1")
+    methods = ("LS", "MI", "MO", "RT", "TD", "1to1")
 
     if not method in methods:
         AssertionError("unknown paralogy pruning method: '{}'".format(method))
 
     if method == "LS":
-        tree = largest_subtree(tree, min_taxa)
-        if tree:
-            subtrees.append(tree)
+        subtrees = largest_subtree_to_list(tree, min_taxa)
     elif method == "MI":
         trees = list(maximum_inclusion(tree, min_taxa))
         if trees:
@@ -231,6 +256,10 @@ def prune_paralogs(method, tree, min_taxa, outgroup):
             subtrees = trees
     elif method == "RT":
         trees = list(rooted_tree(tree, min_taxa, outgroup))
+        if trees:
+            subtrees = trees
+    elif method == "TD":
+        trees = list(tree_decomposition(tree))
         if trees:
             subtrees = trees
     elif method == "1to1":

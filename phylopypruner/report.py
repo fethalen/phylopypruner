@@ -147,7 +147,7 @@ def progress_bar(message, replace=True, display=True):
     Returns
     -------
     progress : str
-        Your message with a greater than sign ('>') prepended to it.
+        Your message with the string '->' prepended to it.
     """
     progress = "{} {}".format(colorize(u">", "green"), message)
     if display and replace:

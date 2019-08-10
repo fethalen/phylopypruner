@@ -7,6 +7,7 @@ from collections import defaultdict
 from phylopypruner.report import underline
 from phylopypruner import fasta
 from phylopypruner import report
+from phylopypruner import plot
 try:
     import matplotlib as mpl
     if not "DISPLAY" in os.environ:
@@ -21,11 +22,10 @@ TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUM_HEADER = "id;alignments;sequences;otus;meanSequences;meanOtus;meanSeqLen;\
 shortestSeq;longestSeq;pctMissingData;catAlignmentLen\n"
 SUM_PATH = "/supermatrix_stats.csv"
-OCCUPANCY_PLOT_FILE = "/occupancy_matrix.png"
-FREQ_PLOT_FILE = "/paralogy_freq_plot.png"
+OCCUPANCY_PLOT_FILE = "/plots/occupancy_matrix.png"
 FREQ_CSV_FILE = "/otu_stats.csv"
 GAP_CHARACTERS = {"-", "?", "x"}
-RESOLUTION = 300
+RESOLUTION = 72
 XFONT_SIZE = 2.5
 YFONT_SIZE = 2.5
 
@@ -33,8 +33,8 @@ class Summary(object):
     "Represents a collection of Log objects from previous runs."
     def __init__(self):
         self._logs = []
-        self._discarded_otus = None
-        self._discarded_genes = None
+        self._discarded_otus = []
+        self._discarded_genes = []
 
     def __len__(self):
         return len(self.logs)
@@ -176,7 +176,7 @@ class Summary(object):
                 for sequence in msa.sequences:
                     otu = sequence.otu
                     otus_in_alignment.append(otu)
-                    if not sequence:
+                    if sequence:
                         occupancy = len(sequence.ungapped()) / float(len(sequence))
                     else:
                         occupancy = 0
@@ -232,7 +232,7 @@ class Summary(object):
 
         # plot the occupancy matrix
         if MATPLOTLIB and not no_plot and occupancies:
-            plot_occupancy_matrix(occupancies, gene_partitions, otus, dir_out,
+            plot.occupancy_matrix(occupancies, gene_partitions, otus, dir_out,
                                   below_threshold)
 
         return above_otu_threshold, above_gene_threshold
@@ -257,9 +257,6 @@ class Summary(object):
         paralog_freq : dict
             Dictionary where a OTU string is key and PF, as a float, is the value.
         """
-        if os.path.isfile(dir_out + FREQ_PLOT_FILE):
-            os.remove(dir_out + FREQ_PLOT_FILE)
-
         if os.path.isfile(dir_out + FREQ_CSV_FILE):
             os.remove(dir_out + FREQ_CSV_FILE)
 
@@ -303,31 +300,11 @@ class Summary(object):
                     otu, freq, divergent[otu]))
 
         otus = list(paralog_freq.keys())
-        indexes = range(len(otus))
+        indices = range(len(otus))
         freq = list(paralog_freq.values())
 
-        if not MATPLOTLIB or no_plot:
-            return paralog_freq
-
-        try:
-            plt.barh(y=indexes, color="c0", width=freq, alpha=0.5)
-        except TypeError:
-            report.error("plotting function is lacking indices, try updating \
-mpl or use the flag '--no-plot'")
-            return paralog_freq
-        plt.yticks(list(indexes), otus)
-        plt.ylabel("OTU")
-        plt.xlabel("number of paralogs / number of alignments OTU is in")
-        plt.title("Paralogy Frequency")
-        if threshold:
-            plt.axvline(x=threshold,
-                        color="red",
-                        label="cutoff = {}".format(round(threshold, 3)),
-                        linestyle="--")
-            plt.legend(loc='upper right', fontsize=8)
-        plot_figure = plt.gcf()
-        plot_figure.set_size_inches(12.8, len(otus) * 0.17)
-        plt.savefig(dir_out + FREQ_PLOT_FILE, dpi=RESOLUTION)
+        if MATPLOTLIB and not no_plot:
+            plot.paralogy_frequency(indices, freq, otus, threshold, dir_out)
 
         return paralog_freq
 
@@ -482,7 +459,11 @@ mpl or use the flag '--no-plot'")
             "avg_no_of_seqs": 0,
             "avg_seq_len": 0,
             "no_of_otus": 0,
-            "missing_data": 0
+            "missing_data": 0,
+            "otus_removed_count": len(self.discarded_otus),
+            "otus_removed_pct": 0,
+            "genes_removed_count": len(self.discarded_genes),
+            "genes_removed_pct": 0
                 }
 
         for log in self.logs:
@@ -524,46 +505,32 @@ mpl or use the flag '--no-plot'")
         if stats["sequences"] > 0:
             stats["avg_seq_len"] = int(stats["seq_lens"] / stats["sequences"])
 
-        stats_report = ""
-        if homolog_stats:
-            # determine the column width from the longest statistic
-            col_width = max(
-                len(str(stats["sequences"])),
-                len(str(stats["alignments"])),
-                len(str(stats["cat_alignment_len"])),
-                len(str(stats["no_of_otus"])),
-                len(str(stats["longest"])),
-                len(str(homolog_stats[1])),
-                len(str(homolog_stats[2])),
-                len(str(homolog_stats[8])),
-                len(str(homolog_stats[10]))
-                ) + 1
+        # determine the column width from the longest statistic
+        col_width = max(
+            len(str(stats["sequences"])),
+            len(str(stats["alignments"])),
+            len(str(stats["cat_alignment_len"])),
+            len(str(stats["no_of_otus"])),
+            len(str(stats["longest"])),
+            len(str(homolog_stats[1])),
+            len(str(homolog_stats[2])),
+            len(str(homolog_stats[8])),
+            len(str(homolog_stats[10]))
+            ) + 1
 
-            if self.discarded_otus:
-                otus_removed_count = len(self.discarded_otus)
-            else:
-                otus_removed_count = 0
+        if col_width < 4:
+            col_width = 4
 
-            if self.discarded_genes:
-                genes_removed_count = len(self.discarded_genes)
-            else:
-                genes_removed_count = 0
+        if otus:
+            stats["otus_removed_pct"] = 100 * stats["otus_removed_count"] / len(otus)
 
-            if otus:
-                otus_removed_pct = 100 * otus_removed_count / len(otus)
-            else:
-                otus_removed_pct = 0
-
-            if col_width < 4:
-                col_width = 4
-
-            header = "Alignment statistics:\n  " +\
-                    underline("{:33s}  {:{}s}   {:{}s}".format(
-                        name, "Input", col_width, "Output", col_width))
-            methods_header = "Methods summary:\n  " +\
-                    underline("{:29s} {:{}s}    {:{}s}".format(
-                        name, "No. removed", col_width, "% of input", col_width))
-            stats_report = """
+        header = "Alignment statistics:\n  " +\
+                underline("{:33s}  {:{}s}   {:{}s}".format(
+                    name, "Input", col_width, "Output", col_width))
+        methods_header = "Methods summary:\n  " +\
+                underline("{:29s} {:{}s}    {:{}s}".format(
+                    name, "No. removed", col_width, "% of input", col_width))
+        stats_report = """
 {}
   No. of alignments                 {:{}d}   {:{}d}
   No. of sequences                  {:{}d}   {:{}d}
@@ -602,8 +569,9 @@ mpl or use the flag '--no-plot'")
       stats["divergent"], col_width, 100 * stats["divergent"] / homolog_stats[2], col_width,
       stats["collapsed"], col_width, 100 * stats["collapsed"] / homolog_stats[2],
       col_width,
-      otus_removed_count, col_width, otus_removed_pct, col_width,
-      genes_removed_count, col_width, 100 * genes_removed_count / homolog_stats[2], col_width
+      stats["otus_removed_count"], col_width, stats["otus_removed_pct"], col_width,
+      stats["genes_removed_count"], col_width,
+      100 * stats["genes_removed_count"] / homolog_stats[2], col_width
   )
 
         row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
@@ -691,57 +659,6 @@ def remove_position_from_str(string, position):
         The input string with the provided position removed.
     """
     return string[:position] + string[position + 1:]
-
-def plot_occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
-    """Generate a heatmap that displays the number of positions covered for
-    each gene and OTU.
-    """
-    message = "generating occupancy plot (disable with '--no-plot')"
-    report.progress_bar(message, replace=False)
-
-    plot_figure = plt.figure()
-    axes = plot_figure.add_subplot(111)
-    plot = axes.matshow(matrix, cmap="ocean_r", interpolation="nearest")
-    plot_figure.colorbar(plot)
-
-    # set default plot size and font size
-    width = 3
-    height = 3
-
-    # allow for occupancy plots of various sizes
-    if len(xlabels) > 100:
-        width = 0.05 * len(xlabels)
-
-    if len(ylabels) > 100:
-        height = 0.05 * len(ylabels)
-
-    axes.set_title("Occupancy Matrix")
-    axes.xaxis.set_ticks_position("bottom")
-    axes.set_xticks(list(range(len(xlabels))))
-    axes.set_yticks(list(range(len(ylabels))))
-    axes.set_xticklabels(list(xlabels), rotation="vertical",
-                         fontsize=XFONT_SIZE, stretch="expanded")
-    axes.set_yticklabels(list(ylabels), fontsize=YFONT_SIZE)
-
-    otus_below, genes_below = below_threshold
-
-    # Highlight gene partitions below the allowed threshold in red.
-    for index in range(genes_below)[::-1]:
-        axes.get_xticklabels()[-index - 1].set_color("red")
-
-    # Highlight OTUs below the allowed threshold in red.
-    for index in range(otus_below)[::-1]:
-        axes.get_yticklabels()[-index - 1].set_color("red")
-
-    plot_figure.set_size_inches(width, height)
-
-    plt.xlabel("Gene partitions")
-    plt.ylabel("OTUs")
-    # Pad margins so that markers don't get clipped by the axes.
-    plt.margins(0.2)
-    # Tweak spacing to prevent clipping of tick-labels.
-    plt.subplots_adjust(bottom=0.15)
-    plt.savefig(dir_out + OCCUPANCY_PLOT_FILE, dpi=RESOLUTION)
 
 def _mean(data):
     """Returns the sample arithmetic mean of data. 0 is returned if an empty
