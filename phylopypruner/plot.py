@@ -8,6 +8,7 @@ try:
     if "DISPLAY" not in os.environ:
         mpl.use("agg")
     import matplotlib.pyplot as plt
+    plt.rcParams.update({'figure.max_open_warning': 0})
     MATPLOTLIB = True
 except ImportError:
     report.tip("install Matplotlib (https://matplotlib.org/) to generate \
