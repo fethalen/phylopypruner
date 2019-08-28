@@ -19,7 +19,7 @@ OCCUPANCY_PLOT_FILE = "occupancy_matrix.png"
 FREQ_PLOT_FILE = "paralogy_freq_plot.png"
 PLOTS_DIR = "/plots"
 PPI = 300
-DEFAULT_AXIS_SIZE = 3
+DEFAULT_AXIS_SIZE = 4
 FONT_SIZE = 2.5
 MAX_PLOT_SIZE = 500
 
@@ -45,6 +45,28 @@ def flag_outliers(axes, genes_below, otus_below):
         axes.get_yticklabels()[-index - 1].set_color("red")
 
     return axes
+
+
+def get_outliers(total, current_end, below_threshold):
+    """Return the number of genes that should be flagged in a subplot, given
+    the total number of genes, the last subplot index, and the number of genes
+    below the threshold in total.
+    """
+    otus_below, genes_below = below_threshold
+    in_this_round = genes_below - (total - current_end)
+    return (otus_below, in_this_round) if in_this_round >= 0 \
+        else (otus_below, 0)
+
+    # if genes_below <= MAX_PLOT_SIZE:
+    #     if current_end == total:
+    #         return (otus_below, genes_below)
+    #     return (otus_below, 0)
+    # return below_threshold
+    # if current_end != total:
+    #     below = (below_threshold[0], 0)
+    # else:
+    #     below = below_threshold
+
 
 
 def chunks(items, size):
@@ -74,7 +96,7 @@ def occupancy_subplot(matrix, xlabels, ylabels, from_and_to=None, dir_out=None,
     fig = plt.figure()
     plotting_dir = dir_out + PLOTS_DIR + "/"
     axes = fig.add_subplot(111)
-    plot = axes.matshow(mat_sub, cmap="ocean_r", interpolation="nearest")
+    plot = axes.matshow(mat_sub, cmap="Blues", interpolation="nearest")
     fig.colorbar(plot)
 
     axes.set_title("Occupancy Matrix")
@@ -85,9 +107,9 @@ def occupancy_subplot(matrix, xlabels, ylabels, from_and_to=None, dir_out=None,
                          fontsize=FONT_SIZE, stretch="expanded")
     axes.set_yticklabels(ylabels, fontsize=FONT_SIZE)
 
-    if below_threshold:
-        otus_below, genes_below = below_threshold
-        axes = flag_outliers(axes, genes_below, otus_below)
+    # if below_threshold:
+    #     otus_below, genes_below = below_threshold
+    #     axes = flag_outliers(axes, genes_below, otus_below)
 
     fig.set_size_inches(set_size(xlabels), set_size(ylabels))
     plt.xlabel("Gene partitions")
@@ -116,12 +138,15 @@ def occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
             else:
                 end = MAX_PLOT_SIZE + (index * MAX_PLOT_SIZE)
 
+            below = get_outliers(len(xlabels), end, below_threshold)
+
             occupancy_subplot(
                 matrix, chunk, ylabels,
-                (begin, end), dir_out)
+                (begin, end), dir_out, below)
     else:
         occupancy_subplot(matrix=matrix, xlabels=xlabels, ylabels=ylabels,
-                          from_and_to=None, dir_out=dir_out)
+                          from_and_to=None, dir_out=dir_out,
+                          below_threshold=below_threshold)
 
 
 def paralogy_frequency(indices, frequencies, otus, threshold, dir_out):
@@ -154,6 +179,6 @@ Matplotlib or disable plotting with '--no-plot'")
                     linestyle="--")
         plt.legend(loc='upper right', fontsize=8)
 
-    plot_figure = plt.gcf()
-    plot_figure.set_size_inches(12.8, len(otus) * 0.17)
+    fig = plt.gcf()
+    fig.set_size_inches(20.0, set_size(otus))
     plt.savefig(freq_file, dpi=PPI)

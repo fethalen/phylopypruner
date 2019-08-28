@@ -17,6 +17,7 @@ from phylopypruner.prune_paralogs import prune_paralogs
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUBCLADE_STATS_FILE = "/subclade_stats.csv"
 
+
 def _exclude_and_rerun(taxon, summary, pruning_method, min_taxa, outgroup, dir_out):
     summary_copy = copy.deepcopy(summary)
 
@@ -29,19 +30,24 @@ def _exclude_and_rerun(taxon, summary, pruning_method, min_taxa, outgroup, dir_o
 
     return resample_summary
 
+
 def _resample(log, excluded, pruning_method, min_taxa, outgroup, dir_out):
     resample_log = copy.deepcopy(log)
     tree_excluded = filtering.exclude(resample_log.masked_tree, excluded)
     resample_log.msas_out = []
+
     if not tree_excluded:
         return None
+
     resample_log.settings.exclude = excluded
     resample_log.orthologs = prune_paralogs(pruning_method,
                                             tree_excluded,
                                             min_taxa,
                                             outgroup)
     resample_log.get_msas_out(dir_out)
+
     return resample_log
+
 
 def jackknife(summary, dir_out, threads):
     """Exclude each OTUs within the summary, one by one, perform paralogy
@@ -98,6 +104,7 @@ def jackknife(summary, dir_out, threads):
         excluded = resample.logs[0].settings.exclude
         summary.report("{}_excluded".format(excluded), dir_out)
 
+
 def _mean(data):
     """Returns the sample arithmetic mean of data. 0 is returned if an empty
     list was provided.
@@ -113,6 +120,7 @@ def _mean(data):
     """
     return float(sum(data)) / max(len(data), 1)
 
+
 def _sdm(data):
     """Returns the squared deviations from the mean (SDM) of data.
 
@@ -126,6 +134,7 @@ def _sdm(data):
         The sum of square deviations of data.
     """
     return sum((x - _mean(data))**2 for x in data)
+
 
 def _std(data):
     """Return the population standard deviation of data.
@@ -141,7 +150,9 @@ def _std(data):
     """
     if len(data) < 2:
         raise ValueError('variance requires at least two data points')
+
     return (_sdm(data) / len(data)) ** 0.5
+
 
 def _rerun_wo_otu(log, otus, dir_out):
     log_copy = copy.deepcopy(log)
@@ -152,14 +163,18 @@ def _rerun_wo_otu(log, otus, dir_out):
     tree_excluded = filtering.exclude(tree, list(otus))
     log_copy.msas_out = []
     log_copy.settings.exclude = list(otus)
+
     if not tree_excluded:
         return None
+
     log_copy.orthologs = prune_paralogs(pruning_method,
                                         tree_excluded,
                                         min_taxa,
                                         outgroup)
     log_copy.get_msas_out(dir_out)
+
     return log_copy
+
 
 def exclude_otus(summary, otus):
     """Exclude the provided OTUs from the provided Summary object.
@@ -184,6 +199,7 @@ def exclude_otus(summary, otus):
 
     return summary
 
+
 def exclude_genes(summary, msas):
     """Exclude the multiple sequence alignments (MSAs) within the provided list
     from the provided Summary object.
@@ -207,6 +223,7 @@ def exclude_genes(summary, msas):
                 log.msas_out.remove(msa)
 
     return summary
+
 
 def prune_by_exclusion(summary, otus, dir_out, threads):
     """Exclude the OTUs within the provided list of OTUs from the masked trees
@@ -260,6 +277,7 @@ def prune_by_exclusion(summary, otus, dir_out, threads):
 
     return summary_out
 
+
 def trim_freq_paralogs(factor, paralog_freq):
     """Returns a set of OTUs with a paralogy frequency that is factor times
     larger than the standard deviation of the paralogy frequency of all OTUs.
@@ -292,10 +310,12 @@ def trim_freq_paralogs(factor, paralog_freq):
         no_otus_above, otu_str, ending)
 
     report.progress_bar(message, replace=False)
+
     if no_otus_above != 0:
         display_otus(otus_above_threshold)
 
     return otus_above_threshold
+
 
 def trim_divergent(node, divergence_threshold=0.25, include=[]):
     """For each OTU with more than one sequence present in the provided node:
@@ -345,7 +365,8 @@ def trim_divergent(node, divergence_threshold=0.25, include=[]):
                 out_otus_dists[paralog.otu()].append(paralog.distance_to(leaf))
 
     for otu in out_otus_dists:
-        out_otus_avg_dist[otu] = sum(out_otus_dists[otu]) / float(len(out_otus_dists[otu]))
+        out_otus_avg_dist[otu] = \
+                sum(out_otus_dists[otu]) / float(len(out_otus_dists[otu]))
 
     for otu in out_otus_avg_dist:
         in_out_ratio = in_otus_max_dist[otu] / out_otus_avg_dist[otu]
@@ -366,6 +387,7 @@ def trim_divergent(node, divergence_threshold=0.25, include=[]):
     node.remove_nodes(nodes_to_remove)
 
     return otus_above_threshold, removed
+
 
 def score_monophyly(summary, taxonomic_groups, dir_out):
     """Takes a Summary object, a list of TaxonomicGroup objects, and the path
@@ -425,7 +447,8 @@ def score_monophyly(summary, taxonomic_groups, dir_out):
             for branch in tree.iter_branches():
                 otus_in_branch = set(branch.iter_otus())
                 ingroups_in_branch = otus_in_branch.intersection(ingroups)
-                outgroups_in_branch = otus_in_branch.difference(ingroups_in_branch)
+                outgroups_in_branch = \
+                    otus_in_branch.difference(ingroups_in_branch)
 
                 if len(ingroups_in_branch) < 2 or len(outgroups_in_branch) > 2:
                     continue
@@ -433,8 +456,8 @@ def score_monophyly(summary, taxonomic_groups, dir_out):
                 # Find the branch that maximizes the amount of ingroup OTUs and
                 # minimizes the amount of outgroup OTUs.
                 if len(ingroups_in_branch) > most_ingroups or \
-                    (len(ingroups_in_branch) == most_ingroups and \
-                    len(outgroups_in_branch) < no_of_outgroups):
+                    (len(ingroups_in_branch) == most_ingroups and
+                     len(outgroups_in_branch) < no_of_outgroups):
                     most_inclusive_branch = branch
                     most_ingroups = len(ingroups_in_branch)
                     no_of_outgroups = len(outgroups_in_branch)
@@ -462,6 +485,7 @@ def score_monophyly(summary, taxonomic_groups, dir_out):
     # Order the score so that there is one OTU for each row, instead of for
     # each column.
     scores_otu_row = []
+
     for index, score in enumerate(otu_scores_ordered):
         scores_otu_row.append([otus[index], score])
 

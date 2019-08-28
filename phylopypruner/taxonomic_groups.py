@@ -3,6 +3,7 @@ A taxonomic group represents collections of operational taxonomical units
 (OTUs).
 """
 
+
 class TaxonomicGroup:
     """
     Represents a collection of operational taxonomical units (OTUs).
@@ -45,6 +46,7 @@ class TaxonomicGroup:
         "Add an OTU to this taxonomic group. Expects OTU to be a string."
         self.otus.append(otu)
         return otu
+
 
 def read(path):
     """Takes the path to a file that contains one, or more, 'taxonomic groups'
