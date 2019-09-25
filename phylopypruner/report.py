@@ -13,19 +13,21 @@ try:
 except (ImportError, AttributeError):
     pass
 
+
 def supports_color():
     """
     Returns True if the running system's terminal supports color, and False
     otherwise.
     """
     plat = sys.platform
-    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
-                                                  'ANSICON' in os.environ)
+    supported_platform = plat != "Pocket PC" and (plat != "win32" or
+                                                  "ANSICON" in os.environ)
     # isatty is not always implemented, #6223.
-    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+    is_a_tty = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
     if not supported_platform or not is_a_tty:
         return False
     return True
+
 
 if supports_color():
     COLOR_SUPPORT = True
@@ -38,6 +40,7 @@ PURPLE = "\033[35m"
 CYAN = "\033[36m"
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
+
 
 def warning(message, display=True):
     """Write the provided message, with the text 'warning: ' in front of it, to
@@ -61,6 +64,7 @@ def warning(message, display=True):
         print(warning_message, file=sys.stderr)
     return warning_message
 
+
 def error(message, display=True):
     """Write the provided message, with the text 'error: ', in front of it to
     stderr.
@@ -82,6 +86,7 @@ def error(message, display=True):
     if display:
         print(error_message, file=sys.stderr)
     return error_message
+
 
 def tip(message, display=True):
     """Write the provided message, with the text 'tip: ' in front of it, to
@@ -105,6 +110,7 @@ def tip(message, display=True):
         print(tip_message, file=sys.stderr)
     return tip_message
 
+
 def yes_or_no(question):
     """Takes a question as an input and prompts the user for a yes or no. Returns
     True if the answer is yes and False if the answer is no.
@@ -124,6 +130,7 @@ def yes_or_no(question):
     while not answer in ("y", "n"):
         answer = input("please answer yes or no" + " (y/n): ".lower().rstrip())
     return answer[0] == "y"
+
 
 def progress_bar(message, replace=True, display=True):
     """Takes a text string as an input and prints it to standard error, with a
@@ -157,6 +164,7 @@ def progress_bar(message, replace=True, display=True):
         print(progress, file=sys.stderr)
     return progress
 
+
 def print_path(path, display=True):
     """Takes the path to a file as an input and prints the given path in blue.
 
@@ -177,6 +185,7 @@ def print_path(path, display=True):
         print(path, file=sys.stderr)
     return path
 
+
 def underline(text):
     """Returns the provided text with an underline.
 
@@ -193,6 +202,7 @@ def underline(text):
     underlined_text = ("{}{}{}".format(UNDERLINE, text, NORMAL))
     return underlined_text
 
+
 def bold(text):
     """Returns the provided text in bold.
 
@@ -208,6 +218,7 @@ def bold(text):
     """
     bold_text = ("{}{}{}".format(BOLD, text, NORMAL))
     return bold_text
+
 
 def display_otus(otus, display=True):
     """Takes a list of OTUs as an input and returns the OTUs as a string, where
@@ -234,6 +245,7 @@ def display_otus(otus, display=True):
     if display:
         print("    " + formatted_otus, file=sys.stderr)
     return "    " + formatted_otus
+
 
 def colorize(text, color):
     """Returns the provided text in the chosen color. The color you pick should
@@ -264,6 +276,7 @@ def colorize(text, color):
     if COLOR_SUPPORT:
         return colored_text
     return text
+
 
 def format_otus(otus):
     """Returns the provided OTUs as a formatted string, where each OTU in the

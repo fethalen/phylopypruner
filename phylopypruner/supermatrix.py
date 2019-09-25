@@ -77,7 +77,7 @@ class Supermatrix(object):
         """
         otu = sequence.otu
 
-        if not otu in self.sequences:
+        if otu not in self.sequences:
             self.sequences[otu] = sequence.sequence_data
         else:
             self.sequences[otu] = self.sequences[otu] + sequence.sequence_data
@@ -155,7 +155,7 @@ class Supermatrix(object):
                         filler = "N" * len(msa.sequences[0])
                     else:
                         filler = "X" * len(msa.sequences[0])
-                    if not otu in self.sequences:
+                    if otu not in self.sequences:
                         self.sequences[otu] = filler
                     else:
                         self.sequences[otu] = self.sequences[otu] + filler

@@ -284,7 +284,9 @@ class TreeNode(object):
         -------
         True if the number of children in this node == 1, else False.
         """
-        return not self.is_leaf() and not self.is_root() and len(self.children) < 2
+        return not self.is_leaf() and\
+            not self.is_root() and\
+            len(self.children) < 2
 
     def has_monofurcations(self):
         """Returns True if there are any non-root nodes which are

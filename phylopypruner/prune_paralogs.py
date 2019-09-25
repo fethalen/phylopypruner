@@ -6,12 +6,14 @@ gene tree.
 from __future__ import absolute_import
 from phylopypruner import root
 
+
 def _has_enough_taxa(node, min_taxa):
     """Takes a TreeNode object and a threshold as an input. Returns False if
     there are fewer than [min_taxa] OTUs within the node, else True.
     """
     otus = {_ for _ in node.iter_otus}
     return len(otus) >= min_taxa
+
 
 def largest_subtree(node, min_taxa):
     """Takes a TreeNode object and a minimum number of taxa as an input. Find
@@ -42,6 +44,7 @@ def largest_subtree(node, min_taxa):
 
     return max_subtree
 
+
 def largest_subtree_to_list(tree, min_taxa):
     """Takes a TreeNode object and the minimum allowed number of OTUs as an
     input. If there is a node that has no overlapping OTUs and that satisfies
@@ -52,6 +55,7 @@ def largest_subtree_to_list(tree, min_taxa):
     if largest_node:
         return [largest_node]
     return []
+
 
 def maximum_inclusion(tree, min_taxa):
     """
@@ -67,7 +71,12 @@ def maximum_inclusion(tree, min_taxa):
         if max_subtree.is_root():
             break
 
-        max_subtree.delete()
+        parent = max_subtree.parent
+        parent.remove_child(max_subtree)
+
+        # remove monofurcating nodes
+        while tree.has_monofurcations():
+            tree.prune_monofurcations()
 
         # get rid of empty leaves that may occur after pruning
         while tree.empty_leaves():
@@ -77,6 +86,7 @@ def maximum_inclusion(tree, min_taxa):
                     break
 
         max_subtree = largest_subtree(tree, min_taxa)
+
 
 def largest_root(node, outgroups, min_taxa):
     """Takes a TreeNode, a list of outgroups and the minimum number of taxa
@@ -126,6 +136,7 @@ def largest_root(node, outgroups, min_taxa):
 
     return outgroup_clade
 
+
 def rooted_tree(tree, min_taxa, outgroups):
     """
     Takes a TreeNode object, the minimum number of OTUs allowed in the output
@@ -174,6 +185,7 @@ def rooted_tree(tree, min_taxa, outgroups):
         outgroup_clade.delete()
         outgroup_clade = largest_root(tree, outgroups, min_taxa)
 
+
 def monophyletic_outgroups(tree, min_taxa, outgroups):
     """Takes a TreeNode object, the minimum number of taxa allowed and a list
     of outgroups as an input. Looks for subtrees where all outgroup OTUs are
@@ -206,12 +218,14 @@ def monophyletic_outgroups(tree, min_taxa, outgroups):
             yield max_subtree
             return
 
+
 def one_to_one_orthologs(tree):
     """Takes a TreeNode object as an input and returns an unmodified tree if
     and only if the OTUs are non-repetetive.
     """
     if not bool(tree.paralogs()):
         return tree
+
 
 def one_to_one_orthologs_to_list(tree):
     """Takes a TreeNode object as an input. If the provided TreeNode object is
@@ -224,6 +238,7 @@ def one_to_one_orthologs_to_list(tree):
         return [one_to_one_ortholog]
     return []
 
+
 def tree_decomposition(tree):
     """Takes
     """
@@ -233,6 +248,7 @@ def tree_decomposition(tree):
                 print(child.view())
     yield tree
 
+
 def prune_paralogs(method, tree, min_taxa, outgroup):
     """Takes the name of the paralogy pruning algorithm to use and a TreeNode
     object as an input. Returns a list of TreeNode objects, where each object
@@ -241,7 +257,7 @@ def prune_paralogs(method, tree, min_taxa, outgroup):
     subtrees = []
     methods = ("LS", "MI", "MO", "RT", "TD", "1to1")
 
-    if not method in methods:
+    if method not in methods:
         AssertionError("unknown paralogy pruning method: '{}'".format(method))
 
     if method == "LS":

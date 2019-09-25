@@ -506,17 +506,26 @@ class Summary(object):
             stats["avg_seq_len"] = int(stats["seq_lens"] / stats["sequences"])
 
         # determine the column width from the longest statistic
-        col_width = max(
-            len(str(stats["sequences"])),
-            len(str(stats["alignments"])),
-            len(str(stats["cat_alignment_len"])),
-            len(str(stats["no_of_otus"])),
-            len(str(stats["longest"])),
-            len(str(homolog_stats[1])),
-            len(str(homolog_stats[2])),
-            len(str(homolog_stats[8])),
-            len(str(homolog_stats[10]))
-            ) + 1
+        if homolog_stats:
+            col_width = max(
+                len(str(stats["sequences"])),
+                len(str(stats["alignments"])),
+                len(str(stats["cat_alignment_len"])),
+                len(str(stats["no_of_otus"])),
+                len(str(stats["longest"])),
+                len(str(homolog_stats[1])),
+                len(str(homolog_stats[2])),
+                len(str(homolog_stats[8])),
+                len(str(homolog_stats[10]))
+                ) + 1
+        else:
+            col_width = max(
+                len(str(stats["sequences"])),
+                len(str(stats["alignments"])),
+                len(str(stats["cat_alignment_len"])),
+                len(str(stats["no_of_otus"])),
+                len(str(stats["longest"])),
+                ) + 1
 
         if col_width < 4:
             col_width = 4
@@ -530,6 +539,24 @@ class Summary(object):
         methods_header = "Methods summary:\n  " +\
                 underline("{:29s} {:{}s}    {:{}s}".format(
                     name, "No. removed", col_width, "% of input", col_width))
+
+        row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
+            title,
+            stats["alignments"],
+            stats["sequences"],
+            stats["no_of_otus"],
+            stats["avg_no_of_seqs"],
+            stats["avg_no_of_seqs"],
+            stats["avg_seq_len"],
+            stats["shortest"],
+            stats["longest"],
+            stats["missing_data"],
+            stats["cat_alignment_len"])
+
+
+        if not homolog_stats:
+            return "", row
+
         stats_report = """
 {}
   No. of alignments                 {:{}d}   {:{}d}
@@ -574,19 +601,6 @@ class Summary(object):
       100 * stats["genes_removed_count"] / homolog_stats[2], col_width
   )
 
-        row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
-            title,
-            stats["alignments"],
-            stats["sequences"],
-            stats["no_of_otus"],
-            stats["avg_no_of_seqs"],
-            stats["avg_no_of_seqs"],
-            stats["avg_seq_len"],
-            stats["shortest"],
-            stats["longest"],
-            stats["missing_data"],
-            stats["cat_alignment_len"])
-
         return stats_report, row
 
     def report(self, title, dir_out, homolog_stats=None):
@@ -606,7 +620,10 @@ class Summary(object):
         report : str
             Overview statistics of the summary.
         """
-        report, row = self.alignment_stats("Description", title, homolog_stats)
+        if homolog_stats:
+            report, row = self.alignment_stats("Description", title, homolog_stats)
+        else:
+            report, row = self.alignment_stats("Description", title)
 
         with open(dir_out + SUM_PATH, "a") as sum_out_file:
             sum_out_file.write(row)
