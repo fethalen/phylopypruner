@@ -339,23 +339,23 @@ def parse_args():
     parser.add_argument("--no-plot",
                         default=False,
                         action="store_true",
-                        help="do not generate plots (faster)")
+                        help="do not generate any plots")
     parser.add_argument("--wrap",
                         metavar="COLUMN",
                         default=None,
                         type=int,
-                        help="wrap output sequences at this column instead \
-                              of writing each sequence to a single line")
+                        help="wrap output sequences at COLUMN instead\
+                              writing each sequence to a single line")
     parser.add_argument("--threads",
                         metavar="COUNT",
                         default=None,
                         type=int,
-                        help="use this many threads instead of up to 10")
+                        help="use COUNT threads instead of up to 10 threads")
     parser.add_argument("--output",
                         metavar="DIRECTORY",
                         type=str,
                         default=None,
-                        help="save output files to this directory instead of \
+                        help="save output files to DIRECTORY instead of\
                               the input directory")
 
     group = parser.add_argument_group("input data")
@@ -363,44 +363,44 @@ def parse_args():
                        metavar="DIRECTORY",
                        type=str,
                        default=None,
-                       help="a folder containing 1+ alignment and tree files")
+                       help="a DIRECTORY containing 1+ alignment and tree files")
 
     group = parser.add_argument_group("filters")
     group.add_argument("--min-taxa",
                        metavar="COUNT",
                        type=int,
                        default=4,
-                       help="discard output alignments with fewer OTUs than \
-                             this (4 by default)")
+                       help="discard output alignments with fewer OTUs than\
+                             COUNT (4 by default)")
     group.add_argument("--min-len",
                        metavar="LENGTH",
                        default=None,
                        type=int,
-                       help="remove sequences with fewer bases than this")
+                       help="remove sequences with fewer bases than LENGTH")
     group.add_argument("--min-support",
                        metavar="SUPPORT",
                        default=None,
                        type=float,
-                       help="collapse nodes with less support than this into \
+                       help="collapse nodes with less support than SUPPORT into\
                              polytomies")
     group.add_argument("--trim-lb",
                        default=None,
                        metavar="FACTOR",
                        type=float,
-                       help="remove branches longer than FACTOR standard \
+                       help="remove branches longer than FACTOR standard\
                              deviations of all branches")
     group.add_argument("--min-pdist",
                        default=None,
                        metavar="DISTANCE",
                        type=float,
-                       help="remove sequence pairs with less tip-to-tip \
-                             distance than this")
+                       help="remove sequence pairs with less tip-to-tip\
+                             distance than DISTANCE")
     group.add_argument("--include",
                        nargs="+",
                        metavar="OTU",
                        default=None,
                        type=str,
-                       help="include these OTUs, even if deemed problematic \
+                       help="include these OTUs, even if deemed problematic\
                              by '--trim-freq-paralogs' or '--trim-divergent'")
     group.add_argument("--exclude",
                        nargs='+',
@@ -413,20 +413,20 @@ def parse_args():
                        metavar="OTU",
                        default=None,
                        type=str,
-                       help="discard output alignments where these OTUs are \
+                       help="discard output alignments where these OTUs are\
                              missing")
     group.add_argument("--min-otu-occupancy",
                        metavar="OCCUPANCY",
                        default=None,
                        type=float,
-                       help="do not include OTUs with less occupancy than \
-                       this")
+                       help="do not include OTUs with less occupancy than\
+                              OCCUPANCY")
     group.add_argument("--min-gene-occupancy",
                        metavar="OCCUPANCY",
                        default=None,
                        type=float,
-                       help="discard output alignments with less occupancy \
-                       than this")
+                       help="discard output alignments with less occupancy\
+                             than OCCUPANCY")
 
     group = parser.add_argument_group("tree-based orthology inference")
     group.add_argument("--outgroup",
@@ -434,20 +434,20 @@ def parse_args():
                        metavar="OTU",
                        default=None,
                        type=str,
-                       help="root trees using these OTUs if at least one OTU \
-                             is present and if all present OTUs are \
+                       help="root trees using these OTUs if at least one OTU\
+                             is present and if all present OTUs are\
                              non-repetetive and form a clade")
     group.add_argument("--root",
                        default=None,
                        type=str,
                        choices=["midpoint"],
-                       help="root trees using this method in cases where no \
+                       help="root trees using this method in cases where no\
                              outgroup rooting is not performed")
     group.add_argument("--mask",
                        default="pdist",
                        type=str,
                        choices=["longest", "pdist"],
-                       help="if 2+ sequences from a single OTU forms a clade, \
+                       help="if 2+ sequences from a single OTU forms a clade,\
                              choose which sequence to keep using this method")
     group.add_argument("--prune",
                        default="LS",
@@ -460,28 +460,28 @@ def parse_args():
                        default=None,
                        metavar="FACTOR",
                        type=float,
-                       help="exclude OTUs with more paralogy frequency (PF) \
+                       help="exclude OTUs with more paralogy frequency (PF)\
                              than FACTOR standard deviations of all PFs")
     group.add_argument("--trim-divergent",
                        default=None,
                        metavar="PERCENTAGE",
                        type=float,
-                       help="for each alignment: discard all sequences from an OTU on a \
-                       per-alignment-basis, if the ratio between the largest \
-                       pairwise distance of sequences from this OTU and \
-                       the average pairwise distance of sequences from this \
+                       help="for each alignment: discard all sequences from an OTU on a\
+                       per-alignment-basis, if the ratio between the largest\
+                       pairwise distance of sequences from this OTU and\
+                       the average pairwise distance of sequences from this\
                        OTU to other's exceed this percentage")
     group.add_argument("--subclades",
                        default=None,
                        metavar="FILE",
                        type=str,
-                       help="specify a set of subclades within this file \
+                       help="specify a set of subclades within this file\
                              and analyse their overall stability")
     group.add_argument("--jackknife",
                        default=False,
                        action="store_true",
-                       help="exclude each OTU one by one, rerun the whole \
-                             analysis and generate statistics for each \
+                       help="exclude each OTU one by one, rerun the whole\
+                             analysis and generate statistics for each\
                              subsample")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 

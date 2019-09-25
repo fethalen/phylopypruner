@@ -9,6 +9,7 @@ from __future__ import absolute_import
 from collections import defaultdict
 from phylopypruner.filtering import rm_empty_root
 
+
 def _monophyletic_sister(node):
     """
     Takes a TreeNode object as an input. If both this node and the sister group
@@ -17,7 +18,7 @@ def _monophyletic_sister(node):
     """
     parent = node.parent
     if not parent:
-        return
+        return None
 
     ingroup_otus = set()
 
@@ -27,7 +28,7 @@ def _monophyletic_sister(node):
 
     if not ingroup_otus:
         # no leaf within the node's children
-        return
+        return None
 
     outgroup_otu = ""
     removed = None
@@ -35,13 +36,14 @@ def _monophyletic_sister(node):
     for child in parent.children:
         if child.is_leaf() and outgroup_otu:
             # non-unique OTUs found in a sister group to this node
-            return
-        elif child.is_leaf():
+            return None
+        if child.is_leaf():
             outgroup_otu = child.otu()
             if outgroup_otu in ingroup_otus:
                 removed = child
 
     return removed
+
 
 def _sequence_len(msa, description):
     """
@@ -52,6 +54,8 @@ def _sequence_len(msa, description):
 
     if sequence:
         return len(sequence.ungapped())
+    return 0
+
 
 def _longest_seq(node, msa):
     """
@@ -66,6 +70,7 @@ def _longest_seq(node, msa):
             leaf_to_keep = leaf
     return leaf_to_keep
 
+
 def _smallest_distance(node):
     """
     Takes a TreeNode object as an input and returns the leaf with with the
@@ -79,11 +84,12 @@ def _smallest_distance(node):
             smallest_dist = dist
     return leaf_to_keep
 
+
 def _monophyletic_branch(node, msa=None):
     no_of_leaves = len(set(node.iter_leaves()))
     keep = None
 
-    if no_of_leaves is 2:
+    if no_of_leaves == 2:
         # repetetive OTUs within a bifurcating node with two leaves
         if msa:
             keep = _longest_seq(node, msa)
@@ -103,8 +109,8 @@ def _monophyletic_branch(node, msa=None):
                 keep = _smallest_distance(node)
     if keep:
         return node.leaves_except(keep)
-    else:
-        return set()
+    return set()
+
 
 def _monophyletic_polytomy(node, msa=None):
     """
@@ -155,6 +161,7 @@ def _monophyletic_polytomy(node, msa=None):
                 leaves_to_remove.add(leaf)
     return leaves_to_remove
 
+
 def longest_isoform(msa, node):
     """
     Takes a TreeNode object as an input. Finds branches with repetetive OTUs
@@ -186,6 +193,7 @@ def longest_isoform(msa, node):
 
     node = rm_empty_root(node)
     return node, masked
+
 
 def pairwise_distance(node):
     """

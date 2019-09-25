@@ -53,20 +53,16 @@ def get_outliers(total, current_end, below_threshold):
     below the threshold in total.
     """
     otus_below, genes_below = below_threshold
+
     in_this_round = genes_below - (total - current_end)
+
+    if current_end == total and genes_below > MAX_PLOT_SIZE:
+        in_this_round = current_end % MAX_PLOT_SIZE
+    elif in_this_round > MAX_PLOT_SIZE:
+        in_this_round = MAX_PLOT_SIZE
+
     return (otus_below, in_this_round) if in_this_round >= 0 \
         else (otus_below, 0)
-
-    # if genes_below <= MAX_PLOT_SIZE:
-    #     if current_end == total:
-    #         return (otus_below, genes_below)
-    #     return (otus_below, 0)
-    # return below_threshold
-    # if current_end != total:
-    #     below = (below_threshold[0], 0)
-    # else:
-    #     below = below_threshold
-
 
 
 def chunks(items, size):
@@ -96,7 +92,7 @@ def occupancy_subplot(matrix, xlabels, ylabels, from_and_to=None, dir_out=None,
     fig = plt.figure()
     plotting_dir = dir_out + PLOTS_DIR + "/"
     axes = fig.add_subplot(111)
-    plot = axes.matshow(mat_sub, cmap="Blues", interpolation="nearest")
+    plot = axes.matshow(mat_sub, cmap="BuGn", interpolation="nearest")
     fig.colorbar(plot)
 
     axes.set_title("Occupancy Matrix")
@@ -107,9 +103,9 @@ def occupancy_subplot(matrix, xlabels, ylabels, from_and_to=None, dir_out=None,
                          fontsize=FONT_SIZE, stretch="expanded")
     axes.set_yticklabels(ylabels, fontsize=FONT_SIZE)
 
-    # if below_threshold:
-    #     otus_below, genes_below = below_threshold
-    #     axes = flag_outliers(axes, genes_below, otus_below)
+    if below_threshold:
+        otus_below, genes_below = below_threshold
+        axes = flag_outliers(axes, genes_below, otus_below)
 
     fig.set_size_inches(set_size(xlabels), set_size(ylabels))
     plt.xlabel("Gene partitions")
@@ -180,5 +176,5 @@ Matplotlib or disable plotting with '--no-plot'")
         plt.legend(loc='upper right', fontsize=8)
 
     fig = plt.gcf()
-    fig.set_size_inches(20.0, set_size(otus))
+    fig.set_size_inches(20.0, 0.15 * len(otus))
     plt.savefig(freq_file, dpi=PPI)
