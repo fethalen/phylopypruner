@@ -8,17 +8,18 @@ from phylopypruner import root
 
 
 def _has_enough_taxa(node, min_taxa):
-    """Takes a TreeNode object and a threshold as an input. Returns False if
-    there are fewer than [min_taxa] OTUs within the node, else True.
+    """
+    Takes a TreeNode object and a threshold as an input. Returns False if there
+    are fewer than [min_taxa] OTUs within the node, else True.
     """
     otus = {_ for _ in node.iter_otus}
     return len(otus) >= min_taxa
 
 
 def largest_subtree(node, min_taxa):
-    """Takes a TreeNode object and a minimum number of taxa as an input. Find
-    and return the TreeNode object of the largest subtree with non-repeating
-    OTUs.
+    """
+    Takes a TreeNode object and a minimum number of taxa as an input. Find and
+    return the TreeNode object of the largest subtree with non-repeating OTUs.
     """
     max_subtree = None
     largest = 0
@@ -46,10 +47,11 @@ def largest_subtree(node, min_taxa):
 
 
 def largest_subtree_to_list(tree, min_taxa):
-    """Takes a TreeNode object and the minimum allowed number of OTUs as an
-    input. If there is a node that has no overlapping OTUs and that satisfies
-    the OTU requirement, then return that TreeNode as a list of one object. If
-    no such node is found, then return an empty list.
+    """
+    Takes a TreeNode object and the minimum allowed number of OTUs as an input.
+    If there is a node that has no overlapping OTUs and that satisfies the OTU
+    requirement, then return that TreeNode as a list of one object. If no such
+    node is found, then return an empty list.
     """
     largest_node = largest_subtree(tree, min_taxa)
     if largest_node:
@@ -89,13 +91,13 @@ def maximum_inclusion(tree, min_taxa):
 
 
 def largest_root(node, outgroups, min_taxa):
-    """Takes a TreeNode, a list of outgroups and the minimum number of taxa
+    """
+    Takes a TreeNode, a list of outgroups and the minimum number of taxa
     allowed as an input. Returns the largest subtree where all of the provided
     outgroups are present.
 
     Parameters
     ----------
-
     node : TreeNode object
         Root of the node that you want to search.
 
@@ -187,8 +189,9 @@ def rooted_tree(tree, min_taxa, outgroups):
 
 
 def monophyletic_outgroups(tree, min_taxa, outgroups):
-    """Takes a TreeNode object, the minimum number of taxa allowed and a list
-    of outgroups as an input. Looks for subtrees where all outgroup OTUs are
+    """
+    Takes a TreeNode object, the minimum number of taxa allowed and a list of
+    outgroups as an input. Looks for subtrees where all outgroup OTUs are
     present and forms a monophyletic group, cuts the tree off, roots it and
     returns the largest subtree with non-repetetive taxa within that tree. An
     iterator object is returned, where each object is the most inclusive
@@ -220,27 +223,18 @@ def monophyletic_outgroups(tree, min_taxa, outgroups):
 
 
 def one_to_one_orthologs(tree):
-    """Takes a TreeNode object as an input and returns an unmodified tree if
-    and only if the OTUs are non-repetetive.
+    """
+    Takes a TreeNode object as an input and returns an unmodified tree if and
+    only if none of the OTUs within the tree is present more than once.
     """
     if not bool(tree.paralogs()):
         return tree
-
-
-def one_to_one_orthologs_to_list(tree):
-    """Takes a TreeNode object as an input. If the provided TreeNode object is
-    a one-to-one ortholog (the number of OTUs is the same as the number of
-    sequences), then return that TreeNode object as an item in a list. If not,
-    then return an empty list.
-    """
-    one_to_one_ortholog = one_to_one_orthologs(tree)
-    if one_to_one_ortholog:
-        return [one_to_one_ortholog]
-    return []
+    return None
 
 
 def tree_decomposition(tree):
-    """Takes
+    """
+    Takes a TreeNode object as an input ...
     """
     for internal_node in tree.iter_branches():
         if internal_node.paralogs():

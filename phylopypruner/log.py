@@ -1,6 +1,3 @@
-# pylint: disable=too-many-instance-attributes
-# pylint: disable=too-many-branches
-
 """
 Store information about performed operations.
 """
@@ -21,6 +18,7 @@ pctMissingData;alignmentLen\n"
 HOMOLOG_STATS_HEADER = "id;otus;sequences;meanSeqLen;shortestSeq;longestSeq;\
 pctMissingData;alignmentLen;shortSequencesRemoved;longBranchesRemoved;\
 monophyliesMasked;nodesCollapsed;divergentOtusRemoved\n"
+
 
 class Log(object):
     """
@@ -361,7 +359,8 @@ class Log(object):
             for index, subtree in enumerate(self.orthologs):
                 if subtree:
                     leaf_count = len(list(subtree.iter_leaves()))
-                    ortho_str += "\northologous group #{}:\t\t\t\t".format(index + 1)
+                    ortho_str += "\northologous group #{}:\t\t\t\t".format(
+                        index + 1)
                     ortho_str += "\n  # of sequences:\t{}".format(leaf_count)
                     ortho_str += "\n{}".format(subtree.view())
         else:
@@ -417,7 +416,8 @@ class Log(object):
         if index:
             index = "_{}".format(index)
 
-        return("{}/{}_pruned{}{}".format(orthologs_dir, basename, index, extension),
+        return("{}/{}_pruned{}{}".format(
+            orthologs_dir, basename, index, extension),
                extension)
 
     def get_msas_out(self, dir_out):
@@ -442,6 +442,7 @@ class Log(object):
 
         return self.msas_out
 
+
 def avg_seq_len(msa):
     """
     Takes a MultipleSequenceAlignment object as an input and returns the
@@ -457,6 +458,7 @@ def avg_seq_len(msa):
     else:
         return 0
 
+
 def shortest_sequence(msa):
     """
     Returns the shortest sequence in the provided MultipleSequenceAlignment
@@ -467,6 +469,7 @@ def shortest_sequence(msa):
         if not shortest or shortest > len(sequence.ungapped()):
             shortest = len(sequence.ungapped())
     return shortest
+
 
 def longest_sequence(msa):
     """
@@ -479,12 +482,13 @@ def longest_sequence(msa):
             longest = len(sequence.ungapped())
     return longest
 
+
 def _file_out(path, directory=None, index=""):
     """
     Takes the path to an MSA and an optional path to a directory as an input.
-    Extracts the base name and extension from the provided path. If no directory
-    has been specified, then the directory is also extracted from the path.
-    Returns the path to a file in the following format:
+    Extracts the base name and extension from the provided path. If no
+    directory has been specified, then the directory is also extracted from
+    the path.  Returns the path to a file in the following format:
       <dir_out>/<basename>_pruned<extension>
 
     If an index has been provided, then the output will be in the following
