@@ -17,8 +17,8 @@ from phylopypruner.prune_paralogs import prune_paralogs
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUBCLADE_STATS_FILE = "/subclade_stats.csv"
 
-
-def _exclude_and_rerun(taxon, summary, pruning_method, min_taxa, outgroup, dir_out):
+def _exclude_and_rerun(taxon, summary, pruning_method, min_taxa, outgroup,
+                       dir_out):
     summary_copy = copy.deepcopy(summary)
 
     resample_summary = Summary()
@@ -50,9 +50,9 @@ def _resample(log, excluded, pruning_method, min_taxa, outgroup, dir_out):
 
 
 def jackknife(summary, dir_out, threads):
-    """Exclude each OTUs within the summary, one by one, perform paralogy
-    pruning and output summary statistics of the output alignments for each
-    subsample.
+    """
+    Exclude each OTUs within the summary, one by one, perform paralogy pruning
+    and output summary statistics of the output alignments for each subsample.
 
     Parameters
     ----------
@@ -106,8 +106,9 @@ def jackknife(summary, dir_out, threads):
 
 
 def _mean(data):
-    """Returns the sample arithmetic mean of data. 0 is returned if an empty
-    list was provided.
+    """
+    Returns the sample arithmetic mean of data. 0 is returned if an empty list
+    was provided.
 
     Parameters
     ----------
@@ -122,7 +123,8 @@ def _mean(data):
 
 
 def _sdm(data):
-    """Returns the squared deviations from the mean (SDM) of data.
+    """
+    Returns the squared deviations from the mean (SDM) of data.
 
     Parameters
     ----------
@@ -137,7 +139,8 @@ def _sdm(data):
 
 
 def _std(data):
-    """Return the population standard deviation of data.
+    """
+    Return the population standard deviation of data.
 
     Parameters
     ----------
@@ -177,7 +180,8 @@ def _rerun_wo_otu(log, otus, dir_out):
 
 
 def exclude_otus(summary, otus):
-    """Exclude the provided OTUs from the provided Summary object.
+    """
+    Exclude the provided OTUs from the provided Summary object.
 
     Parameters
     ----------
@@ -201,7 +205,8 @@ def exclude_otus(summary, otus):
 
 
 def exclude_genes(summary, msas):
-    """Exclude the multiple sequence alignments (MSAs) within the provided list
+    """
+    Exclude the multiple sequence alignments (MSAs) within the provided list
     from the provided Summary object.
 
     Parameters
@@ -226,7 +231,8 @@ def exclude_genes(summary, msas):
 
 
 def prune_by_exclusion(summary, otus, dir_out, threads):
-    """Exclude the OTUs within the provided list of OTUs from the masked trees
+    """
+    Exclude the OTUs within the provided list of OTUs from the masked trees
     within summary, perform paralogy pruning and output statistics and
     alignments for each ortholog recovered.
 
@@ -279,7 +285,8 @@ def prune_by_exclusion(summary, otus, dir_out, threads):
 
 
 def trim_freq_paralogs(factor, paralog_freq):
-    """Returns a set of OTUs with a paralogy frequency that is factor times
+    """
+    Returns a set of OTUs with a paralogy frequency that is factor times
     larger than the standard deviation of the paralogy frequency of all OTUs.
 
     Parameters

@@ -2,9 +2,9 @@
 
 from __future__ import absolute_import
 import re
-from sys import stderr
 from phylopypruner import report
 from phylopypruner.sequence import Sequence
+
 
 class MultipleSequenceAlignment(object):
     "Represents a set of sequences."
@@ -61,7 +61,8 @@ class MultipleSequenceAlignment(object):
             sequence.sequence_data = sequence_data
             sequence.otu = re.split(r"\||@", sequence.description)[0]
             try:
-                sequence.identifier = re.split(r"\||@", sequence.description)[1]
+                sequence.identifier = re.split(
+                    r"\||@", sequence.description)[1]
             except IndexError:
                 report.warning("no description found on split with | or @")
                 sequence.identifier = None
@@ -117,14 +118,14 @@ class MultipleSequenceAlignment(object):
         return gaps
 
     def missing_data(self, otus_missing=0):
-        """Returns the percent missing data within this
-        MultipleSequenceAlignment object. The amount of missing data is
-        calculated as follows: Sum the number of gap characters ('-', '?', or
-        'x') within each alignment and then divide this number by the total
-        number of positions within all alignments. Treat each OTU that is missing
-        from the alignment (set by the user; DEFAULT: 0), as having gaps
-        equivalent to the entire length of this MultipleSequenceAlignment
-        object.
+        """
+        Returns the percent missing data within this MultipleSequenceAlignment
+        object. The amount of missing data is calculated as follows: Sum the
+        number of gap characters ('-', '?', or 'x') within each alignment and
+        then divide this number by the total number of positions within all
+        alignments. Treat each OTU that is missing from the alignment (set by
+        the user; DEFAULT: 0), as having gaps equivalent to the entire length
+        of this MultipleSequenceAlignment object.
 
         Parameters
         ----------
@@ -146,8 +147,7 @@ class MultipleSequenceAlignment(object):
         if no_of_sequences > 0:
             return float(gaps) / (float(alignment_len) *
                                   float(no_of_sequences + otus_missing))
-        else:
-            return 0
+        return 0
 
     def otus(self):
         "Returns a list of the OTUs present within this alignment."

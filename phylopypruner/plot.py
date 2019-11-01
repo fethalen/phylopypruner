@@ -25,7 +25,8 @@ MAX_PLOT_SIZE = 500
 
 
 def set_size(labels):
-    """Takes a list of x- or y labels as an input. Returns the size of the
+    """
+    Takes a list of x- or y labels as an input. Returns the size of the
     provided list times 0.05, if it is larger than 100. Otherwise, return the
     default axis size.
     """
@@ -48,8 +49,9 @@ def flag_outliers(axes, genes_below, otus_below):
 
 
 def get_outliers(total, current_end, below_threshold):
-    """Return the number of genes that should be flagged in a subplot, given
-    the total number of genes, the last subplot index, and the number of genes
+    """
+    Return the number of genes that should be flagged in a subplot, given the
+    total number of genes, the last subplot index, and the number of genes
     below the threshold in total.
     """
     otus_below, genes_below = below_threshold
@@ -66,8 +68,9 @@ def get_outliers(total, current_end, below_threshold):
 
 
 def chunks(items, size):
-    """Takes a list and an integer as an input. Yield subsets of the list of
-    the same size as the provided integer.
+    """
+    Takes a list and an integer as an input. Yield subsets of the list of the
+    same size as the provided integer.
     """
     for index in range(0, len(items), size):
         yield items[index:index + size]
@@ -75,8 +78,9 @@ def chunks(items, size):
 
 def occupancy_subplot(matrix, xlabels, ylabels, from_and_to=None, dir_out=None,
                       below_threshold=None):
-    """Takes a matrix as a list, a list of X-labels and a list of Y-labels as
-    an input and generates an occupancy subplot.
+    """
+    Takes a matrix as a list, a list of X-labels and a list of Y-labels as an
+    input and generates an occupancy subplot.
     """
     if from_and_to:
         mat_sub = [None] * len(matrix)
@@ -118,8 +122,9 @@ def occupancy_subplot(matrix, xlabels, ylabels, from_and_to=None, dir_out=None,
 
 
 def occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
-    """Generate a heatmap that displays the number of positions covered for
-    each gene and OTU.
+    """
+    Generate a heatmap that displays the number of positions covered for each
+    gene and OTU.
     """
     report.progress_bar(
         "plotting (disable with '--no-plot')", replace=False)

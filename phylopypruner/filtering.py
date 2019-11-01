@@ -6,9 +6,11 @@ from __future__ import absolute_import
 import copy
 from phylopypruner.tree_node import TreeNode
 
+
 def _is_short_sequence(sequence, threshold):
     """
-    Return true if the provided sequence is shorter than the provided threshold.
+    Return true if the provided sequence is shorter than the provided
+    threshold.
 
     Parameters
     ----------
@@ -23,6 +25,7 @@ def _is_short_sequence(sequence, threshold):
         True if the sequence length is shorter than the provided threshold.
     """
     return len(sequence.ungapped()) < threshold
+
 
 def too_few_otus(tree, threshold):
     """
@@ -43,12 +46,14 @@ def too_few_otus(tree, threshold):
     """
     return len(set(tree.iter_otus())) < threshold
 
+
 def _leaves_to_exclude(node, otus):
     if not node:
         return False
     for leaf in node.iter_leaves():
         if leaf.otu() in otus and not leaf.is_root():
             return True
+
 
 def rm_empty_root(node):
     "Remove an empty node at the root of the provided node."
@@ -58,7 +63,7 @@ def rm_empty_root(node):
     new_root = node
     for branch in node.iter_branches():
         if branch.is_root:
-            if not len(branch) is 1:
+            if len(branch) != 1:
                 new_root = branch
                 new_root = TreeNode(branch.name, branch.dist)
                 new_root.children = branch.children
@@ -70,6 +75,7 @@ def rm_empty_root(node):
             leaves_to_remove.add(leaf)
 
     return new_root.remove_nodes(leaves_to_remove)
+
 
 def exclude(node, otus):
     """
@@ -93,6 +99,7 @@ def exclude(node, otus):
     return node_excluded
     # return rm_empty_root(node_excluded)
 
+
 def force_inclusion(trees, otus):
     """Takes a list of TreeNode objects and a list of OTUs as an input. Returns
     the subset of these TreeNode objects where all OTUs within the list are
@@ -112,6 +119,7 @@ def force_inclusion(trees, otus):
 
     return trees_w_otus
 
+
 def _short_seqs(msa, tree, threshold):
     """
     Takes an MSA object, a TreeNode object and a threshold as an input. Returns
@@ -127,11 +135,12 @@ def _short_seqs(msa, tree, threshold):
                 return True
     return False
 
+
 def trim_short_seqs(msa, tree, threshold):
     """
     Takes a TreeNode object, an MSA object and a threshold as an input. Remove
-    sequences that are shorter than the provided threshold from both the MSA and
-    the tree.
+    sequences that are shorter than the provided threshold from both the MSA
+    and the tree.
     """
     nodes_to_remove = set()
 
@@ -147,22 +156,25 @@ def trim_short_seqs(msa, tree, threshold):
 
     return removed_nodes
 
+
 def _mean(data):
     """ Return the sample arithmetic mean of data, a sequence of real-valued
     numbers. The average of the empty list, '[]', is 0.
     """
     return float(sum(data)) / max(len(data), 1)
 
+
 def _sdm(data):
-    """ Return the sum of square deviations of data.
-    """
+    "Return the sum of square deviations of data."
     return sum((x - _mean(data))**2 for x in data)
+
 
 def _std(data):
     "Return the population standard deviation of data."
     if len(data) < 2:
         raise ValueError('variance requires at least two data points')
     return (_sdm(data) / len(data)) ** 0.5
+
 
 def prune_long_branches(node, factor):
     """
@@ -188,6 +200,7 @@ def prune_long_branches(node, factor):
     node.remove_nodes(leaves_to_remove)
     return removed
 
+
 def trim_zero_len_branches(node, min_len=1e-7):
     leaves_to_remove = set()
 
@@ -201,11 +214,12 @@ def trim_zero_len_branches(node, min_len=1e-7):
     node.remove_nodes(leaves_to_remove)
     return removed
 
+
 def collapse_nodes(node, threshold):
     """
     Takes a TreeNode object and an integer or float support value as an input.
-    Collapse all branches with a support value below the provided threshold into
-    polytomies.
+    Collapse all branches with a support value below the provided threshold
+    into polytomies.
     """
     count = 0
 

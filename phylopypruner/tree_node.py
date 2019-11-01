@@ -145,7 +145,7 @@ class TreeNode(object):
         if not isinstance(node, TreeNode):
             raise TypeError("{} must be a Treeroot object".format(node))
 
-        if not node in self.traverse_preorder():
+        if node not in self.traverse_preorder():
             raise AssertionError("{} is not present within tree \
                     {}".format(node, self))
 
