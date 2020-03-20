@@ -66,7 +66,6 @@ def get_outliers(total, current_end, below_threshold):
     return (otus_below, in_this_round) if in_this_round >= 0 \
         else (otus_below, 0)
 
-
 def chunks(items, size):
     """
     Takes a list and an integer as an input. Yield subsets of the list of the

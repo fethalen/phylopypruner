@@ -7,9 +7,9 @@ with open("README.md", "r") as fh:
 
 setup(
     name="phylopypruner",
-    version="0.9.5",
+    version="0.9.6",
     author="Felix Thalen",
-    author_email="fe1430th-s@student.lu.se",
+    author_email="felix.thalen@uni-goettingen.de",
     license="GPL 3",
     description="tree-based orthology inference",
     scripts=['scripts/phylopypruner'],

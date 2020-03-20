@@ -41,11 +41,11 @@ FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
 NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree", ".out", ".treefile"}
 ORTHO_STATS_PATH = "/output_alignment_stats.csv"
 HOMOLOG_STATS_PATH = "/input_alignment_stats.csv"
-ORTHOLOG_STATS_HEADER = "filename;otus;sequences;meanSeqLen;shortestSeq;longestSeq;\
-pctMissingData;alignmentLen\n"
-HOMOLOG_STATS_HEADER = "filename;otus;sequences;meanSeqLen;shortestSeq;longestSeq;\
-pctMissingData;alignmentLen;shortSequencesRemoved;longBranchesRemoved;\
-monophyliesMasked;nodesCollapsed;divergentOtusRemoved\n"
+ORTHOLOG_STATS_HEADER = "filename,otus,sequences,meanSeqLen,shortestSeq,longestSeq,\
+pctMissingData,alignmentLen\n"
+HOMOLOG_STATS_HEADER = "filename,otus,sequences,meanSeqLen,shortestSeq,longestSeq,\
+pctMissingData,alignmentLen,shortSequencesRemoved,longBranchesRemoved,\
+monophyliesMasked,nodesCollapsed,divergentOtusRemoved\n"
 ORTHO_STATS_PATH = "/output_alignment_stats.csv"
 LOG_PATH = "/phylopypruner.log"
 ORTHOLOGS_PATH = "/output_alignments"
@@ -118,13 +118,12 @@ either in percentage (1-100) or in decimal format between 0.0 - 1.0")
             args.min_gene_occupancy = args.min_gene_occupancy / 100
 
     if args.trim_divergent:
-        if args.trim_divergent < 0 or args.trim_divergent > 100:
-            report.error("the divergence threshold ('--trim-divergent') has to be \
-either in percentage (1-100) or in decimal format between 0.0 - 1.0")
-            errors = True
-        elif args.trim_divergent > 1:
-            # convert from percentage to floating point
+        if isinstance(args.trim_divergent, int):
             args.trim_divergent = args.trim_divergent / 100
+        if args.trim_divergent < 0:
+            report.error("the divergence threshold ('--trim-divergent') has to be \
+a positive number")
+            errors = True
 
     if args.min_len and args.min_len < 1:
         report.error("minimum sequence length ('--min-len') has to be a positive \

@@ -13,11 +13,11 @@ from phylopypruner.settings import Settings
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d")
 ORTHO_STATS_PATH = "/output_alignment_stats.csv"
 HOMOLOG_STATS_PATH = "/input_alignment_stats.csv"
-ORTHOLOG_STATS_HEADER = "id;otus;sequences;meanSeqLen;shortestSeq;longestSeq;\
-pctMissingData;alignmentLen\n"
-HOMOLOG_STATS_HEADER = "id;otus;sequences;meanSeqLen;shortestSeq;longestSeq;\
-pctMissingData;alignmentLen;shortSequencesRemoved;longBranchesRemoved;\
-monophyliesMasked;nodesCollapsed;divergentOtusRemoved\n"
+ORTHOLOG_STATS_HEADER = "id,otus,sequences,meanSeqLen,shortestSeq,longestSeq,\
+pctMissingData,alignmentLen\n"
+HOMOLOG_STATS_HEADER = "id,otus,sequences,meanSeqLen,shortestSeq,longestSeq,\
+pctMissingData,alignmentLen,shortSequencesRemoved,longBranchesRemoved,\
+monophyliesMasked,nodesCollapsed,divergentOtusRemoved\n"
 
 
 class Log(object):
@@ -378,7 +378,7 @@ class Log(object):
         """
         with open(dir_out + ORTHO_STATS_PATH, "a") as stats_file:
             for ortholog in self.msas_out:
-                row = "{};{};{};{};{};{};{};{}\n".format(
+                row = "{},{},{},{},{},{},{},{}\n".format(
                     os.path.basename(str(ortholog)),
                     len(ortholog),
                     len(ortholog.otus()),
@@ -390,7 +390,7 @@ class Log(object):
                 stats_file.write(row)
 
         with open(dir_out + HOMOLOG_STATS_PATH, "a") as stats_file:
-            row = "{};{};{};{};{};{};{};{};{};{};{};{};{}\n".format(
+            row = "{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(
                 os.path.basename(str(self.msa_file)),
                 len(self.msa.otus()),
                 len(self.msa),

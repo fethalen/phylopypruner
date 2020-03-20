@@ -82,6 +82,7 @@ class MultipleSequenceAlignment(object):
         for sequence in self.sequences:
             if description == sequence.description:
                 return sequence
+        return
 
     def iter_descriptions(self):
         """Returns an iterator object that includes all sequence descriptions
