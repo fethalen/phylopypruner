@@ -10,20 +10,20 @@ from phylopypruner import report
 from phylopypruner import plot
 try:
     import matplotlib as mpl
-    if not "DISPLAY" in os.environ:
+    if "DISPLAY" not in os.environ:
         mpl.use("agg")
-    import matplotlib.pyplot as plt
     MATPLOTLIB = True
 except ImportError:
     report.tip("install Matplotlib (https://matplotlib.org/) to generate \
 plots")
     MATPLOTLIB = False
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
-SUM_HEADER = "id;alignments;sequences;otus;meanSequences;meanOtus;meanSeqLen;\
-shortestSeq;longestSeq;pctMissingData;catAlignmentLen\n"
+SUM_HEADER = "id,alignments,sequences,otus,meanSequences,meanOtus,meanSeqLen,\
+shortestSeq,longestSeq,pctMissingData,catAlignmentLen\n"
 SUM_PATH = "/supermatrix_stats.csv"
 OCCUPANCY_PLOT_FILE = "/plots/occupancy_matrix.png"
 FREQ_CSV_FILE = "/otu_stats.csv"
+SPECIES_LIST_FILE = "/otu_list.txt"
 GAP_CHARACTERS = {"-", "?", "x"}
 RESOLUTION = 72
 XFONT_SIZE = 2.5
@@ -76,7 +76,6 @@ class Summary(object):
     def discarded_genes(self, value):
         self._discarded_genes = value
 
-
     def remove_gap_only_columns(self):
         """Iterate over the output alignments within this summary and remove
         positions where no residues are present.
@@ -100,10 +99,10 @@ class Summary(object):
                 # Identify columns where no residues are present.
                 for sequence in msa.sequences:
                     for index, position in enumerate(sequence.sequence_data):
-                        if not position in GAP_CHARACTERS:
+                        if position not in GAP_CHARACTERS:
                             presence[index] = True
 
-                if not False in presence:
+                if False not in presence:
                     continue
 
                 for sequence in msa.sequences:
@@ -294,10 +293,16 @@ class Summary(object):
             threshold = _std(list(paralog_freq.values())) * factor
 
         with open(dir_out + FREQ_CSV_FILE, "w") as csv_out:
-            csv_out.write("otu;paralogyFrequency;timesAboveDivergenceThreshold\n")
+            csv_out.write("otu,paralogyFrequency,timesAboveDivergenceThreshold\n")
             for otu, freq in paralog_freq.items():
-                csv_out.write("{};{};{}\n".format(
+                csv_out.write("{},{},{}\n".format(
                     otu, freq, divergent[otu]))
+
+        # In addition to the OTU-stats, create a list of all the OTUs, which
+        # can be useful for automating subsequent steps.
+        with open(dir_out + SPECIES_LIST_FILE, "w") as species_list:
+            for otu, _ in paralog_freq.items():
+                species_list.write("{}\n".format(otu))
 
         otus = list(paralog_freq.keys())
         indices = range(len(otus))
@@ -345,7 +350,7 @@ class Summary(object):
         report : str
             A report of the statistics within this file.
         row : str
-            A CSV-row where each column is separated by a semicolon, ';'.
+            A CSV-row where each column is separated by a semicolon, ','.
         """
         no_of_alignments = 0
         no_of_seqs = 0
@@ -401,7 +406,7 @@ class Summary(object):
         if not longest:
             longest = 0
 
-        row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
+        row = "{},{},{},{},{},{},{},{},{},{},{}\n".format(
             title,
             no_of_alignments,
             no_of_seqs,
@@ -439,7 +444,7 @@ class Summary(object):
         report : str
             A report of the statistics within this file.
         row : str
-            A CSV-row where each column is separated by a semicolon, ';'.
+            A CSV-row where each column is separated by a semicolon, ','.
         """
 
         pct_missing = 0.0
@@ -540,7 +545,7 @@ class Summary(object):
                 underline("{:29s} {:{}s}    {:{}s}".format(
                     name, "No. removed", col_width, "% of input", col_width))
 
-        row = "{};{};{};{};{};{};{};{};{};{};{}\n".format(
+        row = "{},{},{},{},{},{},{},{},{},{},{}\n".format(
             title,
             stats["alignments"],
             stats["sequences"],

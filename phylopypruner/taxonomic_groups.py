@@ -53,11 +53,11 @@ def read(path):
     as an input. Each group is contained within a single line and consists of
     two parts: a group name and one, or more, taxa. Each line starts with the
     group name, followed by a colon (':'). Each taxa that follows is separated
-    by a semi colon (';'). For example:
+    by a comma (','). For example:
 
-    Mollusca:Crepidula;Nucella;Aplysia;Phenacolepa
-    Annelida:Helobdella;Capitella;Pectinaria;Clymenella
-    Entoprocta:Loxosomella;Loxosoma;Barentsia;Pedicellina
+    Mollusca:Crepidula,Nucella,Aplysia,Phenacolepa
+    Annelida:Helobdella,Capitella,Pectinaria,Clymenella
+    Entoprocta:Loxosomella,Loxosoma,Barentsia,Pedicellina
 
     This format ensures that spaces (' ') are also supported in taxon names.
 
