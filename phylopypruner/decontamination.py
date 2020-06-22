@@ -17,6 +17,7 @@ from phylopypruner.prune_paralogs import prune_paralogs
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUBCLADE_STATS_FILE = "/subclade_stats.csv"
 
+
 def _exclude_and_rerun(taxon, summary, pruning_method, min_taxa, outgroup,
                        dir_out):
     summary_copy = copy.deepcopy(summary)
