@@ -31,6 +31,8 @@ def supports_color():
 
 if supports_color():
     COLOR_SUPPORT = True
+else:
+    COLOR_SUPPORT = False
 NORMAL = "\033[0m"
 RED = "\033[31m"
 GREEN = "\033[32m"
