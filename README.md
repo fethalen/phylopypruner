@@ -51,7 +51,7 @@ phylopypruner
 
 ## [Documentation](https://gitlab.com/fethalen/phylopypruner/wikis)
 
-1. [About PhyloPyPruner](https://gitlab.com/fethalen/phylopypruner/wikis/about-phylopypruner)
+1. [About PhyloPyPruner](https://gitlab.com/fethalen/phylopypruner/wikis/introduction)
 2. [Tutorial](https://gitlab.com/fethalen/phylopypruner/wikis/tutorial#phylopypruner-tutorial)
 3. [Installation](https://gitlab.com/fethalen/phylopypruner/wikis/installation)
 4. [Input data](https://gitlab.com/fethalen/phylopypruner/wikis/input-data)
