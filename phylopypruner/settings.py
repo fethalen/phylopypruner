@@ -1,6 +1,6 @@
 "Module for storing and retrieving a set of options."
 
-from phylopypruner import report
+import report
 
 ON = u"[{}]".format(report.colorize("x", "green"))
 OFF = u"[ ]"

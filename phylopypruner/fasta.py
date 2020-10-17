@@ -5,7 +5,7 @@ Module for working with the FASTA file format.
 from __future__ import absolute_import
 from os import path
 from textwrap import wrap
-from phylopypruner import msa
+import msa
 
 
 def read(filename):

@@ -4,10 +4,10 @@ from __future__ import absolute_import
 import os
 import datetime
 from collections import defaultdict
-from phylopypruner.report import underline
-from phylopypruner import fasta
-from phylopypruner import report
-from phylopypruner import plot
+from report import underline
+import fasta
+import report
+import plot
 try:
     import matplotlib as mpl
     if "DISPLAY" not in os.environ:

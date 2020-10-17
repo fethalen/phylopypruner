@@ -20,20 +20,20 @@ from functools import partial
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 import pkg_resources
-from phylopypruner import fasta
-from phylopypruner import newick
-from phylopypruner import filtering
-from phylopypruner import decontamination
-from phylopypruner import mask_monophylies
-from phylopypruner import root
-from phylopypruner import report
-from phylopypruner import taxonomic_groups
-from phylopypruner.prune_paralogs import prune_paralogs
-from phylopypruner.summary import Summary
-from phylopypruner.summary import mk_sum_out_title
-from phylopypruner.log import Log
-from phylopypruner.settings import Settings
-from phylopypruner.supermatrix import Supermatrix
+import fasta
+import newick
+import filtering
+import decontamination
+import mask_monophylies
+import root
+import report
+import taxonomic_groups
+from prune_paralogs import prune_paralogs
+from summary import Summary
+from summary import mk_sum_out_title
+from log import Log
+from settings import Settings
+from supermatrix import Supermatrix
 
 VERSION = pkg_resources.require("phylopypruner")[0].version
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
@@ -456,7 +456,7 @@ def parse_args():
     group.add_argument("--prune",
                        default="LS",
                        type=str,
-                       choices=["LS", "MI", "MO", "RT", "1to1"],
+                       choices=["LS", "MI", "MO", "RT", "1to1", "OTO"],
                        help="select the paralogy pruning method (default: LS)")
 
     group = parser.add_argument_group("postfilters")

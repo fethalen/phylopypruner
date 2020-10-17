@@ -4,7 +4,7 @@ gene tree.
 """
 
 from __future__ import absolute_import
-from phylopypruner import root
+import root
 
 
 def _has_enough_taxa(node, min_taxa):
@@ -12,7 +12,7 @@ def _has_enough_taxa(node, min_taxa):
     Takes a TreeNode object and a threshold as an input. Returns False if there
     are fewer than [min_taxa] OTUs within the node, else True.
     """
-    otus = {_ for _ in node.iter_otus}
+    otus = {_ for _ in node.iter_otus()}
     return len(otus) >= min_taxa
 
 
@@ -272,7 +272,7 @@ def prune_paralogs(method, tree, min_taxa, outgroup):
         trees = list(tree_decomposition(tree))
         if trees:
             subtrees = trees
-    elif method == "1to1":
+    elif method == "1to1" or "OTO":
         if one_to_one_orthologs(tree):
             subtrees.append(tree)
 

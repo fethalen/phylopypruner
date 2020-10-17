@@ -57,7 +57,7 @@ def read(path, root=None):
 
         # Create a new node if no node has been assigned.
         if not root:
-            from phylopypruner.tree_node import TreeNode
+            from tree_node import TreeNode
             root = TreeNode()
 
         node = None
