@@ -4,11 +4,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 import os
 from sys import stderr
-from phylopypruner.gene_partition import GenePartition
-from phylopypruner.msa import MultipleSequenceAlignment
-from phylopypruner.sequence import Sequence
-from phylopypruner.report import progress_bar
-from phylopypruner import fasta
+from gene_partition import GenePartition
+from msa import MultipleSequenceAlignment
+from sequence import Sequence
+from report import progress_bar
+import fasta
 SUPERMATRIX_FILENAME = "/supermatrix.fas"
 PARTITION_FILENAME = "/partition_data.txt"
 

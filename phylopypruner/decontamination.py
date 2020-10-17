@@ -8,11 +8,11 @@ import datetime
 from collections import defaultdict
 from functools import partial
 from multiprocessing import Pool
-from phylopypruner import filtering
-from phylopypruner import report
-from phylopypruner.report import display_otus
-from phylopypruner.summary import Summary
-from phylopypruner.prune_paralogs import prune_paralogs
+import filtering
+import report
+from report import display_otus
+from summary import Summary
+from prune_paralogs import prune_paralogs
 
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUBCLADE_STATS_FILE = "/subclade_stats.csv"

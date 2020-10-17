@@ -6,9 +6,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 from datetime import datetime
 import os.path
-from phylopypruner.msa import MultipleSequenceAlignment
-from phylopypruner.tree_node import TreeNode
-from phylopypruner.settings import Settings
+from msa import MultipleSequenceAlignment
+from tree_node import TreeNode
+from settings import Settings
 
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d")
 ORTHO_STATS_PATH = "/output_alignment_stats.csv"

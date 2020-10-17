@@ -11,5 +11,10 @@ for argument in sys.argv[1:]:
         argument = os.path.abspath(argument)
     ARGUMENTS.append(argument)
 
-os.chdir("..")
-os.system("{} -m phylopypruner {}".format(sys.executable, " ".join(ARGUMENTS)))
+# Old call (just in case)
+# os.chdir("..")
+# os.system("{} -m phylopypruner {}".format(sys.executable, " ".join(ARGUMENTS)))
+
+script_path = os.path.abspath((os.path.dirname(sys.argv[0])))
+ppp_executable = os.path.join(script_path, os.path.pardir) + "/phylopypruner/__main__.py"
+os.system("{} {} {}".format(sys.executable, ppp_executable, " ".join(ARGUMENTS)))
