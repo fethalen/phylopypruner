@@ -1,6 +1,8 @@
+MANIFEST.in
 README.md
 setup.py
 phylopypruner/__init__.py
+phylopypruner/__main__.py
 phylopypruner/decontamination.py
 phylopypruner/fasta.py
 phylopypruner/filtering.py
@@ -9,7 +11,6 @@ phylopypruner/log.py
 phylopypruner/mask_monophylies.py
 phylopypruner/msa.py
 phylopypruner/newick.py
-phylopypruner/phylopypruner
 phylopypruner/plot.py
 phylopypruner/prune_paralogs.py
 phylopypruner/report.py
@@ -24,5 +25,7 @@ phylopypruner/tree_stats.py
 phylopypruner.egg-info/PKG-INFO
 phylopypruner.egg-info/SOURCES.txt
 phylopypruner.egg-info/dependency_links.txt
+phylopypruner.egg-info/entry_points.txt
+phylopypruner.egg-info/requires.txt
 phylopypruner.egg-info/top_level.txt
 scripts/phylopypruner

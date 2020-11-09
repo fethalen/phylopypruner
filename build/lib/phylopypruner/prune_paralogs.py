@@ -4,7 +4,7 @@ gene tree.
 """
 
 from __future__ import absolute_import
-import root
+from phylopypruner import root
 
 
 def _has_enough_taxa(node, min_taxa):

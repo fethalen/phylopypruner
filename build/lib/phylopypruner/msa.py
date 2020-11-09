@@ -2,8 +2,8 @@
 
 from __future__ import absolute_import
 import re
-import report
-from sequence import Sequence
+from phylopypruner import report
+from phylopypruner.sequence import Sequence
 
 
 class MultipleSequenceAlignment(object):
