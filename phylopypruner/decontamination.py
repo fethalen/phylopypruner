@@ -10,7 +10,7 @@ from functools import partial
 from multiprocessing import Pool
 from phylopypruner import filtering
 from phylopypruner import report
-from phylopypruner import Summary
+from phylopypruner.summary import Summary
 from phylopypruner.report import display_otus
 from phylopypruner.prune_paralogs import prune_paralogs
 
