@@ -1,0 +1,3 @@
+id;alignments;sequences;otus;meanSequences;meanOtus;meanSeqLen;shortestSeq;longestSeq;pctMissingData;catAlignmentLen
+input;10;371;28;37;25;308;69;542;21.5;3627
+output;9;172;28;19;19;325;84;542;39.0;3069

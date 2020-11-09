@@ -1,0 +1,32 @@
+PhyloPyPruner version 0.9.8
+Monday, 09. November 2020 03:03PM
+---------------------------------
+
+
+Alignment statistics:
+  Description                        Input   Output
+  No. of alignments                    10      10
+  No. of sequences                    819     319
+  No. of OTUs                          74      72
+  Avg no. of sequences / alignment     81      31
+  Avg no. of OTUs / alignment          56      31
+  Avg sequence length (ungapped)      174     169
+  Shortest sequence (ungapped)         52      52
+  Longest sequence (ungapped)         232     231
+  % missing data                    26.60   60.10
+  Concatenated alignment length      1913    1909
+
+Methods summary:
+  Description                   No. removed    % of input
+  Short sequences                0          0.00
+  Long branches                  0          0.00
+  Ultrashort distance pairs      0          0.00
+  Divergent sequences            0          0.00
+  Collapsed nodes                0          0.00
+  OTUs < occupancy threshold     0          0.00
+  Genes < occupancy threshold    0          0.00
+
+Reuse these parameters:
+./__main__.py --dir ../examples/lophotrochozoa/
+
+completed in 3.56 seconds

@@ -4,7 +4,7 @@ Tools for filtering tree nodes and sequences.
 
 from __future__ import absolute_import
 import copy
-from tree_node import TreeNode
+from phylopypruner.tree_node import TreeNode
 
 
 def _is_short_sequence(sequence, threshold):
