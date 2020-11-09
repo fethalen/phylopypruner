@@ -1,7 +1,7 @@
 "Module for generating plots."
 
 import os
-import report
+from phylopypruner import report
 
 try:
     import matplotlib as mpl
