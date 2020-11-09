@@ -10,7 +10,7 @@
 
 import os
 import argparse
-import newick
+from phylopypruner import newick
 
 NW_EXTENSIONS = (".tre", ".nw", ".newick")
 
@@ -19,6 +19,10 @@ def get_nw_stats(path):
     average support and
     """
     tree = newick.read(path)
+    leaf_count = 0
+    total_dist = 0
+    branch_count = 0
+    total_support = 0
 
     for node in tree.traverse():
         if node.is_leaf():

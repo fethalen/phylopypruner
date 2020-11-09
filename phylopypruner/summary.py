@@ -4,10 +4,10 @@ from __future__ import absolute_import
 import os
 import datetime
 from collections import defaultdict
-from report import underline
-import fasta
-import report
-import plot
+from phylopypruner import fasta
+from phylopypruner import report
+from phylopypruner import plot
+from phylopypruner.report import underline
 try:
     import matplotlib as mpl
     if "DISPLAY" not in os.environ:
@@ -95,10 +95,16 @@ class Summary(object):
                 # Generate a list of booleans for each alignment: True = one
                 # or more residues present at column, False = residues absent.
                 presence = [False] * len(msa.sequences[0])
+                residues = len(presence)
 
                 # Identify columns where no residues are present.
                 for sequence in msa.sequences:
                     for index, position in enumerate(sequence.sequence_data):
+                        if index > residues:
+                            print(report.error("Uneven length in alignment \
+                                {}".format(msa.filename)))
+                            break
+
                         if position not in GAP_CHARACTERS:
                             presence[index] = True
 

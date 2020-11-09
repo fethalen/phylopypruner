@@ -20,22 +20,22 @@ from functools import partial
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 import pkg_resources
-import fasta
-import newick
-import filtering
-import decontamination
-import mask_monophylies
-import root
-import report
-import taxonomic_groups
-from prune_paralogs import prune_paralogs
-from summary import Summary
-from summary import mk_sum_out_title
-from log import Log
-from settings import Settings
-from supermatrix import Supermatrix
+from phylopypruner import fasta
+from phylopypruner import newick
+from phylopypruner import filtering
+from phylopypruner import decontamination
+from phylopypruner import mask_monophylies
+from phylopypruner import root
+from phylopypruner import report
+import phylopypruner.taxonomic_groups
+from pathlib import Path
+from phylopypruner.prune_paralogs import prune_paralogs
+from phylopypruner.summary import Summary
+from phylopypruner.summary import mk_sum_out_title
+from phylopypruner.log import Log
+from phylopypruner.settings import Settings
+from phylopypruner.supermatrix import Supermatrix
 
-VERSION = pkg_resources.require("phylopypruner")[0].version
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
                     ".frn"}
 NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree", ".out", ".treefile"}
@@ -50,13 +50,14 @@ ORTHO_STATS_PATH = "/output_alignment_stats.csv"
 LOG_PATH = "/phylopypruner.log"
 ORTHOLOGS_PATH = "/output_alignments"
 TIMESTAMP = datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p")
-ABOUT = report.underline("PhyloPyPruner version {}".format(VERSION))
-ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
-    VERSION, TIMESTAMP, "-" * len(TIMESTAMP))
 NO_FILES = """You did not specify any input data. Use the flag '--dir', followed
 by the path to a directory, to point to a directory which contain your
 multiple sequence alignments (MSAs) and input trees."""
-
+with open("VERSION") as version_file:
+    version = version_file.read().strip()
+ABOUT = report.underline("PhyloPyPruner version {}".format(version))
+ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
+    version, TIMESTAMP, "-" * len(TIMESTAMP))
 
 def _validate_input(msa, tree, tree_path):
     "Test to see if MSA and tree entries matches."
@@ -159,7 +160,7 @@ def _run(settings, msa, tree):
     # test to see if the entries in the MSA and tree matches
     _validate_input(msa, tree, settings.nw_file)
 
-    log = Log(VERSION, msa, tree, settings)
+    log = Log(version, msa, tree, settings)
 
     # exclude taxa within the list settings.exclude
     if settings.exclude:
@@ -341,7 +342,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-v", "-V", "--version",
                         action="version",
-                        version=str(VERSION),
+                        version=str(version),
                         help="display the version number and exit")
     parser.add_argument("--overwrite",
                         default=False,

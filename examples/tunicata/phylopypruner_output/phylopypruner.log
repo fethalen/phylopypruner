@@ -1,0 +1,46 @@
+PhyloPyPruner version 0.8.5
+Sunday, 30. June 2019 12:16AM
+-----------------------------
+Input data:
+  Directory:	/Users/feli/Dropbox/Projects/phylopypruner/examples/tunicata
+
+Parameters used:
+  Minimum number of OTUs...........: 4
+  Minimum sequence length..........: None
+  Long branch threshold............: None
+  Minimum support value............: None
+  Include..........................: None
+  Exclude..........................: None
+  Monophyly masking method.........: pdist
+  Rooting method...................: None
+  Outgroup rooting.................: None
+  Paralogy pruning method..........: LS
+  Paralogy frequency threshold.....: None
+  Trim divergent percentage........: None
+  Jackknife........................: False
+
+Alignment statistics:
+  Description                        Input   Output
+  No. of alignments                    10       9
+  No. of sequences                    371     172
+  No. of OTUs                          28      28
+  Avg no. of sequences / alignment     37      19
+  Avg no. of OTUs /alignment           25      19
+  Avg sequence length (ungapped)      308     325
+  Shortest sequence (ungapped)         69      84
+  Longest sequence (ungapped)         542     542
+  % missing data                    21.50   39.00
+  Concatenated alignment length      3627    3069
+
+Methods summary:
+  Description                                 Total   % of input
+  No. of short sequences removed                0   0.00
+  No. of long branches removed                  0   0.00
+  No. of ultrashort distance pairs removed      0   0.00
+  No. of divergent sequences removed            0   0.00
+  No. of collapsed nodes                        0   0.00
+
+Reuse these parameters:
+/Users/feli/Dropbox/Projects/phylopypruner/phylopypruner/__main__.py --dir /Users/feli/Dropbox/Projects/phylopypruner/examples/tunicata
+
+completed in 3.54 seconds
