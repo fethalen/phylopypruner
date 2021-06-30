@@ -81,6 +81,9 @@ def run(settings, msa, tree):
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         run_log.monophylies_masked = masked_seqs
 
+
+    tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
+
     # trim divergent sequences
     if settings.trim_divergent:
         run_log.divergent, run_log.divergent_removed = decontamination.trim_divergent(

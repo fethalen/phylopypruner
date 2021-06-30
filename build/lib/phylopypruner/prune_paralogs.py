@@ -86,7 +86,6 @@ def maximum_inclusion(tree, min_taxa):
                 if not leaf.name:
                     leaf.delete()
                     break
-
         max_subtree = largest_subtree(tree, min_taxa)
 
 
