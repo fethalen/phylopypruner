@@ -4,18 +4,16 @@ from __future__ import absolute_import
 import os
 import datetime
 from collections import defaultdict
-from phylopypruner import fasta
-from phylopypruner import report
-from phylopypruner import plot
-from phylopypruner.report import underline
+from . import fasta
+from . import report
+from . import plot
+from .report import underline
 try:
     import matplotlib as mpl
     if "DISPLAY" not in os.environ:
         mpl.use("agg")
     MATPLOTLIB = True
 except ImportError:
-    report.tip("install Matplotlib (https://matplotlib.org/) to generate \
-plots")
     MATPLOTLIB = False
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUM_HEADER = "id,alignments,sequences,otus,meanSequences,meanOtus,meanSeqLen,\
@@ -113,9 +111,14 @@ class Summary(object):
 
                 for sequence in msa.sequences:
                     for index in range(0, len(presence))[::-1]:
-                        if not presence[index]:
-                            sequence.sequence_data = remove_position_from_str(
-                                sequence.sequence_data, index)
+                        try:
+                            if not presence[index]:
+                                sequence.sequence_data = remove_position_from_str(
+                                    sequence.sequence_data, index)
+                        except:
+                            report.error("uneven alignment length encountered \
+                                          in MSA {}".format(msa.filename))
+                            exit(1)
 
         return self
 

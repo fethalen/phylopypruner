@@ -7,7 +7,7 @@ in-paralogs, isoforms, or other moonophyletic groups within the same OTU.
 
 from __future__ import absolute_import
 from collections import defaultdict
-from phylopypruner.filtering import rm_empty_root
+from .filtering import rm_empty_root
 
 
 def _monophyletic_sister(node):

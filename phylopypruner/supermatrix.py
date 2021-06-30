@@ -4,11 +4,11 @@ from __future__ import absolute_import
 from __future__ import print_function
 import os
 from sys import stderr
-from phylopypruner import fasta
-from phylopypruner.gene_partition import GenePartition
-from phylopypruner.msa import MultipleSequenceAlignment
-from phylopypruner.sequence import Sequence
-from phylopypruner.report import progress_bar
+from . import fasta
+from .gene_partition import GenePartition
+from .msa import MultipleSequenceAlignment
+from . import sequence
+from .report import progress_bar
 SUPERMATRIX_FILENAME = "/supermatrix.fas"
 PARTITION_FILENAME = "/partition_data.txt"
 
@@ -146,9 +146,9 @@ class Supermatrix(object):
 
                 otus_in_sequence = set()
 
-                for sequence in msa.sequences:
-                    self.add_sequence(sequence)
-                    otus_in_sequence.add(sequence.otu)
+                for seq_record in msa.sequences:
+                    self.add_sequence(seq_record)
+                    otus_in_sequence.add(seq_record.otu)
 
                 for otu in otus.difference(otus_in_sequence):
                     if is_dna:
@@ -163,11 +163,11 @@ class Supermatrix(object):
         for otu in self.sequences:
             # Sequence expects the following format: OTU@identifier or
             # OTU|identifier, so we have to work around it.
-            sequence = Sequence()
-            sequence.description = otu
-            sequence.otu = otu
-            sequence.sequence_data = self.sequences[otu]
-            self.as_msa.sequences.append(sequence)
+            seq_record = sequence.Sequence()
+            seq_record.description = otu
+            seq_record.otu = otu
+            seq_record.sequence_data = self.sequences[otu]
+            self.as_msa.sequences.append(seq_record)
 
         # Write the gene partitions to a file.
         with open(dir_out + PARTITION_FILENAME, "w") as partition_file:

@@ -6,9 +6,9 @@ from __future__ import print_function
 from __future__ import absolute_import
 from datetime import datetime
 import os.path
-from phylopypruner.msa import MultipleSequenceAlignment
-from phylopypruner.tree_node import TreeNode
-from phylopypruner.settings import Settings
+from .msa import MultipleSequenceAlignment
+from . import tree_node
+from . import settings
 
 TIMESTAMP = datetime.now().strftime("%Y-%m-%d")
 ORTHO_STATS_PATH = "/output_alignment_stats.csv"
@@ -24,8 +24,8 @@ class Log(object):
     """
     A record of a single run.
     """
-    def __init__(self, version, msa=MultipleSequenceAlignment, tree=TreeNode,
-                 settings=Settings):
+    def __init__(self, version, msa=MultipleSequenceAlignment, tree=tree_node.TreeNode(),
+                 settings=settings.Settings()):
         self._version = version
         self._msa = msa
         self._tree = tree

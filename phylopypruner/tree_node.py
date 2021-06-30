@@ -1,5 +1,6 @@
 "Module for working with a phylogenetic tree."
 
+from __future__ import absolute_import
 import re
 from collections import deque
 
@@ -591,7 +592,7 @@ class TreeNode(object):
         :param attributes: A list of node attributes to shown in the
             ASCII representation.
         """
-        (lines, mid) = self._asciiArt(show_internal=show_internal,
+        (lines, _) = self._asciiArt(show_internal=show_internal,
                                       compact=compact, attributes=attributes)
         return '\n'+'\n'.join(lines)
 

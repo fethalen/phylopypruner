@@ -4,7 +4,7 @@ Tools for filtering tree nodes and sequences.
 
 from __future__ import absolute_import
 import copy
-from phylopypruner.tree_node import TreeNode
+from . import tree_node
 
 
 def _is_short_sequence(sequence, threshold):
@@ -65,7 +65,7 @@ def rm_empty_root(node):
         if branch.is_root:
             if len(branch) != 1:
                 new_root = branch
-                new_root = TreeNode(branch.name, branch.dist)
+                new_root = tree_node.TreeNode(branch.name, branch.dist)
                 new_root.children = branch.children
                 break
 

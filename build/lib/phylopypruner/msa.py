@@ -2,8 +2,8 @@
 
 from __future__ import absolute_import
 import re
-from phylopypruner import report
-from phylopypruner.sequence import Sequence
+from . import report
+from . import sequence
 
 
 class MultipleSequenceAlignment(object):
@@ -53,26 +53,26 @@ class MultipleSequenceAlignment(object):
     def sequences(self, value):
         self._sequences = value
 
-    def add_sequence(self, sequence=None, description="", sequence_data=""):
+    def add_sequence(self, seq_record=None, description="", sequence_data=""):
         "Add a sequence object to the sequences list in this alignment object."
-        if not sequence:
-            sequence = Sequence()
-            sequence.description = description
-            sequence.sequence_data = sequence_data
-            sequence.otu = re.split(r"\||@", sequence.description)[0]
+        if not seq_record:
+            seq_record = sequence.Sequence()
+            seq_record.description = description
+            seq_record.sequence_data = sequence_data
+            seq_record.otu = re.split(r"\||@", seq_record.description)[0]
             try:
-                sequence.identifier = re.split(
-                    r"\||@", sequence.description)[1]
+                seq_record.identifier = re.split(
+                    r"\||@", seq_record.description)[1]
             except IndexError:
                 report.warning("no description found on split with | or @")
-                sequence.identifier = None
-        elif description:
-            sequence.otu = re.split(r"\||@", sequence.description)[0]
-        elif sequence_data:
-            sequence.identifier = re.split(r"\||@", sequence.description)[1]
+                seq_record.identifier = None
+        if description:
+            seq_record.otu = re.split(r"\||@", seq_record.description)[0]
+        if sequence_data:
+            seq_record.identifier = re.split(r"\||@", seq_record.description)[1]
 
-        self.sequences.append(sequence)
-        return sequence
+        self.sequences.append(seq_record)
+        return seq_record
 
     def get_sequence(self, description):
         """Takes a FASTA description as an input and returns the matching sequence

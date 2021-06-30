@@ -1,0 +1,10 @@
+LICENSE
+MANIFEST.in
+README.md
+setup.py
+phylopypruner/phylopypruner.egg-info/PKG-INFO
+phylopypruner/phylopypruner.egg-info/SOURCES.txt
+phylopypruner/phylopypruner.egg-info/dependency_links.txt
+phylopypruner/phylopypruner.egg-info/entry_points.txt
+phylopypruner/phylopypruner.egg-info/requires.txt
+phylopypruner/phylopypruner.egg-info/top_level.txt

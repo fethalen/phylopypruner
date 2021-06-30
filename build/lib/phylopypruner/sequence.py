@@ -2,6 +2,7 @@
 Amino acid or nucleotide sequence data type.
 """
 
+from __future__ import absolute_import
 import re
 
 AMINO_ACIDS = "^[ABCDEFGHIKLMNPQRSTUVWYZX*-.]*$"
