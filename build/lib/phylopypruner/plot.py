@@ -1,7 +1,8 @@
 "Module for generating plots."
 
+from __future__ import absolute_import
 import os
-from phylopypruner import report
+from . import report
 
 try:
     import matplotlib as mpl
@@ -11,8 +12,8 @@ try:
     plt.rcParams.update({'figure.max_open_warning': 0})
     MATPLOTLIB = True
 except ImportError:
-    report.tip("install Matplotlib (https://matplotlib.org/) to generate \
-plots")
+#     report.tip("install Matplotlib (https://matplotlib.org/) to generate \
+# plots")
     MATPLOTLIB = False
 
 OCCUPANCY_PLOT_FILE = "occupancy_matrix.png"

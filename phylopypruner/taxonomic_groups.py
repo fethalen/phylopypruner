@@ -3,7 +3,6 @@ A taxonomic group represents collections of operational taxonomical units
 (OTUs).
 """
 
-
 class TaxonomicGroup:
     """
     Represents a collection of operational taxonomical units (OTUs).

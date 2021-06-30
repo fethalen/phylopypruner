@@ -1,6 +1,7 @@
 "Module for storing and retrieving a set of options."
 
-from phylopypruner import report
+from __future__ import absolute_import
+from . import report
 
 ON = u"[{}]".format(report.colorize("x", "green"))
 OFF = u"[ ]"
@@ -12,26 +13,48 @@ class Settings(object):
     A list of settings used in a single run.
     """
     def __init__(self, arguments=None):
-        self._fasta_file = None
-        self._nw_file = None
-        self._min_taxa = arguments.min_taxa
-        self._min_len = arguments.min_len
-        self._min_support = arguments.min_support
-        self._trim_lb = arguments.trim_lb
-        self._trim_zero_len = arguments.min_pdist
-        self._outgroup = arguments.outgroup
-        self._include = arguments.include
-        self._exclude = arguments.exclude
-        self._force_inclusion = arguments.force_inclusion
-        self._root = arguments.root
-        self._mask = arguments.mask
-        self._prune = arguments.prune
-        self._trim_freq_paralogs = arguments.trim_freq_paralogs
-        self._trim_divergent = arguments.trim_divergent
-        self._jackknife = arguments.jackknife
-        self._taxonomic_groups = arguments.subclades
-        self._min_otu_occupancy = arguments.min_otu_occupancy
-        self._min_gene_occupancy = arguments.min_gene_occupancy
+        if arguments:
+            self._fasta_file = None
+            self._nw_file = None
+            self._min_taxa = arguments.min_taxa
+            self._min_len = arguments.min_len
+            self._min_support = arguments.min_support
+            self._trim_lb = arguments.trim_lb
+            self._trim_zero_len = arguments.min_pdist
+            self._outgroup = arguments.outgroup
+            self._include = arguments.include
+            self._exclude = arguments.exclude
+            self._force_inclusion = arguments.force_inclusion
+            self._root = arguments.root
+            self._mask = arguments.mask
+            self._prune = arguments.prune
+            self._trim_freq_paralogs = arguments.trim_freq_paralogs
+            self._trim_divergent = arguments.trim_divergent
+            self._jackknife = arguments.jackknife
+            self._taxonomic_groups = arguments.subclades
+            self._min_otu_occupancy = arguments.min_otu_occupancy
+            self._min_gene_occupancy = arguments.min_gene_occupancy
+        else:
+            self._fasta_file = None
+            self._nw_file = None
+            self._min_taxa = 0
+            self._min_len = 0
+            self._min_support = 0.0
+            self._trim_lb = 0.0
+            self._trim_zero_len = 0
+            self._outgroup = []
+            self._include = []
+            self._exclude = []
+            self._force_inclusion = []
+            self._root = ""
+            self._mask = ""
+            self._prune = 0.0
+            self._trim_freq_paralogs = 0.0
+            self._trim_divergent = 0.0
+            self._jackknife = False
+            self._taxonomic_groups = ""
+            self._min_otu_occupancy = 0.0
+            self._min_gene_occupancy = 0.0
 
     @property
     def fasta_file(self):

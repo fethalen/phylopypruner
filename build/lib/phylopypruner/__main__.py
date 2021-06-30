@@ -16,25 +16,26 @@ import shutil
 import sys
 import time
 import datetime
+import pkg_resources
 from functools import partial
 from multiprocessing import Pool
 from multiprocessing import cpu_count
-import pkg_resources
-from phylopypruner import fasta
-from phylopypruner import newick
-from phylopypruner import filtering
-from phylopypruner import decontamination
-from phylopypruner import mask_monophylies
-from phylopypruner import root
-from phylopypruner import report
-import phylopypruner.taxonomic_groups
 from pathlib import Path
-from phylopypruner.prune_paralogs import prune_paralogs
-from phylopypruner.summary import Summary
-from phylopypruner.summary import mk_sum_out_title
-from phylopypruner.log import Log
-from phylopypruner.settings import Settings
-from phylopypruner.supermatrix import Supermatrix
+from . import fasta
+from . import newick
+from . import filtering
+from . import decontamination
+from . import log
+from . import mask_monophylies
+from . import root
+from . import report
+from . import taxonomic_groups
+from . import settings
+from . import supermatrix
+from . import run
+from .prune_paralogs import prune_paralogs
+from .summary import Summary
+from .summary import mk_sum_out_title
 
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
                     ".frn"}
@@ -53,23 +54,12 @@ TIMESTAMP = datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p")
 NO_FILES = """You did not specify any input data. Use the flag '--dir', followed
 by the path to a directory, to point to a directory which contain your
 multiple sequence alignments (MSAs) and input trees."""
-with open("VERSION") as version_file:
-    version = version_file.read().strip()
+# with open("phylopypruner/VERSION") as version_file:
+#     version = version_file.read()
+version = "1.1.15"
 ABOUT = report.underline("PhyloPyPruner version {}".format(version))
 ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
     version, TIMESTAMP, "-" * len(TIMESTAMP))
-
-def _validate_input(msa, tree, tree_path):
-    "Test to see if MSA and tree entries matches."
-    descriptions = list(msa.iter_descriptions())
-    names = list(tree.iter_names())
-
-    if set(descriptions).intersection(names) < set(descriptions):
-        print("example tree names:", names[:2], file=sys.stderr)
-        print("example sequences:", descriptions[:2], file=sys.stderr)
-        report.error("MSA names don't match tree \n   {}\n   {}".format(
-            msa.filename, tree_path))
-
 
 def _no_files(args):
     "Returns True if the required files are not provided."
@@ -148,121 +138,6 @@ has to be a positive number")
 
     if errors:
         sys.exit()
-
-
-def _run(settings, msa, tree):
-    """
-    Takes a dictionary that specifies a set of settings as an input. The
-    dictionary should contain the following keys: msa, tree, min_taxa, min_len,
-    min_support, trim_lb, outgroup, root, mask, and prune. Runs PhyloPyPruner
-    once using these settings.
-    """
-    # test to see if the entries in the MSA and tree matches
-    _validate_input(msa, tree, settings.nw_file)
-
-    log = Log(version, msa, tree, settings)
-
-    # exclude taxa within the list settings.exclude
-    if settings.exclude:
-        tree = filtering.exclude(tree, settings.exclude)
-
-    if filtering.too_few_otus(tree, settings.min_taxa):
-        return log
-
-    # remove short sequences
-    if settings.min_len:
-        log.trimmed_seqs = filtering.trim_short_seqs(
-            msa, tree, settings.min_len)
-
-    if filtering.too_few_otus(tree, settings.min_taxa):
-        return log
-
-    # trim long branches
-    if settings.trim_lb:
-        log.lbs_removed = list(filtering.prune_long_branches(
-            tree, settings.trim_lb))
-
-    if filtering.too_few_otus(tree, settings.min_taxa):
-        return log
-
-    # trim zero length branches
-    if settings.trim_zero_len:
-        log.ultra_short_branches = filtering.trim_zero_len_branches(
-            tree, settings.trim_zero_len)
-
-    if filtering.too_few_otus(tree, settings.min_taxa):
-        return log
-
-    # collapse weakly supported nodes into polytomies
-    if settings.min_support:
-        log.collapsed_nodes = filtering.collapse_nodes(
-            tree, settings.min_support)
-
-    # mask monophyletic groups
-    if settings.mask:
-        if settings.mask == "pdist":
-            tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
-        elif settings.mask == "longest":
-            tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
-        log.monophylies_masked = masked_seqs
-
-    # trim divergent sequences
-    if settings.trim_divergent:
-        log.divergent, log.divergent_removed = decontamination.trim_divergent(
-            tree, settings.trim_divergent, settings.include)
-
-    if filtering.too_few_otus(tree, settings.min_taxa):
-        return log
-
-    # root by outgroup
-    rooted = False   # True if outgroup rooting is successful
-    if settings.outgroup:
-        if not settings.prune == "MO":
-            tree, rooted = root.outgroup(tree, settings.outgroup)
-
-    # root the tree by midpoint rooting
-    if not rooted and settings.root:
-        if settings.root == "midpoint":
-            tree = root.midpoint(tree)
-
-    # mask monophyletic groups
-    if settings.mask:
-        if settings.mask == "pdist":
-            tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
-        elif settings.mask == "longest":
-            tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
-        log.monophylies_masked.update(masked_seqs)
-
-    log.masked_tree = tree
-
-    # get a list of paralogs
-    log.paralogs = tree.paralogs()
-
-    # prune paralogs
-    log.orthologs = prune_paralogs(settings.prune, tree,
-                                   settings.min_taxa, settings.outgroup)
-
-    if settings.force_inclusion:
-        log.orthologs = filtering.force_inclusion(
-            log.orthologs, settings.force_inclusion)
-
-    return log
-
-
-def _get_orthologs(settings, directory="", dir_out=None):
-    fasta_path = "{}{}".format(directory, settings.fasta_file)
-    nw_path = "{}{}".format(directory, settings.nw_file)
-    msa = fasta.read(fasta_path)
-    nw_file = newick.read(nw_path)
-    log = _run(settings, msa, nw_file)
-    log.get_msas_out(dir_out)
-    log.report(dir_out)
-    return log
-
-
-def _run_for_file_pairs(corr_files, settings, dir_in, dir_out):
-    settings.fasta_file, settings.nw_file = corr_files
-    return _get_orthologs(settings, dir_in, dir_out)
 
 
 def file_pairs_from_directory(directory):
@@ -505,6 +380,7 @@ def parse_args():
 
 def main():
     "Parse args, run filter and infer orthologs."
+    START_TIME = time.time()
     args = parse_args()
     print(ABOUT, file=sys.stderr)
     _validate_arguments(args)
@@ -515,7 +391,7 @@ def main():
         groups = taxonomic_groups.read(args.subclades)
         args.subclades = groups
 
-    settings = Settings(args)
+    parameters = settings.Settings(args)
 
     if args.threads:
         threads = args.threads
@@ -568,7 +444,7 @@ run, overwrite these files?", display=False)):
     else:
         threads = thread_count if thread_count <= 10 else 10
     pool = Pool(processes=threads)
-    part_run = partial(_run_for_file_pairs, settings=settings,
+    part_run = partial(run.run_for_file_pairs, settings=parameters,
                        dir_in=dir_in, dir_out=dir_out)
     report.progress_bar("using {} out of {} available threads".format(
         threads, thread_count))
@@ -632,9 +508,9 @@ more relaxed settings")
     # Remove gap-only columns from the output alignments.
     summary = summary.remove_gap_only_columns()
 
-    if settings.taxonomic_groups:
+    if parameters.taxonomic_groups:
         decontamination.score_monophyly(
-            summary, settings.taxonomic_groups, dir_out)
+            summary, parameters.taxonomic_groups, dir_out)
 
     # Perform taxon jackknifing.
     if args.jackknife:
@@ -644,8 +520,8 @@ more relaxed settings")
     summary.write_msas(args.wrap)
 
     # concatenate output alignments into a supermatrix
-    supermatrix = Supermatrix(dir_out)
-    supermatrix.partitions_from_summary(summary, dir_out)
+    matrix = supermatrix.Supermatrix(dir_out)
+    matrix.partitions_from_summary(summary, dir_out)
 
     # print the output
     path_out = report.print_path(dir_out, display=False)
@@ -653,7 +529,7 @@ more relaxed settings")
 
     # print settings
     print("", file=sys.stderr)
-    settings.print_settings()
+    parameters.print_settings()
 
     # print alignment statistics
     print(ortholog_report)
@@ -670,7 +546,12 @@ more relaxed settings")
         log_file.write("\n" + run_time)
 
 
+def entry():
+    "Entry point for command-line script"
+    main()
+    return 0
+
+
 if __name__ == "__main__":
     sys.path.insert(0, os.path.abspath('..'))
-    START_TIME = time.time()
     main()

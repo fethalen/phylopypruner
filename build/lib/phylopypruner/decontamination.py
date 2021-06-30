@@ -8,15 +8,14 @@ import datetime
 from collections import defaultdict
 from functools import partial
 from multiprocessing import Pool
-from phylopypruner import filtering
-from phylopypruner import report
-from phylopypruner import Summary
-from phylopypruner.report import display_otus
-from phylopypruner.prune_paralogs import prune_paralogs
+from . import filtering
+from . import report
+from .summary import Summary
+from .report import display_otus
+from .prune_paralogs import prune_paralogs
 
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d")
 SUBCLADE_STATS_FILE = "/subclade_stats.csv"
-
 
 def _exclude_and_rerun(taxon, summary, pruning_method, min_taxa, outgroup,
                        dir_out):

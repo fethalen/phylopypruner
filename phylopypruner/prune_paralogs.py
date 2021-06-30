@@ -4,7 +4,7 @@ gene tree.
 """
 
 from __future__ import absolute_import
-from phylopypruner import root
+from . import root
 
 
 def _has_enough_taxa(node, min_taxa):
@@ -86,7 +86,6 @@ def maximum_inclusion(tree, min_taxa):
                 if not leaf.name:
                     leaf.delete()
                     break
-
         max_subtree = largest_subtree(tree, min_taxa)
 
 

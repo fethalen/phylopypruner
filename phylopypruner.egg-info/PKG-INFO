@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: phylopypruner
-Version: 1.0.0
+Version: 1.1.15
 Summary: tree-based orthology inference
 Home-page: https://gitlab.com/fethalen/phylopypruner
 Author: Felix Thalen
@@ -79,4 +79,6 @@ Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
 Classifier: Operating System :: OS Independent
+Classifier: Topic :: Scientific/Engineering :: Bio-Informatics
+Requires-Python: >=3.6
 Description-Content-Type: text/markdown

@@ -1,6 +1,6 @@
-PhyloPyPruner version 0.9.8
-Monday, 09. November 2020 03:03PM
----------------------------------
+PhyloPyPruner version 1.1.15
+Monday, 28. June 2021 11:38AM
+-----------------------------
 
 
 Alignment statistics:
@@ -27,6 +27,6 @@ Methods summary:
   Genes < occupancy threshold    0          0.00
 
 Reuse these parameters:
-./__main__.py --dir ../examples/lophotrochozoa/
+/home/feli/anaconda3/bin/phylopypruner --dir examples/lophotrochozoa/
 
-completed in 3.56 seconds
+completed in 4.21 seconds

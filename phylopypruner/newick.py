@@ -57,8 +57,8 @@ def read(path, root=None):
 
         # Create a new node if no node has been assigned.
         if not root:
-            from phylopypruner.tree_node import TreeNode
-            root = TreeNode()
+            from . import tree_node
+            root = tree_node.TreeNode()
 
         node = None
         for opening_paren in nw_str.split("(")[1:]:

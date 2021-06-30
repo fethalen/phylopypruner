@@ -8,9 +8,10 @@
   within the provided <path>.
 """
 
+from __future__ import absolute_import
 import os
 import argparse
-from phylopypruner import newick
+from . import newick
 
 NW_EXTENSIONS = (".tre", ".nw", ".newick")
 
@@ -24,7 +25,7 @@ def get_nw_stats(path):
     branch_count = 0
     total_support = 0
 
-    for node in tree.traverse():
+    for node in tree.traverse_preorder():
         if node.is_leaf():
             leaf_count += 1
             total_dist += node.dist
