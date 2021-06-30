@@ -56,7 +56,7 @@ by the path to a directory, to point to a directory which contain your
 multiple sequence alignments (MSAs) and input trees."""
 # with open("phylopypruner/VERSION") as version_file:
 #     version = version_file.read()
-version = "1.1.15"
+version = "1.1.16"
 ABOUT = report.underline("PhyloPyPruner version {}".format(version))
 ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
     version, TIMESTAMP, "-" * len(TIMESTAMP))
@@ -224,10 +224,6 @@ def parse_args():
                         action="store_true",
                         help="overwrite pre-existing output files without\
                               asking")
-    parser.add_argument("--no-plot",
-                        default=False,
-                        action="store_true",
-                        help="do not generate any plots (faster)")
     parser.add_argument("--wrap",
                         metavar="<number>",
                         default=None,
@@ -375,6 +371,16 @@ def parse_args():
                        help="exclude each OTU one by one, rerun the whole\
                              analysis and generate statistics for each\
                              subsample")
+
+    group = parser.add_argument_group("flow-control")
+    parser.add_argument("--no-plot",
+                        default=False,
+                        action="store_true",
+                        help="do not generate any plots (faster)")
+    parser.add_argument("--supermatrix",
+                        default=False,
+                        action="store_true",
+                        help="concatenate output into a supermatrix (slower)")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
 

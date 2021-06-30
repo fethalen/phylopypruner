@@ -104,21 +104,21 @@ class Summary(object):
                             break
 
                         if position not in GAP_CHARACTERS:
-                            presence[index] = True
+                            try:
+                                presence[index] = True
+                            except:
+                                report.error("uneven alignment length encountered \
+                                              in MSA {}".format(msa.filename))
+                                exit(1)
 
                 if False not in presence:
                     continue
 
                 for sequence in msa.sequences:
                     for index in range(0, len(presence))[::-1]:
-                        try:
-                            if not presence[index]:
-                                sequence.sequence_data = remove_position_from_str(
-                                    sequence.sequence_data, index)
-                        except:
-                            report.error("uneven alignment length encountered \
-                                          in MSA {}".format(msa.filename))
-                            exit(1)
+                        if not presence[index]:
+                            sequence.sequence_data = remove_position_from_str(
+                                sequence.sequence_data, index)
 
         return self
 

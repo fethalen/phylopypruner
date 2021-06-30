@@ -104,7 +104,12 @@ class Summary(object):
                             break
 
                         if position not in GAP_CHARACTERS:
-                            presence[index] = True
+                            try:
+                                presence[index] = True
+                            except:
+                                report.error("uneven alignment length encountered \
+                                              in MSA {}".format(msa.filename))
+                                exit(1)
 
                 if False not in presence:
                     continue
