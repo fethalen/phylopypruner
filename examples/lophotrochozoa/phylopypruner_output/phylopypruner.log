@@ -1,5 +1,5 @@
-PhyloPyPruner version 1.1.15
-Monday, 28. June 2021 11:38AM
+PhyloPyPruner version 1.1.16
+Friday, 02. July 2021 11:04AM
 -----------------------------
 
 
@@ -29,4 +29,4 @@ Methods summary:
 Reuse these parameters:
 /home/feli/anaconda3/bin/phylopypruner --dir examples/lophotrochozoa/
 
-completed in 4.21 seconds
+completed in 3.28 seconds
