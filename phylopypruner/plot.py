@@ -2,6 +2,8 @@
 
 from __future__ import absolute_import
 import os
+
+from matplotlib.pyplot import colormaps
 from . import report
 
 try:
@@ -153,7 +155,7 @@ def occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
 def paralogy_frequency(indices, frequencies, otus, threshold, dir_out):
     "Generate a paralogy frequency plot."
     try:
-        plt.barh(y=indices, color="c0", width=frequencies, alpha=0.5)
+        plt.barh(y=indices, color="black", width=frequencies, alpha=0.5)
     except TypeError:
         report.error("plotting function is lacking indices, try updating \
 Matplotlib or disable plotting with '--no-plot'")
