@@ -2,10 +2,12 @@
 
 from __future__ import absolute_import
 import os
+
 from . import report
 
 try:
     import matplotlib as mpl
+    from matplotlib.pyplot import colormaps
     if "DISPLAY" not in os.environ:
         mpl.use("agg")
     import matplotlib.pyplot as plt
@@ -17,7 +19,9 @@ except ImportError:
     MATPLOTLIB = False
 
 OCCUPANCY_PLOT_FILE = "occupancy_matrix.png"
+OCCUPANCY_PLOT_SVG = "occupancy_matrix.svg"
 FREQ_PLOT_FILE = "paralogy_freq_plot.png"
+FREQ_PLOT_SVG = "paralogy_freq_plot.svg"
 PLOTS_DIR = "/plots"
 PPI = 300
 DEFAULT_AXIS_SIZE = 4
@@ -85,12 +89,14 @@ def occupancy_subplot(matrix, xlabels, ylabels, from_and_to=None, dir_out=None,
     if from_and_to:
         mat_sub = [None] * len(matrix)
         begin, end = from_and_to
-        filename = "occupancy_subplot_{}-{}".format(begin, end)
+        png_filename = "occupancy_subplot_{}-{}".format(begin, end)
+        svg_filename = "occupancy_subplot_{}-{}".format(begin, end)
 
         for index, _ in enumerate(matrix):
             mat_sub[index] = matrix[index][begin - 1:end - 1]
     else:
-        filename = OCCUPANCY_PLOT_FILE
+        png_filename = OCCUPANCY_PLOT_FILE
+        svg_filename = OCCUPANCY_PLOT_SVG
         mat_sub = matrix
 
     fig = plt.figure()
@@ -118,7 +124,8 @@ def occupancy_subplot(matrix, xlabels, ylabels, from_and_to=None, dir_out=None,
     plt.margins(0.2)
     # Tweak spacing to prevent clipping of tick-labels.
     plt.subplots_adjust(bottom=0.15)
-    plt.savefig(plotting_dir + filename, dpi=PPI)
+    plt.savefig(plotting_dir + png_filename, dpi=PPI)
+    plt.savefig(plotting_dir + svg_filename, format="svg")
 
 
 def occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
@@ -153,20 +160,24 @@ def occupancy_matrix(matrix, xlabels, ylabels, dir_out, below_threshold):
 def paralogy_frequency(indices, frequencies, otus, threshold, dir_out):
     "Generate a paralogy frequency plot."
     try:
-        plt.barh(y=indices, color="c0", width=frequencies, alpha=0.5)
+        plt.barh(y=indices, color="black", width=frequencies, alpha=0.5)
     except TypeError:
         report.error("plotting function is lacking indices, try updating \
 Matplotlib or disable plotting with '--no-plot'")
         return
 
     plotting_dir = dir_out + PLOTS_DIR + "/"
-    freq_file = plotting_dir + FREQ_PLOT_FILE
+    freq_png_file = plotting_dir + FREQ_PLOT_FILE
+    freq_svg_file = plotting_dir + FREQ_PLOT_SVG
 
     if not os.path.isdir(plotting_dir):
         os.mkdir(plotting_dir)
 
-    if os.path.isfile(freq_file):
-        os.remove(freq_file)
+    if os.path.isfile(freq_png_file):
+        os.remove(freq_png_file)
+
+    if os.path.isfile(freq_svg_file):
+        os.remove(freq_svg_file)
 
     plt.yticks(list(indices), otus)
     plt.ylabel("OTU")
@@ -182,4 +193,5 @@ Matplotlib or disable plotting with '--no-plot'")
 
     fig = plt.gcf()
     fig.set_size_inches(20.0, 0.15 * len(otus))
-    plt.savefig(freq_file, dpi=PPI)
+    plt.savefig(freq_png_file, dpi=PPI)
+    plt.savefig(freq_svg_file, format="svg")

@@ -56,7 +56,7 @@ by the path to a directory, to point to a directory which contain your
 multiple sequence alignments (MSAs) and input trees."""
 # with open("phylopypruner/VERSION") as version_file:
 #     version = version_file.read()
-version = "1.1.16"
+version = "1.2.2"
 ABOUT = report.underline("PhyloPyPruner version {}".format(version))
 ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
     version, TIMESTAMP, "-" * len(TIMESTAMP))
@@ -377,10 +377,11 @@ def parse_args():
                         default=False,
                         action="store_true",
                         help="do not generate any plots (faster)")
-    parser.add_argument("--supermatrix",
+    parser.add_argument("--no-supermatrix",
                         default=False,
                         action="store_true",
-                        help="concatenate output into a supermatrix (slower)")
+                        help="do not concatenate output into a supermatrix\
+                              (faster)")
     return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
 
 
@@ -526,8 +527,9 @@ more relaxed settings")
     summary.write_msas(args.wrap)
 
     # concatenate output alignments into a supermatrix
-    matrix = supermatrix.Supermatrix(dir_out)
-    matrix.partitions_from_summary(summary, dir_out)
+    if not args.no_supermatrix:
+        matrix = supermatrix.Supermatrix(dir_out)
+        matrix.partitions_from_summary(summary, dir_out)
 
     # print the output
     path_out = report.print_path(dir_out, display=False)
