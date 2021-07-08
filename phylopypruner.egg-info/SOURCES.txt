@@ -11,7 +11,6 @@ doc/images/paralog_freq.png
 doc/images/ppp_logo.png
 doc/images/proteomes2orthologs.png
 examples/supermatrix_stats.csv
-examples/lophotrochozoa/.~lock.abbreviations.tsv#
 examples/lophotrochozoa/01482.fa
 examples/lophotrochozoa/01482.tre
 examples/lophotrochozoa/01549.fa
