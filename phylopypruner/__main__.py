@@ -56,7 +56,7 @@ by the path to a directory, to point to a directory which contain your
 multiple sequence alignments (MSAs) and input trees."""
 # with open("phylopypruner/VERSION") as version_file:
 #     version = version_file.read()
-version = "1.2.2"
+version = "1.2.3"
 ABOUT = report.underline("PhyloPyPruner version {}".format(version))
 ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
     version, TIMESTAMP, "-" * len(TIMESTAMP))
