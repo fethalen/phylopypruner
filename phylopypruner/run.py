@@ -1,5 +1,6 @@
 "Needed for multiprocessing (see: https://bugs.python.org/issue25053)"
 
+import copy
 import sys
 from . import decontamination
 from . import prune_paralogs
@@ -81,7 +82,6 @@ def run(settings, msa, tree):
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         run_log.monophylies_masked = masked_seqs
 
-
     tree, masked_seqs = mask_monophylies.pairwise_distance(tree)
 
     # trim divergent sequences
@@ -111,7 +111,7 @@ def run(settings, msa, tree):
             tree, masked_seqs = mask_monophylies.longest_isoform(msa, tree)
         run_log.monophylies_masked.update(masked_seqs)
 
-    run_log.masked_tree = tree
+    run_log.masked_tree = copy.deepcopy(tree)
 
     # get a list of paralogs
     run_log.paralogs = tree.paralogs()
