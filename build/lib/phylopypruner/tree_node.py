@@ -3,6 +3,7 @@
 from __future__ import absolute_import
 import re
 from collections import deque
+from . import report
 
 class TreeNode(object):
     """
@@ -115,11 +116,11 @@ class TreeNode(object):
 
     def is_leaf(self):
         "Returns True if this node has no children."
-        return len(self.children) is 0
+        return len(self.children) == 0
 
     def is_monophyletic(self):
         "Returns True if all leaves in this node belong to a single OTU."
-        return len(set(list(self.iter_otus()))) is 1
+        return len(set(list(self.iter_otus()))) == 1
 
     def is_polytomy(self):
         "Returns True if this node has two or more children."
@@ -127,7 +128,7 @@ class TreeNode(object):
 
     def is_bifurcating(self):
         "Returns True if this node has exactly two children."
-        return len(self.children) is 2
+        return len(self.children) == 2
 
     def reroot(self, node):
         """Root this node at the provided node.
@@ -219,7 +220,10 @@ class TreeNode(object):
             for node in self.traverse_preorder():
                 if node in nodes_to_remove and not node.is_root():
                     match = True
-                    node.delete()
+                    try:
+                        node.delete()
+                    except:
+                        report.error("can't delete node {}".format(node))
                     nodes_to_remove.remove(node)
 
             if not match:
@@ -230,10 +234,13 @@ class TreeNode(object):
             self.prune_monofurcations()
 
         # remove empty leaves
-        while self.empty_leaves():
+        while self.empty_leaves() and not len(self) <= 1:
             for leaf in self.iter_leaves():
                 if not leaf.name:
-                    leaf.delete()
+                    try:
+                        leaf.delete()
+                    except:
+                        report.error("can't delete empty leaf")
                     break
 
         # workaround to make sure that child's parent is the same node as to

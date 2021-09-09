@@ -82,22 +82,19 @@ def exclude(node, otus):
     Takes a TreeNode object and a list of OTUs to exclude as an input. Returns
     the same TreeNode object but with the OTUs in the list removed.
     """
-    node_excluded = copy.copy(node)
-    while _leaves_to_exclude(node_excluded, otus):
-        for leaf in node_excluded.iter_leaves():
-            if leaf.otu() in otus and not leaf.is_root():
-                leaf.delete()
-                break
+    if not node:
+        return node
 
-    if node_excluded:
-        while node_excluded.empty_leaves():
-            for leaf in node_excluded.iter_leaves():
-                if not leaf.name:
-                    leaf.delete()
-                    break
+    node_excluded = copy.copy(node)
+    to_remove = []
+
+    for leaf in node_excluded.iter_leaves():
+        if leaf.otu() in otus and not leaf.is_root():
+            to_remove.append(leaf)
+
+    node_excluded.remove_nodes(to_remove)
 
     return node_excluded
-    # return rm_empty_root(node_excluded)
 
 
 def force_inclusion(trees, otus):

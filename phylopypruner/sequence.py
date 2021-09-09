@@ -8,7 +8,8 @@ import re
 AMINO_ACIDS = "^[ABCDEFGHIKLMNPQRSTUVWYZX*-.]*$"
 NUCLEOTIDES = "^[ATKMBVCNSWDGUYRH-.]*$"
 IUPAC_CODES = (AMINO_ACIDS, NUCLEOTIDES)
-GAP_CHARACTERS = {"-", "?", "x"}
+# GAP_CHARACTERS = {"-", "?", "x"}
+GAP_CHARACTERS = {"-"}
 
 class Sequence(object):
     """
