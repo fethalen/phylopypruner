@@ -392,6 +392,7 @@ def main():
     print(ABOUT, file=sys.stderr)
     _validate_arguments(args)
     summary = Summary()
+    sys.setrecursionlimit(100000)
 
     if args.subclades:
         # replace the file path with a set of taxonomic groups
