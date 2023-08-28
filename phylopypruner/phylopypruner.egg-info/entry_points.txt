@@ -1,3 +1,0 @@
-[console_scripts]
-phylopypruner = __main__:main
-

@@ -1,3 +1,0 @@
-[console_scripts]
-phylopypruner = phylopypruner.__main__:entry
-
