@@ -59,17 +59,16 @@ class MultipleSequenceAlignment(object):
             seq_record = sequence.Sequence()
             seq_record.description = description
             seq_record.sequence_data = sequence_data
-            seq_record.otu = re.split(r"\||@", seq_record.description)[0]
+            seq_record.otu = re.split(r"\||@|_", seq_record.description)[0]
             try:
-                seq_record.identifier = re.split(
-                    r"\||@", seq_record.description)[1]
-            except IndexError:
-                report.warning("no description found on split with | or @")
+                seq_record.identifier = re.search(r"[|@_]([^ ]*)", seq_record.description).group(1)
+            except AttributeError:
+                report.warning("no description found on split with | , _ or @")
                 seq_record.identifier = None
         if description:
-            seq_record.otu = re.split(r"\||@", seq_record.description)[0]
+            seq_record.otu = re.split(r"\||@|_", seq_record.description)[0]
         if sequence_data:
-            seq_record.identifier = re.split(r"\||@", seq_record.description)[1]
+            seq_record.identifier = re.search(r"[|@_]([^ ]*)", seq_record.description).group(1)
 
         self.sequences.append(seq_record)
         return seq_record
