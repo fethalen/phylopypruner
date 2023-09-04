@@ -108,7 +108,7 @@ class TreeNode(object):
 
     def otu(self):
         "Returns the OTU to which this node belongs."
-        return re.split(r"\||@", self.name)[0]
+        return re.split(r"\||@|_", self.name)[0]
 
     def is_root(self):
         "Returns True if this node lacks a parent."
@@ -526,7 +526,7 @@ class TreeNode(object):
     def iter_otus(self):
         "Returns an iterator object that includes all OTUs within this node."
         for name in self.iter_names():
-            otu = re.split(r"\||@", name)[0]
+            otu = re.split(r"\||@|_", name)[0]
             yield otu
 
     def iter_identifiers(self):
@@ -534,7 +534,7 @@ class TreeNode(object):
         Returns an iterator object that includes all identifiers in this node.
         """
         for name in self.iter_names():
-            identifier = re.split(r"\||@", name)[1]
+            identifier = re.search(r"[|@_]([^ ]*)", name).group(1)
             yield identifier
 
     def view(self):

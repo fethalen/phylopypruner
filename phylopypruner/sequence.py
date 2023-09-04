@@ -21,7 +21,8 @@ class Sequence(object):
         self._sequence_data = str(sequence_data)
         self._is_alignment = bool(self.is_alignment)
         if description:
-            self._otu, self._identifier = re.split(r"\||@", description)
+            self._otu = re.split(r"\||@|_", description)[0]
+            self._identifier = re.search(r"[|@_]([^ ]*)", description).group(1)
         else:
             self._otu = ""
             self._identifier = ""
