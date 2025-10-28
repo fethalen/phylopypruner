@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Author: Felix Thalen
+# Author: Felicia Sandberg
 # Date: July 24, 2018
 
 """
@@ -8,37 +8,34 @@ A tree-based orthology inference program with additional functionality for
 reducing contamination. See gitlab.com/fethalen/phylopypruner for details.
 """
 
-from __future__ import print_function
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
+
 import argparse
+import datetime
 import os
 import shutil
 import sys
 import time
-import datetime
-import pkg_resources
 from functools import partial
-from multiprocessing import Pool
-from multiprocessing import cpu_count
-from pathlib import Path
-from . import fasta
-from . import newick
-from . import filtering
-from . import decontamination
-from . import log
-from . import mask_monophylies
-from . import root
-from . import report
-from . import taxonomic_groups
-from . import settings
-from . import supermatrix
-from . import run
-from .prune_paralogs import prune_paralogs
-from .summary import Summary
-from .summary import mk_sum_out_title
+from multiprocessing import Pool, cpu_count
 
-FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn",
-                    ".frn"}
+from . import (
+    decontamination,
+    fasta,
+    filtering,
+    log,
+    mask_monophylies,
+    newick,
+    report,
+    root,
+    run,
+    settings,
+    supermatrix,
+    taxonomic_groups,
+)
+from .summary import Summary, mk_sum_out_title
+
+FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn", ".frn"}
 NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree", ".out", ".treefile"}
 ORTHO_STATS_PATH = "/output_alignment_stats.csv"
 HOMOLOG_STATS_PATH = "/input_alignment_stats.csv"
@@ -54,12 +51,12 @@ TIMESTAMP = datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p")
 NO_FILES = """You did not specify any input data. Use the flag '--dir', followed
 by the path to a directory, to point to a directory which contain your
 multiple sequence alignments (MSAs) and input trees."""
-# with open("phylopypruner/VERSION") as version_file:
-#     version = version_file.read()
-version = "1.2.4"
+version = "1.2.5"
 ABOUT = report.underline("PhyloPyPruner version {}".format(version))
 ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
-    version, TIMESTAMP, "-" * len(TIMESTAMP))
+    version, TIMESTAMP, "-" * len(TIMESTAMP)
+)
+
 
 def _no_files(args):
     "Returns True if the required files are not provided."
@@ -75,16 +72,26 @@ def _validate_arguments(args):
         report.error(NO_FILES)
         errors = True
 
-    if not args.outgroup and args.prune == "MO" or \
-       not args.outgroup and args.prune == "RT":
-        report.error("pruning method is set to {}, but no outgroup has been \
-specified".format(args.prune))
+    if (
+        not args.outgroup
+        and args.prune == "MO"
+        or not args.outgroup
+        and args.prune == "RT"
+    ):
+        report.error(
+            "pruning method is set to {}, but no outgroup has been \
+specified".format(
+                args.prune
+            )
+        )
         errors = True
 
     if args.min_support:
         if args.min_support < 0 or args.min_support > 100:
-            report.error("minimum support value ('--min-support') has to be \
-either in percentage (1-100) or in decimal format between 0.0 - 1.0")
+            report.error(
+                "minimum support value ('--min-support') has to be \
+either in percentage (1-100) or in decimal format between 0.0 - 1.0"
+            )
             errors = True
         elif args.min_support > 1:
             # convert from percentage to floating point
@@ -92,8 +99,10 @@ either in percentage (1-100) or in decimal format between 0.0 - 1.0")
 
     if args.min_otu_occupancy:
         if args.min_otu_occupancy < 0 or args.min_otu_occupancy > 100:
-            report.error("minimum OTU occupancy ('--min-otu-occupancy') has to be \
-either in percentage (1-100) or in decimal format between 0.0 - 1.0")
+            report.error(
+                "minimum OTU occupancy ('--min-otu-occupancy') has to be \
+either in percentage (1-100) or in decimal format between 0.0 - 1.0"
+            )
             errors = True
         elif args.min_otu_occupancy > 1:
             # convert from percentage to floating point
@@ -101,8 +110,10 @@ either in percentage (1-100) or in decimal format between 0.0 - 1.0")
 
     if args.min_gene_occupancy:
         if args.min_gene_occupancy < 0 or args.min_gene_occupancy > 100:
-            report.error("minimum gene occupancy ('--min-gene-occupancy') has to be \
-either in percentage (1-100) or in decimal format between 0.0 - 1.0")
+            report.error(
+                "minimum gene occupancy ('--min-gene-occupancy') has to be \
+either in percentage (1-100) or in decimal format between 0.0 - 1.0"
+            )
             errors = True
         elif args.min_gene_occupancy > 1:
             # convert from percentage to floating point
@@ -112,28 +123,38 @@ either in percentage (1-100) or in decimal format between 0.0 - 1.0")
         if isinstance(args.trim_divergent, int):
             args.trim_divergent = args.trim_divergent / 100
         if args.trim_divergent < 0:
-            report.error("the divergence threshold ('--trim-divergent') has to be \
-a positive number")
+            report.error(
+                "the divergence threshold ('--trim-divergent') has to be \
+a positive number"
+            )
             errors = True
 
     if args.min_len and args.min_len < 1:
-        report.error("minimum sequence length ('--min-len') has to be a positive \
-integer (1, 2, 3, 4, ...)")
+        report.error(
+            "minimum sequence length ('--min-len') has to be a positive \
+integer (1, 2, 3, 4, ...)"
+        )
         errors = True
 
     if args.threads and args.threads < 1:
-        report.error("threads ('--threads') has to be a positive integer \
-(1, 2, 3, 4, ...)")
+        report.error(
+            "threads ('--threads') has to be a positive integer \
+(1, 2, 3, 4, ...)"
+        )
         errors = True
 
     if args.min_taxa and args.min_taxa < 1:
-        report.error("minimum number of taxa ('--min-taxa') has to be a positive \
-integer (1, 2, 3, 4, ...)")
+        report.error(
+            "minimum number of taxa ('--min-taxa') has to be a positive \
+integer (1, 2, 3, 4, ...)"
+        )
         errors = True
 
     if args.trim_lb and args.trim_lb <= 0:
-        report.error("the factor for removing long branches ('--trim-lb') \
-has to be a positive number")
+        report.error(
+            "the factor for removing long branches ('--trim-lb') \
+has to be a positive number"
+        )
         errors = True
 
     if errors:
@@ -196,7 +217,8 @@ def file_pairs_from_directory(directory):
         if len(file_pairs[file_pair]) > 2:
             files = list(file_pairs[file_pair])
             message = "{} files found with the name '{}' (expected 2):".format(
-                len(file_pairs[file_pair]), file_pair)
+                len(file_pairs[file_pair]), file_pair
+            )
             report.error(message)
             print("  " + ", ".join([pair for pair in files]), file=sys.stderr)
             errors = True
@@ -215,174 +237,228 @@ def file_pairs_from_directory(directory):
 def parse_args():
     "Parse the arguments provided by the user."
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("-v", "-V", "--version",
-                        action="version",
-                        version=str(version),
-                        help="display the version number and exit")
-    parser.add_argument("--overwrite",
-                        default=False,
-                        action="store_true",
-                        help="overwrite pre-existing output files without\
-                              asking")
-    parser.add_argument("--wrap",
-                        metavar="<number>",
-                        default=None,
-                        type=int,
-                        help="wrap output sequences at column <number>, instead\
-                              of writing each sequence to a single line")
-    parser.add_argument("--threads",
-                        metavar="<number>",
-                        default=None,
-                        type=int,
-                        help="use <number> threads instead of up to 10 threads")
-    parser.add_argument("--output",
-                        metavar="<directory>",
-                        type=str,
-                        default=None,
-                        help="save output files to <directory>, instead of\
-                              the input directory")
+    parser.add_argument(
+        "-v",
+        "-V",
+        "--version",
+        action="version",
+        version=str(version),
+        help="display the version number and exit",
+    )
+    parser.add_argument(
+        "--overwrite",
+        default=False,
+        action="store_true",
+        help="overwrite pre-existing output files without\
+                              asking",
+    )
+    parser.add_argument(
+        "--wrap",
+        metavar="<number>",
+        default=None,
+        type=int,
+        help="wrap output sequences at column <number>, instead\
+                              of writing each sequence to a single line",
+    )
+    parser.add_argument(
+        "--threads",
+        metavar="<number>",
+        default=None,
+        type=int,
+        help="use <number> threads instead of up to 10 threads",
+    )
+    parser.add_argument(
+        "--output",
+        metavar="<directory>",
+        type=str,
+        default=None,
+        help="save output files to <directory>, instead of\
+                              the input directory",
+    )
 
     group = parser.add_argument_group("input data")
-    group.add_argument("--dir",
-                       metavar="<directory>",
-                       type=str,
-                       default=None,
-                       help="a <directory> containing 1+ alignment and tree files")
+    group.add_argument(
+        "--dir",
+        metavar="<directory>",
+        type=str,
+        default=None,
+        help="a <directory> containing 1+ alignment and tree files",
+    )
 
     group = parser.add_argument_group("prefilters")
-    group.add_argument("--exclude",
-                       nargs='+',
-                       metavar="OTU",
-                       default=None,
-                       type=str,
-                       help="exclude these OTUs")
-    group.add_argument("--min-len",
-                       metavar="<number>",
-                       default=None,
-                       type=int,
-                       help="remove sequences which are shorter than <number> bases")
-    group.add_argument("--trim-lb",
-                       default=None,
-                       metavar="<factor>",
-                       type=float,
-                       help="remove branches longer than <factor> standard\
-                             deviations of all branches")
-    group.add_argument("--min-pdist",
-                       default=None,
-                       metavar="<distance>",
-                       type=float,
-                       help="remove sequence pairs with less tip-to-tip\
-                             distance than <distance>")
-    group.add_argument("--min-support",
-                       metavar="<percentage>",
-                       default=None,
-                       type=float,
-                       help="collapse nodes with less support than\
-                             <percentage> into polytomies")
-    group.add_argument("--mask",
-                       default="pdist",
-                       type=str,
-                       choices=["longest", "pdist"],
-                       help="if 2+ sequences from a single OTU forms a clade,\
-                             choose which sequence to keep using this method")
-    group.add_argument("--trim-divergent",
-                       default=None,
-                       metavar="<percentage>",
-                       type=float,
-                       help="for each alignment: discard all sequences from an OTU on a\
+    group.add_argument(
+        "--exclude",
+        nargs="+",
+        metavar="OTU",
+        default=None,
+        type=str,
+        help="exclude these OTUs",
+    )
+    group.add_argument(
+        "--min-len",
+        metavar="<number>",
+        default=None,
+        type=int,
+        help="remove sequences which are shorter than <number> bases",
+    )
+    group.add_argument(
+        "--trim-lb",
+        default=None,
+        metavar="<factor>",
+        type=float,
+        help="remove branches longer than <factor> standard\
+                             deviations of all branches",
+    )
+    group.add_argument(
+        "--min-pdist",
+        default=None,
+        metavar="<distance>",
+        type=float,
+        help="remove sequence pairs with less tip-to-tip\
+                             distance than <distance>",
+    )
+    group.add_argument(
+        "--min-support",
+        metavar="<percentage>",
+        default=None,
+        type=float,
+        help="collapse nodes with less support than\
+                             <percentage> into polytomies",
+    )
+    group.add_argument(
+        "--mask",
+        default="pdist",
+        type=str,
+        choices=["longest", "pdist"],
+        help="if 2+ sequences from a single OTU forms a clade,\
+                             choose which sequence to keep using this method",
+    )
+    group.add_argument(
+        "--trim-divergent",
+        default=None,
+        metavar="<percentage>",
+        type=float,
+        help="for each alignment: discard all sequences from an OTU on a\
                        per-alignment-basis, if the ratio between the largest\
                        pairwise distance of sequences from this OTU and\
                        the average pairwise distance of sequences from this\
-                       OTU to other's exceed this <percentage>")
-    group.add_argument("--trim-freq-paralogs",
-                       default=None,
-                       metavar="<factor>",
-                       type=float,
-                       help="exclude OTUs with more paralogy frequency (PF)\
-                             than <factor> standard deviations of all PFs")
-    group.add_argument("--include",
-                       nargs="+",
-                       metavar="OTU",
-                       default=None,
-                       type=str,
-                       help="include these OTUs, even if deemed problematic\
-                             by '--trim-freq-paralogs' or '--trim-divergent'")
+                       OTU to other's exceed this <percentage>",
+    )
+    group.add_argument(
+        "--trim-freq-paralogs",
+        default=None,
+        metavar="<factor>",
+        type=float,
+        help="exclude OTUs with more paralogy frequency (PF)\
+                             than <factor> standard deviations of all PFs",
+    )
+    group.add_argument(
+        "--include",
+        nargs="+",
+        metavar="OTU",
+        default=None,
+        type=str,
+        help="include these OTUs, even if deemed problematic\
+                             by '--trim-freq-paralogs' or '--trim-divergent'",
+    )
 
     group = parser.add_argument_group("rooting")
-    group.add_argument("--outgroup",
-                       nargs="+",
-                       metavar="OTU",
-                       default=None,
-                       type=str,
-                       help="root trees using these OTUs if at least one OTU\
+    group.add_argument(
+        "--outgroup",
+        nargs="+",
+        metavar="OTU",
+        default=None,
+        type=str,
+        help="root trees using these OTUs if at least one OTU\
                              is present and if all present OTUs are\
-                             non-repetetive and form a clade")
-    group.add_argument("--root",
-                       default=None,
-                       type=str,
-                       choices=["midpoint"],
-                       help="root trees using this method when outgroup\
-                             rooting was not performed")
+                             non-repetetive and form a clade",
+    )
+    group.add_argument(
+        "--root",
+        default=None,
+        type=str,
+        choices=["midpoint"],
+        help="root trees using this method when outgroup\
+                             rooting was not performed",
+    )
 
     group = parser.add_argument_group("paralogy pruning")
-    group.add_argument("--prune",
-                       default="LS",
-                       type=str,
-                       choices=["LS", "MI", "MO", "RT", "1to1", "OTO"],
-                       help="select the paralogy pruning method (default: LS)")
+    group.add_argument(
+        "--prune",
+        default="LS",
+        type=str,
+        choices=["LS", "MI", "MO", "RT", "1to1", "OTO"],
+        help="select the paralogy pruning method (default: LS)",
+    )
 
     group = parser.add_argument_group("postfilters")
-    group.add_argument("--force-inclusion",
-                       nargs="+",
-                       metavar="OTU",
-                       default=None,
-                       type=str,
-                       help="discard output alignments where these OTUs are\
-                             missing")
-    group.add_argument("--min-taxa",
-                       metavar="<number>",
-                       type=int,
-                       default=4,
-                       help="discard output alignments with fewer OTUs than\
-                             <number> (4 by default)")
-    group.add_argument("--min-otu-occupancy",
-                       metavar="<percentage>",
-                       default=None,
-                       type=float,
-                       help="do not include OTUs with less occupancy than\
-                             <percentage>")
-    group.add_argument("--min-gene-occupancy",
-                       metavar="<percentage>",
-                       default=None,
-                       type=float,
-                       help="discard output alignments with less occupancy\
-                             than <percentage>")
+    group.add_argument(
+        "--force-inclusion",
+        nargs="+",
+        metavar="OTU",
+        default=None,
+        type=str,
+        help="discard output alignments where these OTUs are\
+                             missing",
+    )
+    group.add_argument(
+        "--min-taxa",
+        metavar="<number>",
+        type=int,
+        default=4,
+        help="discard output alignments with fewer OTUs than\
+                             <number> (4 by default)",
+    )
+    group.add_argument(
+        "--min-otu-occupancy",
+        metavar="<percentage>",
+        default=None,
+        type=float,
+        help="do not include OTUs with less occupancy than\
+                             <percentage>",
+    )
+    group.add_argument(
+        "--min-gene-occupancy",
+        metavar="<percentage>",
+        default=None,
+        type=float,
+        help="discard output alignments with less occupancy\
+                             than <percentage>",
+    )
 
     group = parser.add_argument_group("post-processing")
-    group.add_argument("--subclades",
-                       default=None,
-                       metavar="FILE",
-                       type=str,
-                       help="specify a set of subclades within this file\
-                             and analyse their overall stability")
-    group.add_argument("--jackknife",
-                       default=False,
-                       action="store_true",
-                       help="exclude each OTU one by one, rerun the whole\
+    group.add_argument(
+        "--subclades",
+        default=None,
+        metavar="FILE",
+        type=str,
+        help="specify a set of subclades within this file\
+                             and analyse their overall stability",
+    )
+    group.add_argument(
+        "--jackknife",
+        default=False,
+        action="store_true",
+        help="exclude each OTU one by one, rerun the whole\
                              analysis and generate statistics for each\
-                             subsample")
+                             subsample",
+    )
 
     group = parser.add_argument_group("flow-control")
-    parser.add_argument("--no-plot",
-                        default=False,
-                        action="store_true",
-                        help="do not generate any plots (faster)")
-    parser.add_argument("--no-supermatrix",
-                        default=False,
-                        action="store_true",
-                        help="do not concatenate output into a supermatrix\
-                              (faster)")
-    return parser.parse_args(args=None if sys.argv[1:] else ['--help'])
+    parser.add_argument(
+        "--no-plot",
+        default=False,
+        action="store_true",
+        help="do not generate any plots (faster)",
+    )
+    parser.add_argument(
+        "--no-supermatrix",
+        default=False,
+        action="store_true",
+        help="do not concatenate output into a supermatrix\
+                              (faster)",
+    )
+    return parser.parse_args(args=None if sys.argv[1:] else ["--help"])
 
 
 def main():
@@ -415,8 +491,13 @@ def main():
 
     # if not args.overwrite and os.path.isfile(dir_out):
     if not args.overwrite and os.path.isdir(dir_out):
-        if not report.yes_or_no(report.warning("found files from a previous \
-run, overwrite these files?", display=False)):
+        if not report.yes_or_no(
+            report.warning(
+                "found files from a previous \
+run, overwrite these files?",
+                display=False,
+            )
+        ):
             exit()
 
     if os.path.isdir(dir_out):
@@ -452,10 +533,12 @@ run, overwrite these files?", display=False)):
     else:
         threads = thread_count if thread_count <= 10 else 10
     pool = Pool(processes=threads)
-    part_run = partial(run.run_for_file_pairs, settings=parameters,
-                       dir_in=dir_in, dir_out=dir_out)
-    report.progress_bar("using {} out of {} available threads".format(
-        threads, thread_count))
+    part_run = partial(
+        run.run_for_file_pairs, settings=parameters, dir_in=dir_in, dir_out=dir_out
+    )
+    report.progress_bar(
+        "using {} out of {} available threads".format(threads, thread_count)
+    )
     print("", file=sys.stderr)
 
     file_pairs = file_pairs_from_directory(dir_in)
@@ -468,8 +551,7 @@ run, overwrite these files?", display=False)):
         sys.exit()
 
     for index, log in enumerate(pool.imap_unordered(part_run, file_pairs), 1):
-        message = "processing MSAs and trees ({}/{})".format(index,
-                                                             no_of_file_pairs)
+        message = "processing MSAs and trees ({}/{})".format(index, no_of_file_pairs)
         report.progress_bar(message)
         summary.logs.append(log)
     pool.terminate()
@@ -478,32 +560,39 @@ run, overwrite these files?", display=False)):
     print("")
 
     if not summary:
-        report.error("no orthologs recovered, check filetype extensions or try \
-more relaxed settings")
+        report.error(
+            "no orthologs recovered, check filetype extensions or try \
+more relaxed settings"
+        )
         sys.exit()
 
-    paralog_freq = summary.paralogy_frequency(dir_out, args.trim_freq_paralogs,
-                                              args.no_plot)
+    paralog_freq = summary.paralogy_frequency(
+        dir_out, args.trim_freq_paralogs, args.no_plot
+    )
     homolog_stats = summary.homolog_report(dir_out)
     otus_to_exclude = []
 
     if args.trim_freq_paralogs:
         freq_paralogs = decontamination.trim_freq_paralogs(
-            args.trim_freq_paralogs, paralog_freq)
+            args.trim_freq_paralogs, paralog_freq
+        )
         if freq_paralogs:
             otus_to_exclude += freq_paralogs
 
     # Generate a list of OTUs to exclude and exclude them from the summary.
     if otus_to_exclude:
         if args.include:
-            otus_to_exclude = [otu for otu in otus_to_exclude if otu not in
-                               args.include]
+            otus_to_exclude = [
+                otu for otu in otus_to_exclude if otu not in args.include
+            ]
         summary = decontamination.prune_by_exclusion(
-            summary, otus_to_exclude, dir_out, threads)
+            summary, otus_to_exclude, dir_out, threads
+        )
 
     # Get OTUs and genes to exclude based on their occupancy.
     otus_to_exclude, genes_to_exclude = summary.matrix_occupancy(
-        dir_out, args.min_otu_occupancy, args.min_gene_occupancy, args.no_plot)
+        dir_out, args.min_otu_occupancy, args.min_gene_occupancy, args.no_plot
+    )
 
     if genes_to_exclude:
         summary = decontamination.exclude_genes(summary, genes_to_exclude)
@@ -517,8 +606,7 @@ more relaxed settings")
     summary = summary.remove_gap_only_columns()
 
     if parameters.taxonomic_groups:
-        decontamination.score_monophyly(
-            summary, parameters.taxonomic_groups, dir_out)
+        decontamination.score_monophyly(summary, parameters.taxonomic_groups, dir_out)
 
     # Perform taxon jackknifing.
     if args.jackknife:
@@ -542,16 +630,15 @@ more relaxed settings")
 
     # print alignment statistics
     print(ortholog_report)
-    run_time = "\ncompleted in {} seconds".format(
-        round(time.time() - START_TIME, 2))
+    run_time = "\ncompleted in {} seconds".format(round(time.time() - START_TIME, 2))
 
     with open(dir_out + LOG_PATH, "a") as log_file:
         ortholog_report = ortholog_report.replace("\33[0m", "")
         ortholog_report = ortholog_report.replace("\33[4m", "")
         log_file.write("\n" + ortholog_report)
         log_file.write(
-            "\n\nReuse these parameters:\n" +
-            " ".join([arg for arg in sys.argv]))
+            "\n\nReuse these parameters:\n" + " ".join([arg for arg in sys.argv])
+        )
         log_file.write("\n" + run_time)
 
 
@@ -562,5 +649,5 @@ def entry():
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, os.path.abspath('..'))
+    sys.path.insert(0, os.path.abspath(".."))
     main()
