@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Sandberg"
+  given-names: "Felicia"
+  orcid: "https://orcid.org/my-orcid?orcid=0000-0002-3535-5122"
+- family-names: "Kocot"
+  given-names: "Kevin"
+  orcid: "https://orcid.org/0000-0002-8673-2688"
+- family-names: "Steven H.D."
+  orcid: "https://orcid.org/0000-0001-9420-4482"
+  given-names: "Haddock"
+title: "PhyloPyPruner"
+version: 1.2.5
+date-released: 2018-05-07
+url: "https://github.com/fethalen/phylopypruner"
