@@ -16,14 +16,17 @@ version = "1.1.2"
 
 def validate_input(msa, tree, tree_path):
     "Test to see if MSA and tree entries matches."
-    descriptions = list(msa.iter_descriptions())
-    names = list(tree.iter_names())
+    descriptions = set(msa.iter_descriptions())
+    names = set(tree.iter_names())
 
-    if set(descriptions).intersection(names) < set(descriptions):
-        print("example tree names:", names[:2], file=sys.stderr)
-        print("example sequences:", descriptions[:2], file=sys.stderr)
-        report.error("MSA names don't match tree \n   {}\n   {}".format(
-            msa.filename, tree_path))
+    # Find items in descriptions not in names and vice versa
+    missing_in_names = descriptions - names
+    missing_in_descriptions = names - descriptions
+
+    if missing_in_names or missing_in_descriptions:
+        print("Missing in tree names:", list(missing_in_names), file=sys.stderr)
+        print("Missing in sequences:", list(missing_in_descriptions), file=sys.stderr)
+        report.error("MSA names don't match tree \n   {}\n   {}".format(msa.filename, tree_path))
 
 
 def run(settings, msa, tree):
