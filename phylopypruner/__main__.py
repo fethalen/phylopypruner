@@ -9,6 +9,7 @@ reducing contamination. See gitlab.com/fethalen/phylopypruner for details.
 """
 
 from __future__ import absolute_import, print_function
+from importlib.metadata import version, PackageNotFoundError
 
 import argparse
 import datetime
@@ -35,6 +36,11 @@ from . import (
 )
 from .summary import Summary, mk_sum_out_title
 
+try:
+    __version__ = version("phylopypruner")
+except PackageNotFoundError:
+    __version__ = "unknown"
+
 FASTA_EXTENSIONS = {".fa", ".fas", ".fasta", ".fna", ".faa", ".fsa", ".ffn", ".frn"}
 NW_EXTENSIONS = {".newick", ".nw", ".tre", ".tree", ".out", ".treefile"}
 ORTHO_STATS_PATH = "/output_alignment_stats.csv"
@@ -44,18 +50,14 @@ pctMissingData,alignmentLen\n"
 HOMOLOG_STATS_HEADER = "filename,otus,sequences,meanSeqLen,shortestSeq,longestSeq,\
 pctMissingData,alignmentLen,shortSequencesRemoved,longBranchesRemoved,\
 monophyliesMasked,nodesCollapsed,divergentOtusRemoved\n"
-ORTHO_STATS_PATH = "/output_alignment_stats.csv"
 LOG_PATH = "/phylopypruner.log"
 ORTHOLOGS_PATH = "/output_alignments"
 TIMESTAMP = datetime.datetime.now().strftime("%A, %d. %B %Y %I:%M%p")
 NO_FILES = """You did not specify any input data. Use the flag '--dir', followed
 by the path to a directory, to point to a directory which contain your
 multiple sequence alignments (MSAs) and input trees."""
-version = "1.2.5"
-ABOUT = report.underline("PhyloPyPruner version {}".format(version))
-ABOUT_LOG = "PhyloPyPruner version {}\n{}\n{}".format(
-    version, TIMESTAMP, "-" * len(TIMESTAMP)
-)
+ABOUT = report.underline(f"PhyloPyPruner version {__version__}")
+ABOUT_LOG = f"PhyloPyPruner version {__version__}\n{TIMESTAMP}\n{'-' * len(TIMESTAMP)}"
 
 
 def _no_files(args):
@@ -242,7 +244,7 @@ def parse_args():
         "-V",
         "--version",
         action="version",
-        version=str(version),
+        version=f"%(prog)s {__version__}",
         help="display the version number and exit",
     )
     parser.add_argument(

@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phylopypruner"
+dynamic = ["version"]
+description = "Tree-based orthology inference"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "GPL-3.0-only" }
+
+authors = [
+  { name = "Felicia Sandberg", email = "felicia.sandberg@hest.ethz.ch" }
+]
+
+keywords = [
+  "orthology inference",
+  "orthologs",
+  "tree-based",
+  "phylogenetics",
+  "phylogenomics",
+  "orthology"
+]
+
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Bio-Informatics"
+]
+
+dependencies = [
+  "matplotlib>=3.5"
+]
+
+[project.urls]
+Homepage = "https://github.com/fethalen/phylopypruner"
+
+[project.scripts]
+phylopypruner = "phylopypruner.__main__:entry"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.dynamic]
+version = { file = "phylopypruner/VERSION" }
